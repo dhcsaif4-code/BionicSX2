@@ -474,6 +474,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/ccc/src
         pcsx2/3rdparty/demangler/include
         pcsx2/3rdparty/simpleini/include
+        pcsx2/3rdparty/libzip/lib
         pcsx2/3rdparty/imgui/include
         pcsx2/3rdparty/imgui/src
         pcsx2/3rdparty/vixl/include
