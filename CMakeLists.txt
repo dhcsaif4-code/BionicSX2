@@ -174,7 +174,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/SIO/Sio0.cpp
         pcsx2/pcsx2/SIO/Sio2.cpp
         pcsx2/pcsx2/SIO/Memcard/MemoryCardFile.cpp
-        pcsx2/pcsx2/SIO/Memcard/MemoryCardFolder.cpp
+        # pcsx2/pcsx2/SIO/Memcard/MemoryCardFolder.cpp  # needs ryml — excluded for bringup
         pcsx2/pcsx2/SIO/Memcard/MemoryCardProtocol.cpp
         pcsx2/pcsx2/SIO/Multitap/MultitapProtocol.cpp
         pcsx2/pcsx2/SIO/Pad/Pad.cpp
