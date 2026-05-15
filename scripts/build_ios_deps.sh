@@ -1,78 +1,67 @@
 #!/bin/bash
 set -euxo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-ARCH="arm64"
-MIN_IOS="16.0"
-ROOT="$(pwd)"
-INSTALL_DIR="$ROOT/ios-deps/install"
-BUILD_DIR="$ROOT/ios-deps/build"
-mkdir -p "$INSTALL_DIR" "$BUILD_DIR"
+INSTALL="$ROOT/ios-deps/install"
+SRC="$ROOT/ios-deps/src"
+BLD="$ROOT/ios-deps/build"
+mkdir -p "$INSTALL" "$SRC" "$BLD"
 
-CMAKE_IOS_FLAGS=(
-  -DCMAKE_SYSTEM_NAME=iOS
-  -DCMAKE_OSX_ARCHITECTURES=$ARCH
-  -DCMAKE_OSX_SYSROOT=$SDK
-  -DCMAKE_OSX_DEPLOYMENT_TARGET=$MIN_IOS
-  -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
-  -DBUILD_SHARED_LIBS=OFF
-)
+FLAGS="\
+  -DCMAKE_SYSTEM_NAME=iOS \
+  -DCMAKE_OSX_ARCHITECTURES=arm64 \
+  -DCMAKE_OSX_SYSROOT=$SDK \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+  -DCMAKE_INSTALL_PREFIX=$INSTALL \
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+  -DBUILD_SHARED_LIBS=OFF"
 
-build_lib() {
-  local NAME=$1
-  local SRC=$2
-  local EXTRA_FLAGS="${@:3}"
+# ── zlib ──────────────────────────────────────────────
+cd "$SRC"
+[ -d zlib ] || git clone --depth 1 https://github.com/madler/zlib.git
+mkdir -p "$BLD/zlib" && cd "$BLD/zlib"
+cmake "$SRC/zlib" $FLAGS
+make -j$(sysctl -n hw.logicalcpu) install
 
-  if [ ! -d "$SRC" ]; then
-    echo "SKIP: $NAME — source not found at $SRC"
-    return 0
-  fi
+# ── zstd ──────────────────────────────────────────────
+cd "$SRC"
+[ -d zstd ] || git clone --depth 1 https://github.com/facebook/zstd.git
+mkdir -p "$BLD/zstd" && cd "$BLD/zstd"
+cmake "$SRC/zstd/build/cmake" $FLAGS \
+  -DZSTD_BUILD_PROGRAMS=OFF \
+  -DZSTD_BUILD_SHARED=OFF
+make -j$(sysctl -n hw.logicalcpu) install
 
-  echo "=== Building $NAME from $SRC ==="
-  mkdir -p "$BUILD_DIR/$NAME"
-  cd "$BUILD_DIR/$NAME"
-  cmake "$SRC" "${CMAKE_IOS_FLAGS[@]}" $EXTRA_FLAGS
-  make -j$(sysctl -n hw.logicalcpu)
-  make install
-  cd "$ROOT"
-}
+# ── lz4 ───────────────────────────────────────────────
+cd "$SRC"
+[ -d lz4 ] || git clone --depth 1 https://github.com/lz4/lz4.git
+mkdir -p "$BLD/lz4" && cd "$BLD/lz4"
+cmake "$SRC/lz4/build/cmake" $FLAGS \
+  -DLZ4_BUILD_CLI=OFF \
+  -DLZ4_BUILD_LEGACY_LZ4C=OFF
+make -j$(sysctl -n hw.logicalcpu) install
 
-# Find each library dynamically — check multiple possible locations
-find_src() {
-  local NAME=$1
-  shift
-  for PATH_CANDIDATE in "$@"; do
-    if [ -d "$PATH_CANDIDATE" ]; then
-      echo "$PATH_CANDIDATE"
-      return 0
-    fi
-  done
-  echo ""
-}
+# ── xz/lzma ───────────────────────────────────────────
+cd "$SRC"
+[ -d xz ] || git clone --depth 1 \
+  https://github.com/tukaani-project/xz.git
+mkdir -p "$BLD/xz" && cd "$BLD/xz"
+cmake "$SRC/xz" $FLAGS \
+  -DBUILD_TESTING=OFF
+make -j$(sysctl -n hw.logicalcpu) install
 
-ZLIB=$(find_src zlib \
-  "$ROOT/ios-deps/src/zlib")
+# ── freetype ──────────────────────────────────────────
+cd "$SRC"
+[ -d freetype ] || git clone --depth 1 \
+  https://gitlab.freedesktop.org/freetype/freetype.git
+mkdir -p "$BLD/freetype" && cd "$BLD/freetype"
+cmake "$SRC/freetype" $FLAGS \
+  -DFT_DISABLE_HARFBUZZ=ON \
+  -DFT_DISABLE_BZIP2=ON \
+  -DFT_DISABLE_PNG=OFF \
+  -DZLIB_ROOT="$INSTALL"
+make -j$(sysctl -n hw.logicalcpu) install
 
-ZSTD=$(find_src zstd \
-  "$ROOT/ios-deps/src/zstd/build/cmake")
-
-LZ4=$(find_src lz4 \
-  "$ROOT/ios-deps/src/lz4/build/cmake")
-
-LZMA=$(find_src lzma \
-  "$ROOT/ios-deps/src/xz")
-
-FREETYPE=$(find_src freetype \
-  "$ROOT/ios-deps/src/freetype")
-
-build_lib zlib "$ZLIB"
-build_lib zstd "$ZSTD" -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_SHARED=OFF
-build_lib lz4  "$LZ4"  -DLZ4_BUILD_CLI=OFF
-build_lib lzma "$LZMA"
-build_lib freetype "$FREETYPE" -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BZIP2=ON
-
-echo "=== Built libraries ==="
-find "$INSTALL_DIR" -name "*.a" | sort
-echo "=== Installed headers ==="
-find "$INSTALL_DIR/include" -maxdepth 2 -type d | sort
+echo "=== Done ==="
+find "$INSTALL/lib" -name "*.a" | sort

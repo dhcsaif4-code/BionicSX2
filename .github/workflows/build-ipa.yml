@@ -23,28 +23,14 @@ jobs:
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
 
-      - name: Cache iOS dep sources
+      - name: Cache iOS Dependencies
         uses: actions/cache@v4
         with:
-          path: ios-deps/src
-          key: ios-deps-src-v1
+          path: ios-deps
+          key: ios-deps-v3-${{ hashFiles('scripts/build_ios_deps.sh') }}
 
-      - name: Cache iOS dep builds
-        uses: actions/cache@v4
-        with:
-          path: ios-deps/install
-          key: ios-deps-install-${{ hashFiles('scripts/build_ios_deps.sh') }}
-
-      - name: Debug script content
-        run: |
-          cat -n scripts/build_ios_deps.sh
-          echo "---"
-          cat -n .github/workflows/build-ipa.yml
-
-      - name: Build third-party deps for iOS
-        run: |
-          chmod +x scripts/build_ios_deps.sh
-          bash scripts/build_ios_deps.sh
+      - name: Build iOS Dependencies
+        run: bash scripts/build_ios_deps.sh
 
       - name: Configure BionicSX2
         run: |
