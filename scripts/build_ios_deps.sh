@@ -90,9 +90,33 @@ make -j$(sysctl -n hw.logicalcpu) install
 cd "$SRC"
 [ -d rcheevos ] || git clone --depth 1 \
   https://github.com/RetroAchievements/rcheevos.git
-mkdir -p "$BLD/rcheevos" && cd "$BLD/rcheevos"
-cmake "$SRC/rcheevos" $FLAGS
-make -j$(sysctl -n hw.logicalcpu) install
+
+SDK_RC=$(xcrun --sdk iphoneos --show-sdk-path)
+RC_SRC="$SRC/rcheevos/src"
+RC_OUT="$INSTALL/lib/librcheevos.a"
+RC_INC="$SRC/rcheevos/include"
+
+# Compile all .c files manually
+OBJ_DIR="$BLD/rcheevos"
+mkdir -p "$OBJ_DIR"
+
+OBJS=()
+for f in "$RC_SRC"/rc_*.c "$RC_SRC"/rapi/*.c \
+          "$RC_SRC"/rhash/*.c "$RC_SRC"/rurl/*.c; do
+  [ -f "$f" ] || continue
+  OBJ="$OBJ_DIR/$(basename ${f%.c}).o"
+  xcrun clang \
+    -target arm64-apple-ios16.0 \
+    -isysroot "$SDK_RC" \
+    -I"$RC_INC" \
+    -O2 -c "$f" -o "$OBJ"
+  OBJS+=("$OBJ")
+done
+
+xcrun ar rcs "$RC_OUT" "${OBJS[@]}"
+mkdir -p "$INSTALL/include/rcheevos"
+cp "$RC_INC"/*.h "$INSTALL/include/rcheevos/"
+echo "rcheevos built: $(du -sh $RC_OUT)"
 
 # ── libchdr ───────────────────────────────────────────
 cd "$SRC"
