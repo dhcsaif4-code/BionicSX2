@@ -51,45 +51,16 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
-      - name: Relink app with core library
-        run: |
-          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          LIB=$(find build-ios -name "libBionicSX2.a" | head -1)
-
-          # Collect all .o files from the app target
-          OBJ_DIR="build-ios/CMakeFiles/BionicSX2_App.dir"
-          OBJS=$(find "$OBJ_DIR" -name "*.o" | tr '\n' ' ')
-          echo "Object files: $OBJS"
-          echo "Library: $LIB ($(du -sh $LIB))"
-
-          # Link everything together into final binary
-          clang++ \
-            -target arm64-apple-ios16.0 \
-            -isysroot "$SDK" \
-            $OBJS "$LIB" \
-            -framework Metal \
-            -framework UIKit \
-            -framework AVFoundation \
-            -framework GameController \
-            -framework AudioToolbox \
-            -framework CoreMotion \
-            -framework Foundation \
-            -framework CoreGraphics \
-            -framework QuartzCore \
-            -o build-ios/BionicSX2_App.app/BionicSX2_App
-
-          echo "Final size: $(du -sh build-ios/BionicSX2_App.app/BionicSX2_App)"
-
-      - name: Create IPA
-        run: |
-          mkdir -p Payload
-          cp -r build-ios/BionicSX2_App.app Payload/
-          zip -r BionicSX2.ipa Payload/
-          echo "IPA size: $(du -sh BionicSX2.ipa)"
-
-      - name: Upload IPA
+      - name: Upload Core Library
         uses: actions/upload-artifact@v4
         with:
-          name: BionicSX2-IPA
-          path: BionicSX2.ipa
+          name: BionicSX2-Core
+          path: build-ios/libBionicSX2.a
+          retention-days: 7
+
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: BionicSX2-App
+          path: build-ios/BionicSX2_App.app/
           retention-days: 7
