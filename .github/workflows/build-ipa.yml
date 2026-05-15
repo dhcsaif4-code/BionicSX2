@@ -51,20 +51,10 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
-      - name: Discover build output
+      - name: Create IPA
         run: |
-          echo "=== All files in build-ios/ ==="
-          find build-ios/ -type f | head -30
-          echo "=== Large files (>1MB) anywhere ==="
-          find . -type f -size +1M \
-            ! -path "./.git/*" \
-            ! -path "./pcsx2/*" \
-            ! -path "./3rdparty/*" \
-            | sort -k1 | head -20
-
-          # Package as IPA
           mkdir -p Payload
-          cp -r BionicSX2.app Payload/
+          cp -r build-ios/BionicSX2_App.app Payload/
           zip -r BionicSX2.ipa Payload/
           echo "IPA size: $(du -sh BionicSX2.ipa)"
 
