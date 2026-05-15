@@ -84,7 +84,8 @@ build_lib libzip "$LIBZIP" \
   -DENABLE_BZIP2=OFF \
   -DENABLE_OPENSSL=OFF \
   -DENABLE_MBEDTLS=OFF \
-  -DENABLE_GNUTLS=OFF
+  -DENABLE_GNUTLS=OFF \
+  -DCMAKE_C_FLAGS="-U_WIN32 -U__WIN32__ -UWIN32"
 
 echo "=== Built libraries ==="
 find "$INSTALL_DIR" -name "*.a" | sort

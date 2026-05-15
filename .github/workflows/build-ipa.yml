@@ -89,20 +89,12 @@ jobs:
             printf '  return 0;\n}\n' >> "$H"
             echo '#define strerrorlen_s(e)       _zc_strerrorlen_s(e)' >> "$H"
             echo '#define strerror_s(b,bl,e)     _zc_strerror_s(b,bl,e)' >> "$H"
-            echo '#include <sys/stat.h>' >> "$H"
-            echo '#include <stdio.h>' >> "$H"
-            echo '#define _fseeki64(f,o,w)   fseeko(f,(off_t)(o),w)' >> "$H"
-            echo '#define _ftelli64(f)       ftello(f)' >> "$H"
+
             for f in "$DIR"/*.c; do
               grep -q "zip_compat_ios.h" "$f" || \
                 sed -i.bak '1s/^/#include "zip_compat_ios.h"\n/' "$f"
             done
             echo "Patched all .c files in $DIR with zip_compat_ios.h"
-            # Patch libzip's own compat.h to use POSIX stat instead of Windows _stat64
-            sed -i.bak 's/typedef struct _stat64 zip_os_stat_t;/typedef struct stat zip_os_stat_t;/' "$DIR/compat.h"
-            sed -i.bak 's/#define _stat64(path, buf).*$/#define _stat64(path, buf) stat(path, buf)/' "$DIR/compat.h"
-            sed -i.bak 's/#define _fstat64(fd, buf).*$/#define _fstat64(fd, buf) fstat(fd, buf)/' "$DIR/compat.h"
-            echo "Patched $DIR/compat.h for POSIX stat"
           fi
 
       - name: Build third-party deps for iOS
