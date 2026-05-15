@@ -479,6 +479,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/discord-rpc/include
         pcsx2/3rdparty/libchdr/include
         pcsx2/3rdparty/xxhash
+        pcsx2/3rdparty/lzma/include
+        pcsx2/3rdparty/freesurround/include
+        pcsx2/3rdparty/rapidjson/include
+        pcsx2/3rdparty/promptfont
         pcsx2/3rdparty/imgui/include
         pcsx2/3rdparty/imgui/src
         pcsx2/3rdparty/vixl/include
