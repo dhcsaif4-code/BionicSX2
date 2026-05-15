@@ -70,17 +70,311 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # Phase 0-D2: Core PCSX2 sources with missing globals
     # NOTE: File names match actual PCSX2 source tree, not exec order spec
     set(PCSX2_CORE_SOURCES
-        pcsx2/pcsx2/Pcsx2Config.cpp         # EmuConfig
-        pcsx2/pcsx2/SIO/Sio0.cpp            # g_Sio0
-        pcsx2/pcsx2/SIO/Sio2.cpp            # g_Sio2
-        pcsx2/pcsx2/PerformanceMetrics.cpp  # g_perfmon
-        pcsx2/pcsx2/Sif.cpp                 # sif0/sif1/sif2
-        pcsx2/pcsx2/MTVU.cpp                # vu1Thread
-        pcsx2/pcsx2/CDVD/CDVD.cpp           # cdvd global
-        pcsx2/pcsx2/DebugTools/Breakpoints.cpp   # CBreakPoints
-        pcsx2/pcsx2/DebugTools/SymbolGuardian.cpp # R3000SymbolGuardian
+        # ---- common/ (pcsx2/common) ----
+        pcsx2/common/FastJmp.cpp
+
+        # ---- EE Core, IOP, VU, System (pcsx2/pcsx2/) ----
+        pcsx2/pcsx2/Achievements.cpp
+        pcsx2/pcsx2/BuildVersion.cpp
+        pcsx2/pcsx2/Cache.cpp
+        pcsx2/pcsx2/COP0.cpp
+        pcsx2/pcsx2/COP2.cpp
+        pcsx2/pcsx2/Counters.cpp
+        pcsx2/pcsx2/Dmac.cpp
+        pcsx2/pcsx2/Elfheader.cpp
+        pcsx2/pcsx2/FiFo.cpp
+        pcsx2/pcsx2/FPU.cpp
+        pcsx2/pcsx2/FW.cpp
+        pcsx2/pcsx2/GameDatabase.cpp
+        pcsx2/pcsx2/GameList.cpp
+        pcsx2/pcsx2/Gif.cpp
+        pcsx2/pcsx2/Gif_Logger.cpp
+        pcsx2/pcsx2/Gif_Unit.cpp
+        pcsx2/pcsx2/GS.cpp
+        pcsx2/pcsx2/GSDumpReplayer.cpp
+        pcsx2/pcsx2/Host.cpp
+        pcsx2/pcsx2/Hotkeys.cpp
+        pcsx2/pcsx2/Hw.cpp
+        pcsx2/pcsx2/HwRead.cpp
+        pcsx2/pcsx2/HwWrite.cpp
+        pcsx2/pcsx2/INISettingsInterface.cpp
+        pcsx2/pcsx2/Interpreter.cpp
+        pcsx2/pcsx2/IopBios.cpp
+        pcsx2/pcsx2/IopCounters.cpp
+        pcsx2/pcsx2/IopDma.cpp
+        pcsx2/pcsx2/IopGte.cpp
+        pcsx2/pcsx2/IopHw.cpp
+        pcsx2/pcsx2/IopIrq.cpp
+        pcsx2/pcsx2/IopMem.cpp
+        pcsx2/pcsx2/IopModuleNames.cpp
+        pcsx2/pcsx2/LayeredSettingsInterface.cpp
+        pcsx2/pcsx2/Mdec.cpp
+        pcsx2/pcsx2/Memory.cpp
+        pcsx2/pcsx2/MMI.cpp
+        pcsx2/pcsx2/MTGS.cpp
+        pcsx2/pcsx2/MTVU.cpp
+        pcsx2/pcsx2/Patch.cpp
+        pcsx2/pcsx2/Pcsx2Config.cpp
+        pcsx2/pcsx2/PerformanceMetrics.cpp
+        pcsx2/pcsx2/PINE.cpp
+        pcsx2/pcsx2/R3000A.cpp
+        pcsx2/pcsx2/R3000AInterpreter.cpp
+        pcsx2/pcsx2/R3000AOpcodeTables.cpp
+        pcsx2/pcsx2/R5900.cpp
+        pcsx2/pcsx2/R5900OpcodeImpl.cpp
+        pcsx2/pcsx2/R5900OpcodeTables.cpp
+        pcsx2/pcsx2/SaveState.cpp
+        pcsx2/pcsx2/ShiftJisToUnicode.cpp
+        pcsx2/pcsx2/Sif.cpp
+        pcsx2/pcsx2/Sif0.cpp
+        pcsx2/pcsx2/Sif1.cpp
+        pcsx2/pcsx2/sif2.cpp
+        pcsx2/pcsx2/SourceLog.cpp
+        pcsx2/pcsx2/SPR.cpp
+        pcsx2/pcsx2/StateWrapper.cpp
+        pcsx2/pcsx2/Vif.cpp
+        pcsx2/pcsx2/Vif0_Dma.cpp
+        pcsx2/pcsx2/Vif1_Dma.cpp
+        pcsx2/pcsx2/Vif1_MFIFO.cpp
+        pcsx2/pcsx2/Vif_Codes.cpp
+        pcsx2/pcsx2/Vif_Transfer.cpp
+        pcsx2/pcsx2/Vif_Unpack.cpp
+        pcsx2/pcsx2/VMManager.cpp
+        pcsx2/pcsx2/vtlb.cpp
+        pcsx2/pcsx2/VU0.cpp
+        pcsx2/pcsx2/VU0micro.cpp
+        pcsx2/pcsx2/VU0microInterp.cpp
+        pcsx2/pcsx2/VU1micro.cpp
+        pcsx2/pcsx2/VU1microInterp.cpp
+        pcsx2/pcsx2/VUflags.cpp
+        pcsx2/pcsx2/VUmicro.cpp
+        pcsx2/pcsx2/VUmicroMem.cpp
+        pcsx2/pcsx2/VUops.cpp
+
+        # ---- CDVD ----
+        pcsx2/pcsx2/CDVD/BlockdumpFileReader.cpp
+        pcsx2/pcsx2/CDVD/CDVD.cpp
+        pcsx2/pcsx2/CDVD/CDVDcommon.cpp
+        pcsx2/pcsx2/CDVD/CDVDdiscReader.cpp
+        pcsx2/pcsx2/CDVD/CDVDdiscThread.cpp
+        pcsx2/pcsx2/CDVD/CDVDisoReader.cpp
+        pcsx2/pcsx2/CDVD/ChdFileReader.cpp
+        pcsx2/pcsx2/CDVD/CsoFileReader.cpp
+        pcsx2/pcsx2/CDVD/FlatFileReader.cpp
+        pcsx2/pcsx2/CDVD/GzippedFileReader.cpp
+        pcsx2/pcsx2/CDVD/InputIsoFile.cpp
+        pcsx2/pcsx2/CDVD/IsoHasher.cpp
+        pcsx2/pcsx2/CDVD/IsoReader.cpp
+        pcsx2/pcsx2/CDVD/OutputIsoFile.cpp
+        pcsx2/pcsx2/CDVD/Ps1CD.cpp
+        pcsx2/pcsx2/CDVD/ThreadedFileReader.cpp
+
+        # ---- SIO, SIO/Pad, SIO/Memcard, SIO/Multitap ----
+        pcsx2/pcsx2/SIO/Sio.cpp
+        pcsx2/pcsx2/SIO/Sio0.cpp
+        pcsx2/pcsx2/SIO/Sio2.cpp
+        pcsx2/pcsx2/SIO/Memcard/MemoryCardFile.cpp
+        pcsx2/pcsx2/SIO/Memcard/MemoryCardFolder.cpp
+        pcsx2/pcsx2/SIO/Memcard/MemoryCardProtocol.cpp
+        pcsx2/pcsx2/SIO/Multitap/MultitapProtocol.cpp
+        pcsx2/pcsx2/SIO/Pad/Pad.cpp
+        pcsx2/pcsx2/SIO/Pad/PadBase.cpp
+        pcsx2/pcsx2/SIO/Pad/PadDualshock2.cpp
+        pcsx2/pcsx2/SIO/Pad/PadGuitar.cpp
+        pcsx2/pcsx2/SIO/Pad/PadJogcon.cpp
+        pcsx2/pcsx2/SIO/Pad/PadNegcon.cpp
+        pcsx2/pcsx2/SIO/Pad/PadNotConnected.cpp
+        pcsx2/pcsx2/SIO/Pad/PadPopn.cpp
+
+        # ---- GS Core ----
+        pcsx2/pcsx2/GS/GS.cpp
+        pcsx2/pcsx2/GS/GSBlock.cpp
+        pcsx2/pcsx2/GS/GSCapture.cpp
+        pcsx2/pcsx2/GS/GSClut.cpp
+        pcsx2/pcsx2/GS/GSDrawingContext.cpp
+        pcsx2/pcsx2/GS/GSDrawingEnvironment.cpp
+        pcsx2/pcsx2/GS/GSDump.cpp
+        pcsx2/pcsx2/GS/GSLocalMemory.cpp
+        pcsx2/pcsx2/GS/GSLocalMemoryMultiISA.cpp
+        pcsx2/pcsx2/GS/GSLzma.cpp
+        pcsx2/pcsx2/GS/GSPerfMon.cpp
+        pcsx2/pcsx2/GS/GSPng.cpp
+        pcsx2/pcsx2/GS/GSRingHeap.cpp
+        pcsx2/pcsx2/GS/GSState.cpp
+        pcsx2/pcsx2/GS/GSTables.cpp
+        pcsx2/pcsx2/GS/GSUtil.cpp
+        pcsx2/pcsx2/GS/GSVector.cpp
+        pcsx2/pcsx2/GS/GSXXH.cpp
+        pcsx2/pcsx2/GS/MultiISA.cpp
+
+        # ---- GS/Renderers/Common ----
+        pcsx2/pcsx2/GS/Renderers/Common/GSDevice.cpp
+        pcsx2/pcsx2/GS/Renderers/Common/GSDirtyRect.cpp
+        pcsx2/pcsx2/GS/Renderers/Common/GSFunctionMap.cpp
+        pcsx2/pcsx2/GS/Renderers/Common/GSRenderer.cpp
+        pcsx2/pcsx2/GS/Renderers/Common/GSTexture.cpp
+        pcsx2/pcsx2/GS/Renderers/Common/GSVertexTrace.cpp
+        pcsx2/pcsx2/GS/Renderers/Common/GSVertexTraceFMM.cpp
+
+        # ---- GS/Renderers/Null ----
+        pcsx2/pcsx2/GS/Renderers/Null/GSRendererNull.cpp
+
+        # ---- GS/Renderers/HW ----
+        pcsx2/pcsx2/GS/Renderers/HW/GSHwHack.cpp
+        pcsx2/pcsx2/GS/Renderers/HW/GSRendererHW.cpp
+        pcsx2/pcsx2/GS/Renderers/HW/GSRendererHWMultiISA.cpp
+        pcsx2/pcsx2/GS/Renderers/HW/GSTextureCache.cpp
+        pcsx2/pcsx2/GS/Renderers/HW/GSTextureReplacementLoaders.cpp
+        pcsx2/pcsx2/GS/Renderers/HW/GSTextureReplacements.cpp
+
+        # ---- GS/Renderers/SW ----
+        pcsx2/pcsx2/GS/Renderers/SW/GSDrawScanline.cpp
+        pcsx2/pcsx2/GS/Renderers/SW/GSDrawScanlineCodeGenerator.arm64.cpp
+        pcsx2/pcsx2/GS/Renderers/SW/GSRasterizer.cpp
+        pcsx2/pcsx2/GS/Renderers/SW/GSRendererSW.cpp
+        pcsx2/pcsx2/GS/Renderers/SW/GSSetupPrimCodeGenerator.arm64.cpp
+        pcsx2/pcsx2/GS/Renderers/SW/GSTextureCacheSW.cpp
+
+        # ---- IPU ----
+        pcsx2/pcsx2/IPU/IPU.cpp
+        pcsx2/pcsx2/IPU/IPU_Fifo.cpp
+        pcsx2/pcsx2/IPU/IPU_MultiISA.cpp
+        pcsx2/pcsx2/IPU/IPUdither.cpp
+        pcsx2/pcsx2/IPU/IPUdma.cpp
+        pcsx2/pcsx2/IPU/yuv2rgb.cpp
+
+        # ---- DebugTools ----
+        pcsx2/pcsx2/DebugTools/BiosDebugData.cpp
+        pcsx2/pcsx2/DebugTools/Breakpoints.cpp
+        pcsx2/pcsx2/DebugTools/DebugInterface.cpp
+        pcsx2/pcsx2/DebugTools/DisR3000A.cpp
+        pcsx2/pcsx2/DebugTools/DisR5900asm.cpp
+        pcsx2/pcsx2/DebugTools/DisVU0Micro.cpp
+        pcsx2/pcsx2/DebugTools/DisVU1Micro.cpp
+        pcsx2/pcsx2/DebugTools/DisassemblyManager.cpp
+        pcsx2/pcsx2/DebugTools/ExpressionParser.cpp
+        pcsx2/pcsx2/DebugTools/MIPSAnalyst.cpp
+        pcsx2/pcsx2/DebugTools/MipsAssembler.cpp
+        pcsx2/pcsx2/DebugTools/MipsAssemblerTables.cpp
+        pcsx2/pcsx2/DebugTools/MipsStackWalk.cpp
+        pcsx2/pcsx2/DebugTools/SymbolGuardian.cpp
         pcsx2/pcsx2/DebugTools/SymbolImporter.cpp
-        pcsx2/common/FastJmp.cpp            # fastjmp_jmp/fastjmp_set
+
+        # ---- Recording ----
+        pcsx2/pcsx2/Recording/InputRecording.cpp
+        pcsx2/pcsx2/Recording/InputRecordingControls.cpp
+        pcsx2/pcsx2/Recording/InputRecordingFile.cpp
+        pcsx2/pcsx2/Recording/PadData.cpp
+        pcsx2/pcsx2/Recording/Utilities/InputRecordingLogger.cpp
+
+        # ---- Host ----
+        pcsx2/pcsx2/Host/AudioStream.cpp
+        pcsx2/pcsx2/Host/CubebAudioStream.cpp
+
+        # ---- ImGui ----
+        pcsx2/pcsx2/ImGui/FullscreenUI.cpp
+        pcsx2/pcsx2/ImGui/FullscreenUI_Settings.cpp
+        pcsx2/pcsx2/ImGui/ImGuiFullscreen.cpp
+        pcsx2/pcsx2/ImGui/ImGuiManager.cpp
+        pcsx2/pcsx2/ImGui/ImGuiOverlays.cpp
+
+        # ---- Input ----
+        pcsx2/pcsx2/Input/InputManager.cpp
+        pcsx2/pcsx2/Input/InputSource.cpp
+
+        # ---- PS2 ----
+        pcsx2/pcsx2/ps2/BiosTools.cpp
+        pcsx2/pcsx2/ps2/Iop/IopHwRead.cpp
+        pcsx2/pcsx2/ps2/Iop/IopHwWrite.cpp
+        pcsx2/pcsx2/ps2/Iop/PsxBios.cpp
+        pcsx2/pcsx2/ps2/pgif.cpp
+
+        # ---- DEV9 ----
+        pcsx2/pcsx2/DEV9/AdapterUtils.cpp
+        pcsx2/pcsx2/DEV9/ATA/ATA_Info.cpp
+        pcsx2/pcsx2/DEV9/ATA/ATA_State.cpp
+        pcsx2/pcsx2/DEV9/ATA/ATA_Transfer.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_Command.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdDMA.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdExecuteDeviceDiag.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdNoData.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdPIOData.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdSMART.cpp
+        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_SCE.cpp
+        pcsx2/pcsx2/DEV9/ATA/HddCreate.cpp
+        pcsx2/pcsx2/DEV9/DEV9.cpp
+        pcsx2/pcsx2/DEV9/flash.cpp
+        pcsx2/pcsx2/DEV9/InternalServers/DHCP_Logger.cpp
+        pcsx2/pcsx2/DEV9/InternalServers/DHCP_Server.cpp
+        pcsx2/pcsx2/DEV9/InternalServers/DNS_Logger.cpp
+        pcsx2/pcsx2/DEV9/InternalServers/DNS_Server.cpp
+        pcsx2/pcsx2/DEV9/net.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/ARP/ARP_Packet.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/ARP/ARP_PacketEditor.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/EthernetFrame.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/EthernetFrameEditor.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/ICMP/ICMP_Packet.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/IP_Options.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/IP_Packet.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/TCP/TCP_Options.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/TCP/TCP_Packet.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DNS/DNS_Classes.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DNS/DNS_Packet.cpp
+        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/UDP_Packet.cpp
+        pcsx2/pcsx2/DEV9/pcap_io.cpp
+        pcsx2/pcsx2/DEV9/Sessions/BaseSession.cpp
+        pcsx2/pcsx2/DEV9/Sessions/ICMP_Session/ICMP_Session.cpp
+        pcsx2/pcsx2/DEV9/Sessions/TCP_Session/TCP_Session.cpp
+        pcsx2/pcsx2/DEV9/Sessions/TCP_Session/TCP_Session_In.cpp
+        pcsx2/pcsx2/DEV9/Sessions/TCP_Session/TCP_Session_Out.cpp
+        pcsx2/pcsx2/DEV9/Sessions/UDP_Session/UDP_Common.cpp
+        pcsx2/pcsx2/DEV9/Sessions/UDP_Session/UDP_FixedPort.cpp
+        pcsx2/pcsx2/DEV9/Sessions/UDP_Session/UDP_Session.cpp
+        pcsx2/pcsx2/DEV9/smap.cpp
+        pcsx2/pcsx2/DEV9/sockets.cpp
+
+        # ---- USB ----
+        pcsx2/pcsx2/USB/deviceproxy.cpp
+        pcsx2/pcsx2/USB/qemu-usb/bus.cpp
+        pcsx2/pcsx2/USB/qemu-usb/core.cpp
+        pcsx2/pcsx2/USB/qemu-usb/desc.cpp
+        pcsx2/pcsx2/USB/qemu-usb/hid.cpp
+        pcsx2/pcsx2/USB/qemu-usb/input-keymap-qcode-to-qnum.cpp
+        pcsx2/pcsx2/USB/qemu-usb/usb-ohci.cpp
+        pcsx2/pcsx2/USB/shared/ringbuffer.cpp
+        pcsx2/pcsx2/USB/USB.cpp
+        pcsx2/pcsx2/USB/usb-eyetoy/cam-jpeg.cpp
+        pcsx2/pcsx2/USB/usb-eyetoy/jo_mpeg.cpp
+        pcsx2/pcsx2/USB/usb-eyetoy/usb-eyetoy-webcam.cpp
+        pcsx2/pcsx2/USB/usb-hid/usb-hid.cpp
+        pcsx2/pcsx2/USB/usb-lightgun/guncon2.cpp
+        pcsx2/pcsx2/USB/usb-mic/audiodev-cubeb.cpp
+        pcsx2/pcsx2/USB/usb-mic/usb-headset.cpp
+        pcsx2/pcsx2/USB/usb-mic/usb-mic.cpp
+        pcsx2/pcsx2/USB/usb-msd/usb-msd.cpp
+        pcsx2/pcsx2/USB/usb-pad/lg/lg_ff.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-buzz.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-gametrak.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-pad.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-pad-ff.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-pad-sdl-ff.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-realplay.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-seamic.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-train.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-trance-vibrator.cpp
+        pcsx2/pcsx2/USB/usb-pad/usb-turntable.cpp
+        pcsx2/pcsx2/USB/usb-printer/usb-printer.cpp
+
+        # ---- RDebug ----
+        pcsx2/pcsx2/RDebug/deci2.cpp
+        pcsx2/pcsx2/RDebug/deci2_dbgp.cpp
+        pcsx2/pcsx2/RDebug/deci2_dcmp.cpp
+        pcsx2/pcsx2/RDebug/deci2_drfp.cpp
+        pcsx2/pcsx2/RDebug/deci2_iloadp.cpp
+        pcsx2/pcsx2/RDebug/deci2_netmp.cpp
+        pcsx2/pcsx2/RDebug/deci2_ttyp.cpp
     )
 
     # Phase 0-E: SPU2 internal files
