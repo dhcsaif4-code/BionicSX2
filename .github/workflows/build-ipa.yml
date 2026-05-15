@@ -51,35 +51,16 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
-      - name: Verify Build Output
+      - name: Discover build output
         run: |
-          set -euxo pipefail
-          APP="build-ios/BionicSX2.app/BionicSX2"
-          if [ -f "$APP" ]; then
-            echo "Binary found at $APP"
-            SIZE=$(stat -f%z "$APP" 2>/dev/null || echo 0)
-            echo "Binary size: $SIZE bytes"
-            if [ "$SIZE" -lt 5000000 ]; then
-              echo "WARNING: Binary size seems small ($SIZE bytes)"
-            fi
-            nm "$APP" 2>/dev/null | grep -E 'cpuReset|SysMemory|GSopen' && echo "Core symbols verified" || echo "WARNING: Core symbols not found in binary"
-          else
-            echo "Looking for binary..."
-            find build-ios -name "*.a" -o -name "*.app" -type d 2>/dev/null
-          fi
-
-      - name: Create .app bundle and IPA
-        run: |
-          # Find the actual binary
-          BINARY=$(find . -name "BionicSX2" -type f \
-                   ! -name "*.cpp" ! -name "*.h" | head -1)
-          echo "Binary found at: $BINARY"
-          echo "Binary size: $(du -sh $BINARY)"
-
-          # Build proper .app structure
-          mkdir -p BionicSX2.app/
-          cp "$BINARY" BionicSX2.app/BionicSX2
-          cp ios/Info.plist BionicSX2.app/Info.plist
+          echo "=== All files in build-ios/ ==="
+          find build-ios/ -type f | head -30
+          echo "=== Large files (>1MB) anywhere ==="
+          find . -type f -size +1M \
+            ! -path "./.git/*" \
+            ! -path "./pcsx2/*" \
+            ! -path "./3rdparty/*" \
+            | sort -k1 | head -20
 
           # Package as IPA
           mkdir -p Payload
