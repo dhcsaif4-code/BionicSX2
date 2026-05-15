@@ -7,10 +7,10 @@
 #include "pcsx2/Memory.h"
 #include "pcsx2/R5900.h"
 #include "pcsx2/Hw.h"
-#include "pcsx2/Vif_Dynarec.h"
 #include "pcsx2/CDVD/CDVD.h"
 #include "Config.h"
 #include "common/Console.h"
+#include "pcsx2/Vif_Dynarec.h"
 
 namespace iOSVMManager {
 
@@ -37,7 +37,7 @@ bool StartVM(const char* isoPath) {
     cpuReset();
 
     // Step 4: initialize GS Metal backend (Audit Sec 4.1)
-    if (!GSopen2(nullptr, GSRendererType::Metal, 0)) {
+    if (!GSopen(EmuConfig.GS, GSRendererType::Metal, nullptr)) {
         NSLog(@"[BionicSX2] GSopen failed");
         SysMemory::Release();
         s_initialized = false;
