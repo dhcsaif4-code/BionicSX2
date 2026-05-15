@@ -4,7 +4,6 @@
 #import <Foundation/Foundation.h>
 #include "VMManager.h"
 #include "GS/GS.h"
-#include "GS/GSRegs.h"        // GSVSyncMode
 #include "pcsx2/Memory.h"
 #include "pcsx2/R5900.h"
 #include "pcsx2/Hw.h"
