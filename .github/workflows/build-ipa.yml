@@ -23,11 +23,11 @@ jobs:
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
 
-      - name: Cache ios-deps
+      - name: Cache iOS deps
         uses: actions/cache@v4
         with:
           path: ios-deps/install
-          key: ios-deps-${{ hashFiles('scripts/build_ios_deps.sh') }}
+          key: ios-deps-v2-${{ hashFiles('scripts/build_ios_deps.sh') }}
 
       - name: Build third-party deps for iOS
         run: |
