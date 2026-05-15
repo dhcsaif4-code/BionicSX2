@@ -45,18 +45,17 @@ jobs:
             -DUSE_SDL=OFF \
             -DBUILD_TESTS=OFF
 
-      - name: Build BionicSX2
-        run: |
-          set -euxo pipefail
-          # -k tells make to keep going past errors, surfacing ALL failures in one run
-          cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
-
-      - name: Build with full error output
+      - name: Build Core Library
         run: |
           cd build-ios
-          make -k 2>&1 | grep -E "error:|fatal error:|undefined|cannot" \
-            | grep -v "warning" \
-            | head -30
+          make BionicSX2 2>&1
+          echo "Core exit code: $?"
+
+      - name: Build App Target
+        run: |
+          cd build-ios
+          make BionicSX2_App 2>&1
+          echo "App exit code: $?"
 
       - name: Create IPA
         run: |
