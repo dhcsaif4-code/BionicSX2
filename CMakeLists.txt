@@ -463,6 +463,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     target_include_directories(BionicSX2 PRIVATE
         "${IOS_DEPS}/include"
+        "${CMAKE_SOURCE_DIR}/generated"
         ios/platform
         metal
         pcsx2              # for #include "common/xxx.h" and "pcsx2/xxx.h" style
