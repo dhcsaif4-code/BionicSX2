@@ -130,6 +130,11 @@ else
         -DFMT_TEST=OFF -DFMT_DOC=OFF
 fi
 
+# lzma/xz (pcsx2/3rdparty/lzma — builds as pcsx2-lzma)
+if [ -d "$REPO_ROOT/pcsx2/3rdparty/lzma" ]; then
+    build_lib "lzma" "$REPO_ROOT/pcsx2/3rdparty/lzma"
+fi
+
 # xxhash — header-only
 if [ -d "$REPO_ROOT/pcsx2/3rdparty/xxhash" ]; then
     echo ">>> xxhash header-only, copying to install"

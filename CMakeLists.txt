@@ -36,23 +36,25 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     find_library(LZ4_LIB        lz4        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(ZSTD_LIB       zstd       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
-    find_library(LZMA_LIB       lzma       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
+    find_library(LZMA_LIB       pcsx2-lzma PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
+    if(NOT LZMA_LIB)
+        find_library(LZMA_LIB   lzma       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
+    endif()
     find_library(ZIP_LIB        zip        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(CHDR_LIB       chdr       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
-    if(NOT CHDR_LIB)
-        message(STATUS "libchdr not found — CHD archive support disabled for bringup")
-    endif()
     find_library(CUBEB_LIB      cubeb      PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
-    if(NOT CUBEB_LIB)
-        message(STATUS "cubeb not found — using native iOS audio implementation")
+    # soundtouch builds as pcsx2-soundtouch in pcsx2/3rdparty
+    find_library(SOUNDTOUCH_LIB pcsx2-soundtouch PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
+    if(NOT SOUNDTOUCH_LIB)
+        find_library(SOUNDTOUCH_LIB SoundTouch PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     endif()
-    find_library(SOUNDTOUCH_LIB SoundTouch PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(FMT_LIB        fmt        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(PNG_LIB        png16      PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
 
     find_library(AUDIOTOOLBOX_FW   AudioToolbox   REQUIRED)
     find_library(AVFOUNDATION_FW   AVFoundation   REQUIRED)
-    find_library(COREAUDIO_FW      CoreAudio      REQUIRED)
+    # CoreAudio framework is macOS-only; iOS uses AudioToolbox for audio
+    find_library(COREAUDIO_FW      CoreAudio)
     find_library(COREFOUNDATION_FW CoreFoundation REQUIRED)
     find_library(UIKIT_FW          UIKit          REQUIRED)
     find_library(METAL_FW          Metal          REQUIRED)
@@ -66,19 +68,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # ==========================================================================
 
     # Phase 0-D2: Core PCSX2 sources with missing globals
+    # NOTE: File names match actual PCSX2 source tree, not exec order spec
     set(PCSX2_CORE_SOURCES
-        pcsx2/pcsx2/Config.cpp              # EmuConfig
-        pcsx2/pcsx2/System.cpp              # ParamsRead, NoOSD
+        pcsx2/pcsx2/Pcsx2Config.cpp         # EmuConfig
         pcsx2/pcsx2/SIO/Sio0.cpp            # g_Sio0
         pcsx2/pcsx2/SIO/Sio2.cpp            # g_Sio2
         pcsx2/pcsx2/PerformanceMetrics.cpp  # g_perfmon
         pcsx2/pcsx2/Sif.cpp                 # sif0/sif1/sif2
         pcsx2/pcsx2/MTVU.cpp                # vu1Thread
         pcsx2/pcsx2/CDVD/CDVD.cpp           # cdvd global
-        pcsx2/pcsx2/DebugTools/BreakPoints.cpp   # CBreakPoints
+        pcsx2/pcsx2/DebugTools/Breakpoints.cpp   # CBreakPoints
         pcsx2/pcsx2/DebugTools/SymbolGuardian.cpp # R3000SymbolGuardian
         pcsx2/pcsx2/DebugTools/SymbolImporter.cpp
-        common/fastjmp.cpp                  # fastjmp_jmp/fastjmp_set
+        common/FastJmp.cpp                  # fastjmp_jmp/fastjmp_set
     )
 
     # Phase 0-E: SPU2 internal files
@@ -173,16 +175,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     target_link_libraries(BionicSX2 PRIVATE
         ZLIB::ZLIB
-        ${LZ4_LIB}
-        ${ZSTD_LIB}
-        ${LZMA_LIB}
-        ${ZIP_LIB}
+        $<$<BOOL:${LZ4_LIB}>:${LZ4_LIB}>
+        $<$<BOOL:${ZSTD_LIB}>:${ZSTD_LIB}>
+        $<$<BOOL:${LZMA_LIB}>:${LZMA_LIB}>
+        $<$<BOOL:${ZIP_LIB}>:${ZIP_LIB}>
         $<$<BOOL:${CUBEB_LIB}>:${CUBEB_LIB}>
-        ${SOUNDTOUCH_LIB}
+        $<$<BOOL:${SOUNDTOUCH_LIB}>:${SOUNDTOUCH_LIB}>
         $<$<BOOL:${CHDR_LIB}>:${CHDR_LIB}>
-        
-        ${PNG_LIB}
+        $<$<BOOL:${PNG_LIB}>:${PNG_LIB}>
         ${AUDIOTOOLBOX_FW}
+        $<$<BOOL:${COREAUDIO_FW}>:${COREAUDIO_FW}>
         ${AVFOUNDATION_FW}
         ${COREAUDIO_FW}
         ${COREFOUNDATION_FW}
