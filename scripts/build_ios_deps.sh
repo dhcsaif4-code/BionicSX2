@@ -78,7 +78,16 @@ build_lib libzip "$LIBZIP" \
   -DBUILD_TOOLS=OFF \
   -DBUILD_REGRESS=OFF \
   -DBUILD_EXAMPLES=OFF \
-  -DBUILD_DOC=OFF
+  -DBUILD_DOC=OFF \
+  -DZSTD_ROOT="$INSTALL_DIR" \
+  -DLIBLZMA_INCLUDE_DIR="$INSTALL_DIR/include" \
+  -DLIBLZMA_LIBRARY="$INSTALL_DIR/lib/liblzma.a" \
+  -DZSTD_INCLUDE_DIR="$INSTALL_DIR/include" \
+  -DZSTD_LIBRARY="$INSTALL_DIR/lib/libzstd.a" \
+  -DENABLE_LZMA=ON \
+  -DENABLE_ZSTD=ON
 
 echo "=== Built libraries ==="
-find "$INSTALL_DIR/lib" -name "*.a" | sort
+find "$INSTALL_DIR" -name "*.a" | sort
+echo "=== Installed headers ==="
+find "$INSTALL_DIR/include" -maxdepth 2 -type d | sort

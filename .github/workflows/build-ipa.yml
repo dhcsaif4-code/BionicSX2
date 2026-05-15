@@ -58,6 +58,21 @@ jobs:
           [ -d libzip ]   || git clone --depth 1 \
             https://github.com/nih-at/libzip.git
 
+      - name: Patch libzip for iOS (memcpy_s → memcpy)
+        run: |
+          FILE="ios-deps/src/libzip/lib/zip_buffer.c"
+          if [ -f "$FILE" ]; then
+            # memcpy_s is Windows/MSVC only — replace with memcpy on iOS
+            sed -i '' \
+              's/memcpy_s(\(.*\), [^,]*, \(.*\), \(.*\))/memcpy(\1, \2, \3)/g' \
+              "$FILE" 2>/dev/null || \
+            sed -i \
+              's/memcpy_s(\(.*\), [^,]*, \(.*\), \(.*\))/memcpy(\1, \2, \3)/g' \
+              "$FILE"
+            echo '#define memcpy_s(d,ds,s,n) memcpy(d,s,n)' >> "$FILE"
+            echo "Patched $FILE"
+          fi
+
       - name: Build third-party deps for iOS
         run: |
           chmod +x scripts/build_ios_deps.sh
