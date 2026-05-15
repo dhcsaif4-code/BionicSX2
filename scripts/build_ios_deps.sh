@@ -142,16 +142,23 @@ build_lib "libpng" "$SRC_DIR/libpng" \
     -DZLIB_ROOT="$INSTALL_DIR"
 
 # libzip (depends on zstd + zlib)
-if [ -d "$REPO_ROOT/pcsx2/3rdparty/libzip" ]; then
-    build_lib "libzip" "$REPO_ROOT/pcsx2/3rdparty/libzip" \
-        -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_SHARED_LIBS=OFF \
-        -DCMAKE_MODULE_PATH="$REPO_ROOT/cmake"
-else
+# NOTE: pcsx2/3rdparty/libzip hardcodes HAVE_LIBZSTD=TRUE and links Zstd::Zstd
+# without calling find_package(Zstd). We must patch this at build time since
+# pcsx2 is a submodule. Upstream libzip handles this correctly via Findzstd.cmake.
+LIBZIP_SRC="$REPO_ROOT/pcsx2/3rdparty/libzip"
+if [ ! -d "$LIBZIP_SRC" ]; then
     ensure_src "libzip" "https://github.com/nih-at/libzip.git" "v1.11.2" >/dev/null
-    build_lib "libzip" "$SRC_DIR/libzip" \
-        -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_SHARED_LIBS=OFF \
-        -DCMAKE_MODULE_PATH="$REPO_ROOT/cmake"
+    LIBZIP_SRC="$SRC_DIR/libzip"
 fi
+# Patch vendored libzip to not hardcode HAVE_LIBZSTD (bringup phase)
+if grep -q "HAVE_LIBZSTD TRUE" "$LIBZIP_SRC/CMakeLists.txt" 2>/dev/null; then
+    echo "  Patching libzip CMakeLists.txt to disable Zstd (bringup phase)"
+    sed -i '' 's/set(HAVE_LIBZSTD TRUE)/set(HAVE_LIBZSTD FALSE)/' "$LIBZIP_SRC/CMakeLists.txt"
+    sed -i '' '/target_link_libraries(zip PRIVATE Zstd::Zstd)/d' "$LIBZIP_SRC/CMakeLists.txt"
+    sed -i '' '/target_sources(zip PRIVATE lib\/zip_algorithm_zstd.c)/d' "$LIBZIP_SRC/CMakeLists.txt"
+fi
+build_lib "libzip" "$LIBZIP_SRC" \
+    -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_SHARED_LIBS=OFF
 
 # freetype (depends on zlib + libpng)
 ensure_src "freetype" "https://github.com/freetype/freetype.git" "VER-2-13-3" >/dev/null
