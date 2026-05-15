@@ -106,7 +106,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/IopHw.cpp
         pcsx2/pcsx2/IopIrq.cpp
         pcsx2/pcsx2/IopMem.cpp
-        pcsx2/pcsx2/IopModuleNames.cpp
+        # pcsx2/pcsx2/IopModuleNames.cpp  # debug-only, macro expansion issues
         pcsx2/pcsx2/LayeredSettingsInterface.cpp
         pcsx2/pcsx2/Mdec.cpp
         pcsx2/pcsx2/Memory.cpp
