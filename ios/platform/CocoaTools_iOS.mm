@@ -12,6 +12,7 @@
 #include <mutex>
 #include <vector>
 #include <UIKit/UIKit.h>     // PORTED: AppKit removed, UIKit added (Audit Section 4.3)
+#include <AVFoundation/AVFoundation.h>
 #include <QuartzCore/QuartzCore.h>
 
 static NSString*_Nonnull NSStringFromStringView(std::string_view sv)
@@ -37,7 +38,7 @@ bool CocoaTools::CreateMetalLayer(WindowInfo* wi)
 
 	// PORTED: NSView → UIView (Audit Section 4.3)
 	UIView* view = (__bridge UIView*)wi->window_handle;
-	[view setLayer:layer];
+	view.layer = layer;
 	[layer setContentsScale:[[UIScreen mainScreen] scale]];
 	wi->surface_handle = (__bridge_retained void*)layer;
 	return true;
