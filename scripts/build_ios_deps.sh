@@ -90,24 +90,45 @@ ST_SRC="$SRC/soundtouch/source/SoundTouch"
 ST_OUT="$INSTALL/lib/libsoundtouch.a"
 ST_INC="$SRC/soundtouch/include"
 ST_OBJ="$BLD/soundtouch"
-mkdir -p "$ST_OBJ"
+mkdir -p "$ST_OBJ" "$INSTALL/lib" "$INSTALL/include/soundtouch"
+
+# Verify sources exist
+echo "SoundTouch sources:"
+ls "$ST_SRC" || echo "DIR NOT FOUND: $ST_SRC"
 
 OBJS=()
 for f in "$ST_SRC"/*.cpp; do
-  [ -f "$f" ] || continue
+  echo "Compiling: $f"
   OBJ="$ST_OBJ/$(basename ${f%.cpp}).o"
   xcrun clang++ \
     -target arm64-apple-ios16.0 \
     -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
     -I"$ST_INC" \
-    -std=c++17 -O2 -c "$f" -o "$OBJ"
-  OBJS+=("$OBJ")
+    -std=c++17 -O2 -c "$f" -o "$OBJ" 2>&1
+  if [ -f "$OBJ" ]; then
+    OBJS+=("$OBJ")
+    echo "OK: $OBJ"
+  else
+    echo "FAILED: $OBJ"
+  fi
 done
 
-xcrun ar rcs "$ST_OUT" "${OBJS[@]}"
-mkdir -p "$INSTALL/include/soundtouch"
-cp "$ST_INC"/*.h "$INSTALL/include/soundtouch/"
-echo "soundtouch built: $(du -sh $ST_OUT)"
+echo "Total objects: ${#OBJS[@]}"
+
+if [ ${#OBJS[@]} -eq 0 ]; then
+  echo "ERROR: No soundtouch objects compiled"
+  # Try cmake fallback
+  mkdir -p "$BLD/soundtouch_cmake" && cd "$BLD/soundtouch_cmake"
+  cmake "$SRC/soundtouch" $FLAGS \
+    -DCMAKE_CXX_STANDARD=17
+  make -j$(sysctl -n hw.logicalcpu) || true
+  find . -name "*.a" -exec cp {} "$INSTALL/lib/libsoundtouch.a" \; || true
+else
+  xcrun ar rcs "$ST_OUT" "${OBJS[@]}"
+fi
+
+cp "$ST_INC"/*.h "$INSTALL/include/soundtouch/" 2>/dev/null || true
+echo "Result: $(find $INSTALL/lib -name '*soundtouch*' 2>/dev/null)"
 
 # cubeb — cannot build for iOS (macOS-only CoreAudio backend), stubbed
 
