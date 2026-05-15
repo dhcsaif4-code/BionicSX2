@@ -234,3 +234,50 @@ extern "C" float plutosvg_document_get_width(plutosvg_document_t*) { return 0.0f
 extern "C" float plutosvg_document_get_height(plutosvg_document_t*) { return 0.0f; }
 extern "C" int plutosvg_document_render(plutosvg_document_t*, void*, plutovg_canvas_t*, void*, void*, void*) { return 0; }
 extern "C" void plutosvg_document_destroy(plutosvg_document_t*) {}
+
+// =====================================================================
+// LZMA/7-Zip stubs (ios-deps builds lzma but PCSX2 uses 7z directly)
+// =====================================================================
+extern "C" void CrcGenerateTable(void) {}
+extern "C" void Crc64GenerateTable(void) {}
+extern "C" void LookToRead2_CreateVTable(void*, int) {}
+extern "C" void XzProps_Init(void*) {}
+extern "C" int XzUnpacker_Code(void*, uint8_t*, size_t*, const uint8_t*, size_t*, int, int, void*) { return 0; }
+extern "C" void XzUnpacker_Construct(void*, void*) {}
+extern "C" void XzUnpacker_Free(void*) {}
+extern "C" void XzUnpacker_Init(void*, int) {}
+extern "C" void XzUnpacker_PrepareToRandomBlockDecoding(void*) {}
+extern "C" void XzUnpacker_SetOutBuf(void*, uint8_t*, size_t) {}
+extern "C" int Xz_Encode(void*, void*, void*, void*) { return 0; }
+extern "C" void Xzs_Construct(void*) {}
+extern "C" void Xzs_Free(void*, void*) {}
+extern "C" uint64_t Xzs_GetNumBlocks(void*) { return 0; }
+extern "C" int Xzs_ReadBackward(void*, void*, int64_t*, void*, void*) { return 0; }
+
+// =====================================================================
+// BC texture decompression stubs (not needed for Metal renderer bringup)
+// =====================================================================
+extern "C" void DecompressBlockBC1(const uint8_t*, uint32_t*, uint32_t) {}
+extern "C" void DecompressBlockBC2(const uint8_t*, uint32_t*, uint32_t) {}
+extern "C" void DecompressBlockBC3(const uint8_t*, uint32_t*, uint32_t) {}
+extern "C" void bc7decomp_unpack_bc7(const uint8_t*, uint32_t*) {}
+
+// =====================================================================
+// DynamicLibrary stubs (no dlopen on unsigned iOS)
+// =====================================================================
+namespace Common {
+  struct DynamicLibrary {
+    static void* Open(const char*, std::string*) { return nullptr; }
+    static void Close(void*) {}
+    static void* GetSymbolAddress(void*, const char*) { return nullptr; }
+  };
+}
+
+// =====================================================================
+// Misc stubs
+// =====================================================================
+extern "C" void pxOnAssertFail(const char*, int, const char*, const char*) {}
+extern "C" void ShortSpin() {}
+extern "C" void GetValidDrive() {}
+extern "C" void* GetMetalAdapterList() { return nullptr; }
+extern "C" void* GetOpticalDriveList() { return nullptr; }

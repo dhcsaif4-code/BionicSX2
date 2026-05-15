@@ -75,5 +75,42 @@ cmake "$SRC/freetype" $FLAGS \
   -DZLIB_ROOT="$INSTALL"
 make -j$(sysctl -n hw.logicalcpu) install
 
+# ── soundtouch ────────────────────────────────────────
+cd "$SRC"
+[ -d soundtouch ] || git clone --depth 1 \
+  https://codeberg.org/soundtouch/soundtouch.git
+mkdir -p "$BLD/soundtouch" && cd "$BLD/soundtouch"
+cmake "$SRC/soundtouch" $FLAGS \
+  -DSOUNDTOUCH_BUILD_SHARED_LIBS=OFF
+make -j$(sysctl -n hw.logicalcpu) install
+
+# ── cubeb ─────────────────────────────────────────────
+cd "$SRC"
+[ -d cubeb ] || git clone --depth 1 \
+  https://github.com/mozilla/cubeb.git
+mkdir -p "$BLD/cubeb" && cd "$BLD/cubeb"
+cmake "$SRC/cubeb" $FLAGS \
+  -DBUILD_TESTS=OFF \
+  -DBUILD_TOOLS=OFF
+make -j$(sysctl -n hw.logicalcpu) install
+
+# ── rcheevos ──────────────────────────────────────────
+cd "$SRC"
+[ -d rcheevos ] || git clone --depth 1 \
+  https://github.com/RetroAchievements/rcheevos.git
+mkdir -p "$BLD/rcheevos" && cd "$BLD/rcheevos"
+cmake "$SRC/rcheevos" $FLAGS
+make -j$(sysctl -n hw.logicalcpu) install
+
+# ── libchdr ───────────────────────────────────────────
+cd "$SRC"
+[ -d libchdr ] || git clone --depth 1 \
+  https://github.com/rtissera/libchdr.git
+mkdir -p "$BLD/libchdr" && cd "$BLD/libchdr"
+cmake "$SRC/libchdr" $FLAGS \
+  -DWITH_SYSTEM_ZLIB=ON \
+  -DZLIB_ROOT="$INSTALL"
+make -j$(sysctl -n hw.logicalcpu) install
+
 echo "=== Done ==="
 find "$INSTALL/lib" -name "*.a" | sort

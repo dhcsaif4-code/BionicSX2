@@ -73,13 +73,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ---- common/ (pcsx2/common) ----
         pcsx2/common/FastJmp.cpp
         pcsx2/common/FileSystem.cpp
+        pcsx2/common/Image.cpp
+        pcsx2/common/Log.cpp
         pcsx2/common/StringUtil.cpp
+        pcsx2/common/Threading.cpp
+        pcsx2/common/Timer.cpp
 
         # ---- imgui (3rdparty) ----
         pcsx2/3rdparty/imgui/src/imgui.cpp
         pcsx2/3rdparty/imgui/src/imgui_draw.cpp
         pcsx2/3rdparty/imgui/src/imgui_tables.cpp
         pcsx2/3rdparty/imgui/src/imgui_widgets.cpp
+        pcsx2/3rdparty/imgui/misc/freetype/imgui_freetype.cpp
 
         # ---- EE Core, IOP, VU, System (pcsx2/pcsx2/) ----
         pcsx2/pcsx2/Achievements.cpp
@@ -237,10 +242,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
         # ---- GS/Renderers/SW ----
         pcsx2/pcsx2/GS/Renderers/SW/GSDrawScanline.cpp
-        pcsx2/pcsx2/GS/Renderers/SW/GSDrawScanlineCodeGenerator.arm64.cpp
+        # GSDrawScanlineCodeGenerator.arm64.cpp — excluded on iOS (pulls in vixl JIT)
         pcsx2/pcsx2/GS/Renderers/SW/GSRasterizer.cpp
         pcsx2/pcsx2/GS/Renderers/SW/GSRendererSW.cpp
-        pcsx2/pcsx2/GS/Renderers/SW/GSSetupPrimCodeGenerator.arm64.cpp
+        # GSSetupPrimCodeGenerator.arm64.cpp — excluded on iOS (pulls in vixl JIT)
         pcsx2/pcsx2/GS/Renderers/SW/GSTextureCacheSW.cpp
 
         # ---- IPU ----
@@ -390,6 +395,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/lib/libfreetype.a"
         "${IOS_DEPS}/lib/libpng.a"
         "${IOS_DEPS}/lib/libz.a"
+        "${IOS_DEPS}/lib/libSoundTouch.a"
+        "${IOS_DEPS}/lib/libcubeb.a"
+        "${IOS_DEPS}/lib/libchdr.a"
         "-framework Metal"
         "-framework UIKit"
         "-framework Foundation"
