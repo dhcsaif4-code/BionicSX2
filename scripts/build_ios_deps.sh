@@ -78,6 +78,32 @@ else
         -DZSTD_BUILD_STATIC=ON -DZSTD_BUILD_TESTS=OFF
 fi
 
+# Create ZstdConfig.cmake so find_package(Zstd) finds Zstd::Zstd
+# libzip and other deps expect this target name (Audit Sec 10.1)
+mkdir -p "$INSTALL_DIR/lib/cmake/Zstd"
+cat > "$INSTALL_DIR/lib/cmake/Zstd/ZstdConfig.cmake" << 'ZSTDEOF'
+include(CMakeFindDependencyMacro)
+if(NOT TARGET Zstd::Zstd)
+    add_library(Zstd::Zstd STATIC IMPORTED)
+    set_target_properties(Zstd::Zstd PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../../lib/libzstd.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+    )
+endif()
+ZSTDEOF
+cat > "$INSTALL_DIR/lib/cmake/Zstd/ZstdConfigVersion.cmake" << 'ZSTDVEOF'
+set(PACKAGE_VERSION 1.5.6)
+if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
+    set(PACKAGE_VERSION_COMPATIBLE FALSE)
+else()
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+    if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
+        set(PACKAGE_VERSION_EXACT TRUE)
+    endif()
+endif()
+ZSTDVEOF
+echo ">>> Zstd::Zstd cmake config created"
+
 # fmt (from pcsx2 3rdparty)
 if [ -d "$REPO_ROOT/pcsx2/3rdparty/fmt" ]; then
     build_lib "fmt" "$REPO_ROOT/pcsx2/3rdparty/fmt" \
