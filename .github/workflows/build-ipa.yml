@@ -35,15 +35,11 @@ jobs:
           path: ios-deps/install
           key: ios-deps-install-${{ hashFiles('scripts/build_ios_deps.sh') }}
 
-      - name: Clone iOS Dependencies
+      - name: Debug script content
         run: |
-          mkdir -p ios-deps/src
-          cd ios-deps/src
-          git clone --depth 1 https://github.com/madler/zlib.git
-          git clone --depth 1 https://github.com/facebook/zstd.git
-          git clone --depth 1 https://github.com/lz4/lz4.git
-          git clone --depth 1 https://github.com/tukaani-project/xz.git
-          git clone --depth 1 https://gitlab.freedesktop.org/freetype/freetype.git
+          cat -n scripts/build_ios_deps.sh
+          echo "---"
+          cat -n .github/workflows/build-ipa.yml
 
 
           fi
