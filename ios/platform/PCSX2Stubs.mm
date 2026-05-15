@@ -108,6 +108,45 @@ extern "C" void writebackCache(u32, u32) {}
 // BIOS
 extern "C" void CopyBIOSToMemory() {}
 
+// Discord RPC stubs
+extern "C" void Discord_Initialize(const char*, void*, int, const char*) {}
+extern "C" void Discord_Shutdown() {}
+extern "C" void Discord_RunCallbacks() {}
+extern "C" void Discord_UpdatePresence(const void*) {}
+extern "C" void Discord_ClearPresence() {}
+
+// Additional DEV9 stubs
+extern "C" void DEV9read16() {}
+extern "C" void DEV9read32() {}
+extern "C" void DEV9write8() {}
+extern "C" void DEV9write16() {}
+extern "C" void DEV9write32() {}
+extern "C" void DEV9readDMA8Mem() {}
+extern "C" void DEV9irqHandler() {}
+extern "C" void DEV9shutdown() {}
+
+// Additional USB stubs
+extern "C" void USBwrite16() {}
+extern "C" void USBwrite32() {}
+extern "C" void USBshutdown() {}
+
+// VIF JIT stubs — interpreter path only (Phase 0-C)
+extern "C" void dVifUnpack_0() {}
+extern "C" void dVifUnpack_1() {}
+
+// Aligned memory (Darwin uses posix_memalign)
+#include <stdlib.h>
+extern "C" void* _aligned_malloc(size_t size, size_t align) {
+    void* ptr = nullptr;
+    posix_memalign(&ptr, align, size);
+    return ptr;
+}
+extern "C" void _aligned_free(void* ptr) { free(ptr); }
+
+// Misc
+extern "C" void pxOnAssertFail(const char*, int, const char*, const char*) {}
+extern "C" void GetValidDrive() {}
+
 // Misc extern stubs
 extern "C" void GSVertexSW_InitStatic() {}
 extern "C" void ReadOSDConfigParames() {}

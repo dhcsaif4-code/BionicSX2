@@ -72,6 +72,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(PCSX2_CORE_SOURCES
         # ---- common/ (pcsx2/common) ----
         pcsx2/common/FastJmp.cpp
+        pcsx2/common/FileSystem.cpp
+        pcsx2/common/StringUtil.cpp
+
+        # ---- imgui (3rdparty) ----
+        pcsx2/3rdparty/imgui/src/imgui.cpp
+        pcsx2/3rdparty/imgui/src/imgui_draw.cpp
+        pcsx2/3rdparty/imgui/src/imgui_tables.cpp
+        pcsx2/3rdparty/imgui/src/imgui_widgets.cpp
 
         # ---- EE Core, IOP, VU, System (pcsx2/pcsx2/) ----
         pcsx2/pcsx2/Achievements.cpp
@@ -376,6 +384,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # so the linker would otherwise strip libBionicSX2.a to 85KB.
     target_link_libraries(BionicSX2_App PRIVATE
         -Wl,-force_load,$<TARGET_FILE:BionicSX2>
+        "${IOS_DEPS}/lib/liblzma.a"
+        "${IOS_DEPS}/lib/libzstd.a"
+        "${IOS_DEPS}/lib/liblz4.a"
+        "${IOS_DEPS}/lib/libfreetype.a"
+        "${IOS_DEPS}/lib/libzip.a"
+        "${IOS_DEPS}/lib/libpng.a"
+        "${IOS_DEPS}/lib/libz.a"
         "-framework Metal"
         "-framework UIKit"
         "-framework Foundation"

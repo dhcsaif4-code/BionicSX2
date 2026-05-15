@@ -151,3 +151,9 @@ void MetalRenderer::ConvertToIndexedTexture(GSTexture*, float, u32, u32, u32, u3
 void MetalRenderer::FilteredDownsampleTexture(GSTexture*, GSTexture*, u32, const GSVector2i&, const GSVector4&) {}
 void MetalRenderer::RenderHW(GSHWDrawConfig&) {}
 void MetalRenderer::ClearSamplerCache() {}
+
+// Factory function — called from GSDevice.cpp CreateGSDevice()
+GSDevice* MakeGSDeviceMTL()
+{
+    return new MetalRenderer();
+}
