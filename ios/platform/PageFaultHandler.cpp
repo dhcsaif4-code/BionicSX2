@@ -20,6 +20,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <optional>
+#include <unistd.h>
 #include <sys/sysctl.h>
 #include <thread>
 #include <time.h>

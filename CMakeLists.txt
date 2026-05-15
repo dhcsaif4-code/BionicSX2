@@ -179,7 +179,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/ccc/src
         pcsx2/3rdparty/demangler/include
         pcsx2/3rdparty/imgui
-        pcsx2/3rdparty/vixl
+        pcsx2/3rdparty/vixl/include
         pcsx2/3rdparty
     )
 
