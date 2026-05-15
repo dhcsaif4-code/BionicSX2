@@ -475,6 +475,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/imgui/include
         pcsx2/3rdparty/imgui/src
         pcsx2/3rdparty/vixl/include
+        pcsx2/3rdparty/rcheevos/include
         pcsx2/3rdparty
     )
 
