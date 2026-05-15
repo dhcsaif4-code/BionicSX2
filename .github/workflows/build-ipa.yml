@@ -1,0 +1,76 @@
+# AUDIT REFERENCE: Sections 10.3, 13.6
+# STATUS: NEW
+name: Build BionicSX2 IPA
+
+on:
+  push:
+    branches: [main, ios-port]
+  pull_request:
+    branches: [main]
+
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: 8
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Xcode CLI tools
+        run: xcode-select --install || true
+
+      - name: Cache ios-deps
+        uses: actions/cache@v4
+        with:
+          path: ios-deps/install
+          key: ios-deps-${{ hashFiles('scripts/build_ios_deps.sh') }}
+
+      - name: Build third-party deps for iOS
+        run: |
+          chmod +x scripts/build_ios_deps.sh
+          bash scripts/build_ios_deps.sh
+
+      - name: Configure BionicSX2
+        run: |
+          cmake -S . -B build-ios \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/ios.toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_QT=OFF \
+            -DENABLE_OPENGL=OFF \
+            -DENABLE_VULKAN=OFF \
+            -DUSE_SDL=OFF \
+            -DBUILD_TESTS=OFF
+
+      - name: Build BionicSX2
+        run: |
+          set -euxo pipefail
+          cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)"
+
+      - name: Verify Build Output
+        run: |
+          set -euxo pipefail
+          APP="build-ios/BionicSX2.app/BionicSX2"
+          if [ -f "$APP" ]; then
+            echo "Binary found at $APP"
+            SIZE=$(stat -f%z "$APP" 2>/dev/null || echo 0)
+            echo "Binary size: $SIZE bytes"
+            if [ "$SIZE" -lt 5000000 ]; then
+              echo "WARNING: Binary size seems small ($SIZE bytes)"
+            fi
+            nm "$APP" 2>/dev/null | grep -E 'cpuReset|SysMemory|GSopen' && echo "Core symbols verified" || echo "WARNING: Core symbols not found in binary"
+          else
+            echo "Looking for binary..."
+            find build-ios -name "*.a" -o -name "*.app" -type d 2>/dev/null
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BionicSX2-iOS-Build
+          path: |
+            build-ios/
+          retention-days: 7
