@@ -89,6 +89,13 @@ jobs:
             printf '  return 0;\n}\n' >> "$H"
             echo '#define strerrorlen_s(e)       _zc_strerrorlen_s(e)' >> "$H"
             echo '#define strerror_s(b,bl,e)     _zc_strerror_s(b,bl,e)' >> "$H"
+            echo '#include <sys/stat.h>' >> "$H"
+            echo '#include <stdio.h>' >> "$H"
+            echo '#define _fseeki64(f,o,w)   fseeko(f,(off_t)(o),w)' >> "$H"
+            echo '#define _ftelli64(f)       ftello(f)' >> "$H"
+            echo '#define zip_os_stat_t      struct stat' >> "$H"
+            echo '#define _stat64(p,s)       stat(p,s)' >> "$H"
+            echo '#define _fstat64(fd,s)     fstat(fd,s)' >> "$H"
             for f in "$DIR"/*.c; do
               grep -q "zip_compat_ios.h" "$f" || \
                 sed -i.bak '1s/^/#include "zip_compat_ios.h"\n/' "$f"
