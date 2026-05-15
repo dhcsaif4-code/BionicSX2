@@ -29,6 +29,17 @@ jobs:
           path: ios-deps/install
           key: ios-deps-v2-${{ hashFiles('scripts/build_ios_deps.sh') }}
 
+      - name: Discover 3rdparty structure
+        run: |
+          echo "=== 3rdparty root ==="
+          ls 3rdparty/ | sort
+
+          echo "=== ios-deps/src ==="
+          ls ios-deps/src/ 2>/dev/null || echo "EMPTY"
+
+          echo "=== pcsx2/3rdparty ==="
+          ls pcsx2/3rdparty/ 2>/dev/null | sort
+
       - name: Build third-party deps for iOS
         run: |
           chmod +x scripts/build_ios_deps.sh
