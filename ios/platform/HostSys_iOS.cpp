@@ -14,6 +14,7 @@
 #include <cerrno>
 #include <fcntl.h>
 #include <mutex>
+#include <sys/sysctl.h>
 #include <mach/mach.h>
 #include <mach/mach_init.h>
 #include <mach/vm_map.h>

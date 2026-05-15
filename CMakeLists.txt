@@ -99,10 +99,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/SPU2/Wavedump_wav.cpp
     )
 
-    # Phase 0-D: LnxHostSys and DarwinMisc for iOS
+    # Phase 0-D: LnxHostSys for iOS (DarwinMisc excluded — uses macOS-only
+    # CoreGraphics/IOKit; our PageFaultHandler.cpp handles Mach exceptions)
     set(PCSX2_PLATFORM_SOURCES
         pcsx2/common/Linux/LnxHostSys.cpp     # SharedMemoryMappingArea (has __APPLE__ guards)
-        pcsx2/common/Darwin/DarwinMisc.cpp    # Mach exception ports + Misc ARM64 helpers
     )
 
     # Phase 0-A, 0-F: iOS platform layer
