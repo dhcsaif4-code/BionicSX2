@@ -340,6 +340,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui/GameControllerManager.swift
     )
 
+    # iOS app entry point (Phase 0-A: _main symbol)
+    set(IOS_APP_SOURCES
+        ios/ui/main.mm
+        ios/ui/AppDelegate.mm
+    )
+
     # Metal renderer (Phase 11-12)
     set(IOS_METAL_SOURCES
         metal/MetalRenderer.mm
@@ -363,6 +369,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     add_executable(BionicSX2_App
         ${IOS_SWIFT_SOURCES}
+        ${IOS_APP_SOURCES}
     )
 
     target_link_libraries(BionicSX2_App PRIVATE BionicSX2)
@@ -409,6 +416,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/include"
         "${CMAKE_SOURCE_DIR}/generated"
         ios/platform
+        ios/ui
         metal
         pcsx2              # for #include "common/xxx.h" and "pcsx2/xxx.h" style
         pcsx2/pcsx2        # for direct #include "GS/xxx.h" style
@@ -467,6 +475,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     )
 
     # iOS app bundle settings
+    set(CMAKE_MACOSX_BUNDLE YES)
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER com.bionicsx2.app)
     set_target_properties(BionicSX2_App PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/ios/Info.plist"
