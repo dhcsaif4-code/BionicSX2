@@ -39,21 +39,11 @@ jobs:
         run: |
           mkdir -p ios-deps/src
           cd ios-deps/src
-
-          [ -d zlib ]     || git clone --depth 1 \
-            https://github.com/madler/zlib.git
-
-          [ -d zstd ]     || git clone --depth 1 \
-            https://github.com/facebook/zstd.git
-
-          [ -d lz4 ]      || git clone --depth 1 \
-            https://github.com/lz4/lz4.git
-
-          [ -d xz ]       || git clone --depth 1 \
-            https://github.com/tukaani-project/xz.git
-
-          [ -d freetype ] || git clone --depth 1 \
-            https://gitlab.freedesktop.org/freetype/freetype.git
+          git clone --depth 1 https://github.com/madler/zlib.git
+          git clone --depth 1 https://github.com/facebook/zstd.git
+          git clone --depth 1 https://github.com/lz4/lz4.git
+          git clone --depth 1 https://github.com/tukaani-project/xz.git
+          git clone --depth 1 https://gitlab.freedesktop.org/freetype/freetype.git
 
 
           fi
