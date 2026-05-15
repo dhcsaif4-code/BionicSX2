@@ -20,13 +20,12 @@ bool StartVM(const char* isoPath) {
     s_initialized = true;
 
     // Step 1: disable JIT — belt-and-suspenders (Audit Sec 2.3-F)
-    EmuConfig.EE.newVifDynarec         = false;
+    // newVifDynaRec is a constexpr compile-time flag in Vif_Dynarec.h — already 0 on iOS
     EmuConfig.Cpu.Recompiler.EnableEE  = false;
     EmuConfig.Cpu.Recompiler.EnableVU0 = false;
     EmuConfig.Cpu.Recompiler.EnableVU1 = false;
     EmuConfig.Cpu.Recompiler.EnableIOP = false;
     EmuConfig.GS.Renderer              = GSRendererType::Metal;
-    EmuConfig.Cpu.sseMXCSR.bitmask     = 0;
 
     // Step 2: allocate emulated memory — MUST be first (Audit Sec 2.3-E)
     if (!SysMemory::Allocate()) {
@@ -38,7 +37,7 @@ bool StartVM(const char* isoPath) {
     cpuReset();
 
     // Step 4: initialize GS Metal backend (Audit Sec 4.1)
-    if (!GSopen(nullptr, "Metal", 0)) {
+    if (!GSopen2(nullptr, GSRendererType::Metal, 0)) {
         NSLog(@"[BionicSX2] GSopen failed");
         SysMemory::Release();
         s_initialized = false;

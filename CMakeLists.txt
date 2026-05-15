@@ -163,6 +163,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         -Wno-parentheses
         -Wno-missing-braces
         -Wno-unknown-pragmas
+        -fobjc-arc          # Enable ARC for Objective-C (.mm) files
+        -Wno-macro-redefined # ARCH_ARM64 redefined in Pcsx2Defs.h
     )
 
     target_include_directories(BionicSX2 PRIVATE
