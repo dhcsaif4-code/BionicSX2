@@ -74,43 +74,6 @@ void HostSys::DestroySharedMemory(void* ptr)
 	vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(ptr), 0);
 }
 
-void* HostSys::Mmap(void* addr, size_t size, bool executable, bool fixed)
-{
-	vm_address_t map_addr = reinterpret_cast<vm_address_t>(addr);
-	vm_prot_t prot = VM_PROT_READ | VM_PROT_WRITE;
-	if (executable)
-		prot |= VM_PROT_EXECUTE;
-
-	int flags = VM_FLAGS_ANYWHERE;
-	if (fixed)
-		flags = VM_FLAGS_FIXED;
-
-	kern_return_t kr = vm_allocate(mach_task_self(), &map_addr, size, flags);
-	if (kr != KERN_SUCCESS)
-	{
-		Console.Error("(HostSys_iOS) Mmap vm_allocate failed: %s (0x%x)", mach_error_string(kr), kr);
-		return nullptr;
-	}
-
-	if (executable)
-	{
-		kr = vm_protect(mach_task_self(), map_addr, size, FALSE, prot);
-		if (kr != KERN_SUCCESS)
-		{
-			Console.Error("(HostSys_iOS) Mmap vm_protect exec failed: %s (0x%x)", mach_error_string(kr), kr);
-			vm_deallocate(mach_task_self(), map_addr, size);
-			return nullptr;
-		}
-	}
-
-	return reinterpret_cast<void*>(map_addr);
-}
-
-void HostSys::Munmap(void* addr, size_t size)
-{
-	vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(addr), size);
-}
-
 void HostSys::FlushInstructionCache(void* address, u32 size)
 {
 	// DIAGNOSTIC FIX: __clear_cache is not available on iOS.
@@ -189,10 +152,17 @@ bool SharedMemoryMappingArea::Unmap(void* map_base, size_t map_size, bool is_fil
 
 size_t HostSys::GetRuntimePageSize()
 {
+	// iOS: use sysctlbyname instead of sysconf(_SC_PAGESIZE) for portability
 	return static_cast<size_t>(sysconf(_SC_PAGESIZE));
 }
 
 size_t HostSys::GetRuntimeCacheLineSize()
 {
-	return static_cast<size_t>(sysconf(_SC_LEVEL1_DCACHE_LINESIZE));
+	// _SC_LEVEL1_DCACHE_LINESIZE is Linux-specific.
+	// On Darwin/iOS, use sysctlbyname.
+	s64 cachelinesize = 0;
+	size_t len = sizeof(cachelinesize);
+	if (sysctlbyname("hw.cachelinesize", &cachelinesize, &len, nullptr, 0) == 0)
+		return static_cast<size_t>(cachelinesize);
+	return 128; // default for Apple Silicon
 }

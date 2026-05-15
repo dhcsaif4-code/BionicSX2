@@ -9,7 +9,6 @@
 #include "pcsx2/Hw.h"
 #include "pcsx2/Vif_Dynarec.h"
 #include "pcsx2/CDVD/CDVD.h"
-#include "pcsx2/Config.h"
 #include "Pcsx2Config.h"
 
 namespace iOSVMManager {
