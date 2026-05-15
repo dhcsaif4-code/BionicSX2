@@ -79,10 +79,29 @@ make -j$(sysctl -n hw.logicalcpu) install
 cd "$SRC"
 [ -d soundtouch ] || git clone --depth 1 \
   https://codeberg.org/soundtouch/soundtouch.git
-mkdir -p "$BLD/soundtouch" && cd "$BLD/soundtouch"
-cmake "$SRC/soundtouch" $FLAGS \
-  -DSOUNDTOUCH_BUILD_SHARED_LIBS=OFF
-make -j$(sysctl -n hw.logicalcpu) install
+
+ST_SRC="$SRC/soundtouch/source/SoundTouch"
+ST_OUT="$INSTALL/lib/libsoundtouch.a"
+ST_INC="$SRC/soundtouch/include"
+ST_OBJ="$BLD/soundtouch"
+mkdir -p "$ST_OBJ"
+
+OBJS=()
+for f in "$ST_SRC"/*.cpp; do
+  [ -f "$f" ] || continue
+  OBJ="$ST_OBJ/$(basename ${f%.cpp}).o"
+  xcrun clang++ \
+    -target arm64-apple-ios16.0 \
+    -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
+    -I"$ST_INC" \
+    -std=c++17 -O2 -c "$f" -o "$OBJ"
+  OBJS+=("$OBJ")
+done
+
+xcrun ar rcs "$ST_OUT" "${OBJS[@]}"
+mkdir -p "$INSTALL/include/soundtouch"
+cp "$ST_INC"/*.h "$INSTALL/include/soundtouch/"
+echo "soundtouch built: $(du -sh $ST_OUT)"
 
 # cubeb — cannot build for iOS (macOS-only CoreAudio backend), stubbed
 
