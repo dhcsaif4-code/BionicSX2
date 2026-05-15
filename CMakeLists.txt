@@ -80,7 +80,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/DebugTools/Breakpoints.cpp   # CBreakPoints
         pcsx2/pcsx2/DebugTools/SymbolGuardian.cpp # R3000SymbolGuardian
         pcsx2/pcsx2/DebugTools/SymbolImporter.cpp
-        common/FastJmp.cpp                  # fastjmp_jmp/fastjmp_set
+        pcsx2/common/FastJmp.cpp            # fastjmp_jmp/fastjmp_set
     )
 
     # Phase 0-E: SPU2 internal files
@@ -101,8 +101,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     # Phase 0-D: LnxHostSys and DarwinMisc for iOS
     set(PCSX2_PLATFORM_SOURCES
-        common/Linux/LnxHostSys.cpp     # SharedMemoryMappingArea (has __APPLE__ guards)
-        common/Darwin/DarwinMisc.cpp    # Mach exception ports + Misc ARM64 helpers
+        pcsx2/common/Linux/LnxHostSys.cpp     # SharedMemoryMappingArea (has __APPLE__ guards)
+        pcsx2/common/Darwin/DarwinMisc.cpp    # Mach exception ports + Misc ARM64 helpers
     )
 
     # Phase 0-A, 0-F: iOS platform layer
