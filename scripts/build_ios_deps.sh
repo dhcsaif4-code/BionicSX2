@@ -22,7 +22,8 @@ cd "$SRC"
 [ -d zlib ] || git clone --depth 1 https://github.com/madler/zlib.git
 mkdir -p "$BLD/zlib" && cd "$BLD/zlib"
 cmake "$SRC/zlib" $FLAGS
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── libpng ────────────────────────────────────────────
 cd "$SRC"
@@ -34,7 +35,8 @@ cmake "$SRC/libpng" $FLAGS \
   -DPNG_STATIC=ON \
   -DPNG_TESTS=OFF \
   -DZLIB_ROOT="$INSTALL"
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── zstd ──────────────────────────────────────────────
 cd "$SRC"
@@ -43,7 +45,8 @@ mkdir -p "$BLD/zstd" && cd "$BLD/zstd"
 cmake "$SRC/zstd/build/cmake" $FLAGS \
   -DZSTD_BUILD_PROGRAMS=OFF \
   -DZSTD_BUILD_SHARED=OFF
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── lz4 ───────────────────────────────────────────────
 cd "$SRC"
@@ -52,7 +55,8 @@ mkdir -p "$BLD/lz4" && cd "$BLD/lz4"
 cmake "$SRC/lz4/build/cmake" $FLAGS \
   -DLZ4_BUILD_CLI=OFF \
   -DLZ4_BUILD_LEGACY_LZ4C=OFF
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── xz/lzma ───────────────────────────────────────────
 cd "$SRC"
@@ -61,7 +65,8 @@ cd "$SRC"
 mkdir -p "$BLD/xz" && cd "$BLD/xz"
 cmake "$SRC/xz" $FLAGS \
   -DBUILD_TESTING=OFF
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── freetype ──────────────────────────────────────────
 cd "$SRC"
@@ -73,7 +78,8 @@ cmake "$SRC/freetype" $FLAGS \
   -DFT_DISABLE_BZIP2=ON \
   -DFT_DISABLE_PNG=OFF \
   -DZLIB_ROOT="$INSTALL"
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── soundtouch ────────────────────────────────────────
 cd "$SRC"
@@ -147,7 +153,8 @@ mkdir -p "$BLD/libchdr" && cd "$BLD/libchdr"
 cmake "$SRC/libchdr" $FLAGS \
   -DWITH_SYSTEM_ZLIB=ON \
   -DZLIB_ROOT="$INSTALL"
-make -j$(sysctl -n hw.logicalcpu) install
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 echo "=== Done ==="
 find "$INSTALL/lib" -name "*.a" | sort
