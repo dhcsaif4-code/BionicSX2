@@ -52,33 +52,21 @@ find_src() {
 }
 
 ZLIB=$(find_src zlib \
-  "$ROOT/3rdparty/zlib" \
-  "$ROOT/pcsx2/3rdparty/zlib" \
   "$ROOT/ios-deps/src/zlib")
 
 ZSTD=$(find_src zstd \
-  "$ROOT/3rdparty/zstd/build/cmake" \
-  "$ROOT/pcsx2/3rdparty/zstd/build/cmake" \
   "$ROOT/ios-deps/src/zstd/build/cmake")
 
 LZ4=$(find_src lz4 \
-  "$ROOT/3rdparty/lz4/build/cmake" \
-  "$ROOT/pcsx2/3rdparty/lz4/build/cmake" \
   "$ROOT/ios-deps/src/lz4/build/cmake")
 
 LZMA=$(find_src lzma \
-  "$ROOT/3rdparty/xz" \
-  "$ROOT/pcsx2/3rdparty/xz" \
   "$ROOT/ios-deps/src/xz")
 
 FREETYPE=$(find_src freetype \
-  "$ROOT/3rdparty/freetype" \
-  "$ROOT/pcsx2/3rdparty/freetype" \
   "$ROOT/ios-deps/src/freetype")
 
 LIBZIP=$(find_src libzip \
-  "$ROOT/3rdparty/libzip" \
-  "$ROOT/pcsx2/3rdparty/libzip" \
   "$ROOT/ios-deps/src/libzip")
 
 build_lib zlib "$ZLIB"
