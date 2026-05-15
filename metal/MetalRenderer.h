@@ -6,7 +6,7 @@
 
 #include "GS/Renderers/Common/GSDevice.h"
 #include "GS/GS.h"
-#include "GS/GSTextureCache.h"
+#include "GS/Renderers/HW/GSTextureCache.h"
 #include "common/WindowInfo.h"
 
 #import <Metal/Metal.h>

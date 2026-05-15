@@ -37,7 +37,7 @@ public:
 	bool Map(GSMap& m, const GSVector4i* rect, int layer) override { return false; }
 	void Unmap() override {}
 	void GenerateMipmap() override {}
-	void SetDebugName(std::string_view name) override {}
+	void SetDebugName(std::string_view name) {}
 
 private:
 	id<MTLTexture> m_texture = nil;

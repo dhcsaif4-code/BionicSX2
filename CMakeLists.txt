@@ -273,7 +273,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
         # ---- ImGui ----
         pcsx2/pcsx2/ImGui/FullscreenUI.cpp
-        pcsx2/pcsx2/ImGui/FullscreenUI_Settings.cpp
+        # FullscreenUI_Settings.cpp excluded — includes DEV9/pcap_io.h and USB/USB.h unconditionally
         pcsx2/pcsx2/ImGui/ImGuiFullscreen.cpp
         pcsx2/pcsx2/ImGui/ImGuiManager.cpp
         pcsx2/pcsx2/ImGui/ImGuiOverlays.cpp
@@ -291,37 +291,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
         # ---- DEV9 — excluded on iOS per Phase 14 (Audit Sec 1.2 RED) ----
 
-        # ---- USB ----
-        pcsx2/pcsx2/USB/deviceproxy.cpp
-        pcsx2/pcsx2/USB/qemu-usb/bus.cpp
-        pcsx2/pcsx2/USB/qemu-usb/core.cpp
-        pcsx2/pcsx2/USB/qemu-usb/desc.cpp
-        pcsx2/pcsx2/USB/qemu-usb/hid.cpp
-        pcsx2/pcsx2/USB/qemu-usb/input-keymap-qcode-to-qnum.cpp
-        pcsx2/pcsx2/USB/qemu-usb/usb-ohci.cpp
-        pcsx2/pcsx2/USB/shared/ringbuffer.cpp
-        pcsx2/pcsx2/USB/USB.cpp
-        # pcsx2/pcsx2/USB/usb-eyetoy/cam-jpeg.cpp  # needs libjpeg — excluded for iOS bringup
-        pcsx2/pcsx2/USB/usb-eyetoy/jo_mpeg.cpp
-        pcsx2/pcsx2/USB/usb-eyetoy/usb-eyetoy-webcam.cpp
-        pcsx2/pcsx2/USB/usb-hid/usb-hid.cpp
-        pcsx2/pcsx2/USB/usb-lightgun/guncon2.cpp
-        pcsx2/pcsx2/USB/usb-mic/audiodev-cubeb.cpp
-        pcsx2/pcsx2/USB/usb-mic/usb-headset.cpp
-        pcsx2/pcsx2/USB/usb-mic/usb-mic.cpp
-        pcsx2/pcsx2/USB/usb-msd/usb-msd.cpp
-        pcsx2/pcsx2/USB/usb-pad/lg/lg_ff.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-buzz.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-gametrak.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-pad.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-pad-ff.cpp
-        # pcsx2/pcsx2/USB/usb-pad/usb-pad-sdl-ff.cpp  # needs SDL — excluded for iOS bringup
-        pcsx2/pcsx2/USB/usb-pad/usb-realplay.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-seamic.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-train.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-trance-vibrator.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-turntable.cpp
-        pcsx2/pcsx2/USB/usb-printer/usb-printer.cpp
+        # ---- USB — excluded entirely on iOS (needs SDL/libjpeg, not needed for bringup) ----
 
         # ---- RDebug — excluded on iOS (debug tools, needs IopBios2.h, Threading, psxRegs) ----
     )
@@ -425,7 +395,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/libzip/lib
         pcsx2/3rdparty/cubeb/include
         pcsx2/3rdparty/imgui/src
-        pcsx2/3rdparty/xxhash        # xxhash.h — Phase 14 (Audit Sec 10.1)
+        pcsx2/3rdparty/include        # xxhash.h, pcap.h, Icons* (no subdir)
     )
 
     # freetype headers — built into ios-deps (Phase 3, Tier 3)

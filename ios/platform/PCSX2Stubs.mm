@@ -152,6 +152,17 @@ extern "C" void plutovg_canvas_translate(plutovg_canvas_t*, double, double) {}
 extern "C" void plutovg_convert_argb_to_rgba(unsigned char*, const unsigned char*, int, int, int) {}
 
 // =====================================================================
+// USB subsystem stubs — iOS bringup (Audit Sec 1.2, Phase 0-F)
+// =====================================================================
+extern "C" void USBclose() {}
+extern "C" void USBopen() {}
+extern "C" u32 USBread(u32 a, u32 v) { return 0; }
+extern "C" void USBwrite(u32 a, u32 v) {}
+extern "C" void USBirqHandler(int a) {}
+extern "C" void USBfreeze(int a) {}
+extern "C" void USBasync(int a) {}
+
+// =====================================================================
 // plutosvg stubs (not in ios-deps for bringup)
 // =====================================================================
 struct plutosvg_document_t;
