@@ -10,15 +10,17 @@ class MetalTexture final : public GSTexture
 {
 public:
 	MetalTexture(id<MTLTexture> texture, Type type, Format format)
-		: GSTexture(type, format)
+		: GSTexture()
 		, m_texture(texture)
 	{
+		m_type = type;
+		m_format = format;
 	}
 
 	~MetalTexture() override { m_texture = nil; }
 
 	void* GetNativeHandle() const override { return (__bridge void*)m_texture; }
-	u32 GetID() const override { return (u32)(uintptr_t)m_texture; }
+	u32 GetID() const { return (u32)(uintptr_t)m_texture; }
 
 	bool Update(const GSVector4i& rect, const void* data, int pitch, int layer) override
 	{
@@ -34,6 +36,8 @@ public:
 
 	bool Map(GSMap& m, const GSVector4i* rect, int layer) override { return false; }
 	void Unmap() override {}
+	void GenerateMipmap() override {}
+	void SetDebugName(std::string_view name) override {}
 
 private:
 	id<MTLTexture> m_texture = nil;

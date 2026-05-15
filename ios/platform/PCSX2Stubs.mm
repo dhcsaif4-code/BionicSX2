@@ -155,7 +155,8 @@ extern "C" void plutovg_convert_argb_to_rgba(unsigned char*, const unsigned char
 // plutosvg stubs (not in ios-deps for bringup)
 // =====================================================================
 struct plutosvg_document_t;
-extern "C" plutosvg_document_t* plutosvg_document_load_from_data(const char*, size_t) { return nullptr; }
+struct plutovg_surface_t;
+extern "C" plutosvg_document_t* plutosvg_document_load_from_data(const char*, size_t, float, float, float, plutovg_surface_t*) { return nullptr; }
 extern "C" float plutosvg_document_get_width(plutosvg_document_t*) { return 0.0f; }
 extern "C" float plutosvg_document_get_height(plutosvg_document_t*) { return 0.0f; }
 extern "C" int plutosvg_document_render(plutosvg_document_t*, void*, plutovg_canvas_t*, void*, void*, void*) { return 0; }

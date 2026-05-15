@@ -289,51 +289,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/ps2/Iop/PsxBios.cpp
         pcsx2/pcsx2/ps2/pgif.cpp
 
-        # ---- DEV9 ----
-        pcsx2/pcsx2/DEV9/AdapterUtils.cpp
-        pcsx2/pcsx2/DEV9/ATA/ATA_Info.cpp
-        pcsx2/pcsx2/DEV9/ATA/ATA_State.cpp
-        pcsx2/pcsx2/DEV9/ATA/ATA_Transfer.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_Command.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdDMA.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdExecuteDeviceDiag.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdNoData.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdPIOData.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_CmdSMART.cpp
-        pcsx2/pcsx2/DEV9/ATA/Commands/ATA_SCE.cpp
-        pcsx2/pcsx2/DEV9/ATA/HddCreate.cpp
-        pcsx2/pcsx2/DEV9/DEV9.cpp
-        pcsx2/pcsx2/DEV9/flash.cpp
-        pcsx2/pcsx2/DEV9/InternalServers/DHCP_Logger.cpp
-        pcsx2/pcsx2/DEV9/InternalServers/DHCP_Server.cpp
-        pcsx2/pcsx2/DEV9/InternalServers/DNS_Logger.cpp
-        pcsx2/pcsx2/DEV9/InternalServers/DNS_Server.cpp
-        pcsx2/pcsx2/DEV9/net.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/ARP/ARP_Packet.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/ARP/ARP_PacketEditor.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/EthernetFrame.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/EthernetFrameEditor.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/ICMP/ICMP_Packet.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/IP_Options.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/IP_Packet.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/TCP/TCP_Options.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/TCP/TCP_Packet.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DNS/DNS_Classes.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/DNS/DNS_Packet.cpp
-        pcsx2/pcsx2/DEV9/PacketReader/IP/UDP/UDP_Packet.cpp
-        pcsx2/pcsx2/DEV9/pcap_io.cpp
-        pcsx2/pcsx2/DEV9/Sessions/BaseSession.cpp
-        pcsx2/pcsx2/DEV9/Sessions/ICMP_Session/ICMP_Session.cpp
-        pcsx2/pcsx2/DEV9/Sessions/TCP_Session/TCP_Session.cpp
-        pcsx2/pcsx2/DEV9/Sessions/TCP_Session/TCP_Session_In.cpp
-        pcsx2/pcsx2/DEV9/Sessions/TCP_Session/TCP_Session_Out.cpp
-        pcsx2/pcsx2/DEV9/Sessions/UDP_Session/UDP_Common.cpp
-        pcsx2/pcsx2/DEV9/Sessions/UDP_Session/UDP_FixedPort.cpp
-        pcsx2/pcsx2/DEV9/Sessions/UDP_Session/UDP_Session.cpp
-        pcsx2/pcsx2/DEV9/smap.cpp
-        pcsx2/pcsx2/DEV9/sockets.cpp
+        # ---- DEV9 — excluded on iOS per Phase 14 (Audit Sec 1.2 RED) ----
 
         # ---- USB ----
         pcsx2/pcsx2/USB/deviceproxy.cpp
@@ -345,7 +301,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/USB/qemu-usb/usb-ohci.cpp
         pcsx2/pcsx2/USB/shared/ringbuffer.cpp
         pcsx2/pcsx2/USB/USB.cpp
-        pcsx2/pcsx2/USB/usb-eyetoy/cam-jpeg.cpp
+        # pcsx2/pcsx2/USB/usb-eyetoy/cam-jpeg.cpp  # needs libjpeg — excluded for iOS bringup
         pcsx2/pcsx2/USB/usb-eyetoy/jo_mpeg.cpp
         pcsx2/pcsx2/USB/usb-eyetoy/usb-eyetoy-webcam.cpp
         pcsx2/pcsx2/USB/usb-hid/usb-hid.cpp
@@ -359,7 +315,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/USB/usb-pad/usb-gametrak.cpp
         pcsx2/pcsx2/USB/usb-pad/usb-pad.cpp
         pcsx2/pcsx2/USB/usb-pad/usb-pad-ff.cpp
-        pcsx2/pcsx2/USB/usb-pad/usb-pad-sdl-ff.cpp
+        # pcsx2/pcsx2/USB/usb-pad/usb-pad-sdl-ff.cpp  # needs SDL — excluded for iOS bringup
         pcsx2/pcsx2/USB/usb-pad/usb-realplay.cpp
         pcsx2/pcsx2/USB/usb-pad/usb-seamic.cpp
         pcsx2/pcsx2/USB/usb-pad/usb-train.cpp
@@ -367,14 +323,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/USB/usb-pad/usb-turntable.cpp
         pcsx2/pcsx2/USB/usb-printer/usb-printer.cpp
 
-        # ---- RDebug ----
-        pcsx2/pcsx2/RDebug/deci2.cpp
-        pcsx2/pcsx2/RDebug/deci2_dbgp.cpp
-        pcsx2/pcsx2/RDebug/deci2_dcmp.cpp
-        pcsx2/pcsx2/RDebug/deci2_drfp.cpp
-        pcsx2/pcsx2/RDebug/deci2_iloadp.cpp
-        pcsx2/pcsx2/RDebug/deci2_netmp.cpp
-        pcsx2/pcsx2/RDebug/deci2_ttyp.cpp
+        # ---- RDebug — excluded on iOS (debug tools, needs IopBios2.h, Threading, psxRegs) ----
     )
 
     # Phase 0-E: SPU2 internal files
@@ -476,7 +425,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/libzip/lib
         pcsx2/3rdparty/cubeb/include
         pcsx2/3rdparty/imgui/src
+        pcsx2/3rdparty/xxhash        # xxhash.h — Phase 14 (Audit Sec 10.1)
     )
+
+    # freetype headers — built into ios-deps (Phase 3, Tier 3)
+    # ft2build.h lives at <prefix>/include/freetype2/ft2build.h
+    if(EXISTS "${IOS_DEPS}/include/freetype2")
+        list(APPEND THIRDPARTY_INCLUDE_DIRS "${IOS_DEPS}/include/freetype2")
+    endif()
 
     target_include_directories(BionicSX2 PRIVATE
         "${IOS_DEPS}/include"

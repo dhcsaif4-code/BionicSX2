@@ -189,6 +189,8 @@
 #define ICON_FA_SKULL ""
 #define ICON_FA_SPINNER ""
 #define ICON_FA_SPLOTCH ""
+#define ICON_FA_SQUARE ""
+#define ICON_FA_SQUARE_CHECK ""
 #define ICON_FA_SQUARE_ARROW_UP_RIGHT ""
 #define ICON_FA_SQUARE_PLUS ""
 #define ICON_FA_SQUARE_UP_RIGHT ""

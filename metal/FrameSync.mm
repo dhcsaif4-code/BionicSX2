@@ -6,6 +6,7 @@
 
 #import <Metal/Metal.h>
 #include <atomic>
+#include <mutex>
 
 class FrameSync
 {
