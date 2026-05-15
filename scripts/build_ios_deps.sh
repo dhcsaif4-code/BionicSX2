@@ -91,7 +91,17 @@ cd "$SRC"
 mkdir -p "$BLD/cubeb" && cd "$BLD/cubeb"
 cmake "$SRC/cubeb" $FLAGS \
   -DBUILD_TESTS=OFF \
-  -DBUILD_TOOLS=OFF
+  -DBUILD_TOOLS=OFF \
+  -DCMAKE_DISABLE_FIND_PACKAGE_Sanitizers=ON \
+  -DUSE_SANITIZERS=OFF
+# Sanitizers submodule workaround if cmake still fails
+if [ $? -ne 0 ]; then
+  sed -i.bak 's/find_package(Sanitizers)//' "$SRC/cubeb/CMakeLists.txt"
+  sed -i.bak 's/add_sanitizers(cubeb)//' "$SRC/cubeb/CMakeLists.txt"
+  cmake "$SRC/cubeb" $FLAGS \
+    -DBUILD_TESTS=OFF \
+    -DBUILD_TOOLS=OFF
+fi
 make -j$(sysctl -n hw.logicalcpu) install
 
 # ── rcheevos ──────────────────────────────────────────
