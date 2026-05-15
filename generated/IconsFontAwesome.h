@@ -69,3 +69,5 @@
 #define ICON_FA_XMARK ""
 #define ICON_FA_SQUARE_XMARK ""
 #define ICON_FA_STOPWATCH ""
+#define ICON_FA_LOCK_OPEN ""
+#define ICON_FA_SQUARE_CARET_LEFT ""
