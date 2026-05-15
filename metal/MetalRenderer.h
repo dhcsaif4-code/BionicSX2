@@ -28,7 +28,7 @@ public:
 
 	bool DoPreload(const GSDevice::FeatureSupport& features, std::string_view error);
 	void RenderHW(GSTextureCache* tc);
-	void RenderSW(GSTexture* src, const GSVector4i& bounds) override;
+	void RenderSW(GSTexture* src, const GSVector4i& bounds);
 
 	void Present();
 
@@ -39,8 +39,8 @@ public:
 	void DoFXAA(GSTexture* sTex, GSTexture* dTex) override;
 	void DoShadeBoost(GSTexture* sTex, GSTexture* dTex, const float params[4]) override;
 	bool DoCAS(GSTexture* sTex, GSTexture* dTex, bool sharpen_only, const std::array<u32, NUM_CAS_CONSTANTS>& constants) override;
-	void DoStretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, ShaderConvert shader, bool linear) override;
-	RenderAPI GetRenderAPI() const override;
+	void DoStretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GSHWDrawConfig::ColorMaskSelector cms, ShaderConvert shader, bool linear) override;
+	GSDevice::RenderAPI GetRenderAPI() const override;
 	bool HasSurface() const override;
 	void DestroySurface() override;
 	bool UpdateWindow() override;

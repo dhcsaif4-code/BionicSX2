@@ -274,7 +274,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ---- ImGui ----
         pcsx2/pcsx2/ImGui/FullscreenUI.cpp
         # FullscreenUI_Settings.cpp excluded — includes DEV9/pcap_io.h and USB/USB.h unconditionally
-        pcsx2/pcsx2/ImGui/ImGuiFullscreen.cpp
+        # ImGuiFullscreen.cpp excluded — needs plutosvg for SVG icons, not functional in bringup
+        # pcsx2/pcsx2/ImGui/ImGuiFullscreen.cpp
         pcsx2/pcsx2/ImGui/ImGuiManager.cpp
         pcsx2/pcsx2/ImGui/ImGuiOverlays.cpp
 
