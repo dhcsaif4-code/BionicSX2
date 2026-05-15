@@ -153,8 +153,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     target_link_libraries(BionicSX2_App PRIVATE BionicSX2)
 
-    target_compile_features(BionicSX2 PUBLIC cxx_std_17)
-    target_compile_features(BionicSX2_App PRIVATE cxx_std_17)
+    target_compile_features(BionicSX2 PUBLIC cxx_std_20)
+    target_compile_features(BionicSX2_App PRIVATE cxx_std_20)
+    # PCSX2 uses C++20 features: std::countl_zero, concept, etc.
 
     target_compile_options(BionicSX2 PRIVATE
         -ffp-contract=fast
@@ -172,6 +173,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2        # for direct #include "GS/xxx.h" style
         pcsx2/common       # for #include "Pcsx2Defs.h" without prefix
         pcsx2/3rdparty/fmt/include
+        pcsx2/3rdparty/fast_float/include
+        pcsx2/3rdparty
     )
 
     target_link_libraries(BionicSX2 PRIVATE
