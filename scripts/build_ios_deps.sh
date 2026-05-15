@@ -176,19 +176,10 @@ build_lib "freetype" "$SRC_DIR/freetype" \
 # TIER 4 — Depends on lz4 + zstd + zlib
 # ============================================================
 
-# libchdr
-if [ -d "$REPO_ROOT/pcsx2/3rdparty/libchdr" ]; then
-    build_lib "libchdr" "$REPO_ROOT/pcsx2/3rdparty/libchdr" \
-        -DWITH_SYSTEM_ZLIB=ON -DZLIB_ROOT="$INSTALL_DIR" \
-        -Dlz4_DIR="$INSTALL_DIR/lib/cmake/lz4" \
-        -Dzstd_DIR="$INSTALL_DIR/lib/cmake/zstd"
-else
-    ensure_src "libchdr" "https://github.com/rtissera/libchdr.git" >/dev/null
-    build_lib "libchdr" "$SRC_DIR/libchdr" \
-        -DWITH_SYSTEM_ZLIB=ON -DZLIB_ROOT="$INSTALL_DIR" \
-        -Dlz4_DIR="$INSTALL_DIR/lib/cmake/lz4" \
-        -Dzstd_DIR="$INSTALL_DIR/lib/cmake/zstd"
-fi
+# libchdr — skipped for bringup (vendored version has no cmake_minimum_required,
+# designed for add_subdirectory use. Revisit when upstream repo is available.)
+echo ">>> libchdr SKIPPED (bringup phase — no cmake_minimum_required in vendored CMakeLists.txt)"
+echo ">>> libchdr will be built via add_subdirectory in main CMakeLists.txt when ready"
 
 # ============================================================
 # TIER 5 — Audio (independent)

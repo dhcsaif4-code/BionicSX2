@@ -39,6 +39,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     find_library(LZMA_LIB       lzma       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(ZIP_LIB        zip        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(CHDR_LIB       chdr       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
+    if(NOT CHDR_LIB)
+        message(STATUS "libchdr not found — CHD archive support disabled for bringup")
+    endif()
     find_library(CUBEB_LIB      cubeb      PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(SOUNDTOUCH_LIB SoundTouch PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
     find_library(FMT_LIB        fmt        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH)
@@ -171,9 +174,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${ZSTD_LIB}
         ${LZMA_LIB}
         ${ZIP_LIB}
-        ${CHDR_LIB}
         ${CUBEB_LIB}
         ${SOUNDTOUCH_LIB}
+        $<$<BOOL:${CHDR_LIB}>:${CHDR_LIB}>
+        
         ${PNG_LIB}
         ${AUDIOTOOLBOX_FW}
         ${AVFOUNDATION_FW}
