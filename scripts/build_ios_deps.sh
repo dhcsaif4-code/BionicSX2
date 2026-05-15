@@ -1,69 +1,96 @@
 #!/bin/bash
 set -euxo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 ARCH="arm64"
 MIN_IOS="16.0"
-INSTALL_DIR="$REPO_ROOT/ios-deps/install"
-SRC_DIR="$REPO_ROOT/ios-deps/src"
-BUILD_DIR="$REPO_ROOT/ios-deps/build"
-mkdir -p "$INSTALL_DIR/lib" "$INSTALL_DIR/include" "$SRC_DIR" "$BUILD_DIR"
+ROOT="$(pwd)"
+INSTALL_DIR="$ROOT/ios-deps/install"
+BUILD_DIR="$ROOT/ios-deps/build"
+mkdir -p "$INSTALL_DIR" "$BUILD_DIR"
 
-CMAKE_IOS_FLAGS="-DCMAKE_SYSTEM_NAME=iOS \
-  -DCMAKE_OSX_ARCHITECTURES=$ARCH \
-  -DCMAKE_OSX_SYSROOT=$SDK \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET=$MIN_IOS \
-  -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DCMAKE_BUILD_TYPE=Release"
+CMAKE_IOS_FLAGS=(
+  -DCMAKE_SYSTEM_NAME=iOS
+  -DCMAKE_OSX_ARCHITECTURES=$ARCH
+  -DCMAKE_OSX_SYSROOT=$SDK
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=$MIN_IOS
+  -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+  -DBUILD_SHARED_LIBS=OFF
+)
 
 build_lib() {
-  local NAME="$1"
-  local SRC="$2"
-  shift 2
+  local NAME=$1
+  local SRC=$2
+  local EXTRA_FLAGS="${@:3}"
+
+  if [ ! -d "$SRC" ]; then
+    echo "SKIP: $NAME — source not found at $SRC"
+    return 0
+  fi
+
+  echo "=== Building $NAME from $SRC ==="
   mkdir -p "$BUILD_DIR/$NAME"
-  cmake -S "$SRC" -B "$BUILD_DIR/$NAME" \
-    $CMAKE_IOS_FLAGS \
-    "$@"
-  cmake --build "$BUILD_DIR/$NAME" --config Release -j"$(sysctl -n hw.logicalcpu)"
-  cmake --install "$BUILD_DIR/$NAME"
-  echo ">>> $NAME OK"
+  cd "$BUILD_DIR/$NAME"
+  cmake "$SRC" "${CMAKE_IOS_FLAGS[@]}" $EXTRA_FLAGS
+  make -j$(sysctl -n hw.logicalcpu)
+  make install
+  cd "$ROOT"
 }
 
-# zlib
-build_lib "zlib" "$REPO_ROOT/pcsx2/3rdparty/zlib" \
-  -DZLIB_BUILD_EXAMPLES=OFF
+# Find each library dynamically — check multiple possible locations
+find_src() {
+  local NAME=$1
+  shift
+  for PATH_CANDIDATE in "$@"; do
+    if [ -d "$PATH_CANDIDATE" ]; then
+      echo "$PATH_CANDIDATE"
+      return 0
+    fi
+  done
+  echo ""
+}
 
-# zstd
-build_lib "zstd" "$REPO_ROOT/pcsx2/3rdparty/zstd/build/cmake" \
-  -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_SHARED=OFF -DZSTD_BUILD_STATIC=ON
+ZLIB=$(find_src zlib \
+  "$ROOT/3rdparty/zlib" \
+  "$ROOT/pcsx2/3rdparty/zlib" \
+  "$ROOT/ios-deps/src/zlib")
 
-# lz4
-build_lib "lz4" "$REPO_ROOT/pcsx2/3rdparty/lz4/build/cmake" \
-  -DLZ4_BUILD_CLI=OFF -DLZ4_BUILD_LEGACY_LZ4C=OFF
+ZSTD=$(find_src zstd \
+  "$ROOT/3rdparty/zstd/build/cmake" \
+  "$ROOT/pcsx2/3rdparty/zstd/build/cmake" \
+  "$ROOT/ios-deps/src/zstd/build/cmake")
 
-# lzma/xz
-build_lib "lzma" "$REPO_ROOT/pcsx2/3rdparty/lzma" \
-  -DCMAKE_C_FLAGS="-mcpu=apple-a14"
+LZ4=$(find_src lz4 \
+  "$ROOT/3rdparty/lz4/build/cmake" \
+  "$ROOT/pcsx2/3rdparty/lz4/build/cmake" \
+  "$ROOT/ios-deps/src/lz4/build/cmake")
 
-# freetype
-build_lib "freetype" "$REPO_ROOT/pcsx2/3rdparty/freetype" \
-  -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_BROTLI=ON
+LZMA=$(find_src lzma \
+  "$ROOT/3rdparty/xz" \
+  "$ROOT/pcsx2/3rdparty/xz" \
+  "$ROOT/ios-deps/src/xz")
 
-# libpng
-build_lib "libpng" "$REPO_ROOT/pcsx2/3rdparty/libpng" \
-  -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_TESTS=OFF
+FREETYPE=$(find_src freetype \
+  "$ROOT/3rdparty/freetype" \
+  "$ROOT/pcsx2/3rdparty/freetype" \
+  "$ROOT/ios-deps/src/freetype")
 
-# libzip
-build_lib "libzip" "$REPO_ROOT/pcsx2/3rdparty/libzip" \
-  -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF \
-  -DENABLE_COMMONCRYPTO=ON -DENABLE_GNUTLS=OFF -DENABLE_OPENSSL=OFF
+LIBZIP=$(find_src libzip \
+  "$ROOT/3rdparty/libzip" \
+  "$ROOT/pcsx2/3rdparty/libzip" \
+  "$ROOT/ios-deps/src/libzip")
 
-# soundtouch
-build_lib "soundtouch" "$REPO_ROOT/pcsx2/3rdparty/soundtouch" \
-  -DCMAKE_CXX_FLAGS="-DSOUNDTOUCH_DISABLE_X86_OPTIMIZATIONS"
+build_lib zlib "$ZLIB"
+build_lib zstd "$ZSTD" -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_SHARED=OFF
+build_lib lz4  "$LZ4"  -DLZ4_BUILD_CLI=OFF
+build_lib lzma "$LZMA"
+build_lib freetype "$FREETYPE" -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BZIP2=ON
+build_lib libzip "$LIBZIP" \
+  -DBUILD_TOOLS=OFF \
+  -DBUILD_REGRESS=OFF \
+  -DBUILD_EXAMPLES=OFF \
+  -DBUILD_DOC=OFF
 
 echo "=== Built libraries ==="
 find "$INSTALL_DIR/lib" -name "*.a" | sort
