@@ -9,3 +9,4 @@
 #define ICON_PF_ACHIEVEMENTS_WIN ""
 #define ICON_PF_ARROW_UP ""
 #define ICON_PF_ARROW_LEFT ""
+#define ICON_PF_MICROCHIP ""
