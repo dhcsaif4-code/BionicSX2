@@ -58,17 +58,31 @@ jobs:
           [ -d libzip ]   || git clone --depth 1 \
             https://github.com/nih-at/libzip.git
 
-      - name: Patch libzip for iOS (memcpy_s compat header)
+      - name: Patch libzip for iOS (comprehensive _s compat header)
         run: |
           DIR="ios-deps/src/libzip/lib"
-          FILE="$DIR/zip_buffer.c"
-          if [ -f "$FILE" ]; then
-            printf '#pragma once\n#include <string.h>\n#include <stddef.h>\n' > "$DIR/zip_compat_ios.h"
-            printf 'static inline int _zip_memcpy_s(void *d, size_t ds, const void *s, size_t c) {\n' >> "$DIR/zip_compat_ios.h"
-            printf '  (void)ds; memcpy(d, s, c); return 0;\n}\n' >> "$DIR/zip_compat_ios.h"
-            printf '#define memcpy_s(d,ds,s,c) _zip_memcpy_s(d,ds,s,c)\n' >> "$DIR/zip_compat_ios.h"
-            sed -i.bak '1s/^/#include "zip_compat_ios.h"\n/' "$FILE"
-            echo "Patched $FILE with zip_compat_ios.h"
+          if [ -d "$DIR" ]; then
+            H="$DIR/zip_compat_ios.h"
+            echo '#pragma once' > "$H"
+            echo '#include <string.h>' >> "$H"
+            echo '#include <stddef.h>' >> "$H"
+            echo 'static inline int _zc_memcpy_s(void *d, size_t ds, const void *s, size_t n) { (void)ds; memcpy(d, s, n); return 0; }' >> "$H"
+            echo 'static inline int _zc_memmove_s(void *d, size_t ds, const void *s, size_t n) { (void)ds; memmove(d, s, n); return 0; }' >> "$H"
+            echo 'static inline int _zc_strncpy_s(char *d, size_t ds, const char *s, size_t n) { (void)ds; strncpy(d, s, n); return 0; }' >> "$H"
+            echo 'static inline int _zc_strcpy_s(char *d, size_t ds, const char *s) { (void)ds; strcpy(d, s); return 0; }' >> "$H"
+            echo 'static inline int _zc_strcat_s(char *d, size_t ds, const char *s) { (void)ds; strcat(d, s); return 0; }' >> "$H"
+            echo 'static inline size_t _zc_strnlen_s(const char *s, size_t max) { return s ? strnlen(s, max) : 0; }' >> "$H"
+            echo '#define memcpy_s(d,ds,s,n)   _zc_memcpy_s(d,ds,s,n)' >> "$H"
+            echo '#define memmove_s(d,ds,s,n)  _zc_memmove_s(d,ds,s,n)' >> "$H"
+            echo '#define strncpy_s(d,ds,s,n)  _zc_strncpy_s(d,ds,s,n)' >> "$H"
+            echo '#define strcpy_s(d,ds,s)     _zc_strcpy_s(d,ds,s)' >> "$H"
+            echo '#define strcat_s(d,ds,s)     _zc_strcat_s(d,ds,s)' >> "$H"
+            echo '#define strnlen_s(s,m)        _zc_strnlen_s(s,m)' >> "$H"
+            for f in "$DIR"/*.c; do
+              grep -q "zip_compat_ios.h" "$f" || \
+                sed -i.bak '1s/^/#include "zip_compat_ios.h"\n/' "$f"
+            done
+            echo "Patched all .c files in $DIR with zip_compat_ios.h"
           fi
 
       - name: Build third-party deps for iOS
