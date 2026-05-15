@@ -209,61 +209,11 @@ else
         -DCMAKE_CXX_FLAGS="-DSOUNDTOUCH_DISABLE_X86_OPTIMIZATIONS"
 fi
 
-# cubeb — CMakeLists.txt is at the repo root, not in src/
-CUBEB_SRC=""
-if [ -f "$REPO_ROOT/pcsx2/3rdparty/cubeb/CMakeLists.txt" ]; then
-    CUBEB_SRC="$REPO_ROOT/pcsx2/3rdparty/cubeb"
-elif [ -f "$REPO_ROOT/pcsx2/3rdparty/cubeb/src/CMakeLists.txt" ]; then
-    CUBEB_SRC="$REPO_ROOT/pcsx2/3rdparty/cubeb/src"
-else
-    ensure_src "cubeb" "https://github.com/mozilla/cubeb.git" >/dev/null
-    CUBEB_SRC="$SRC_DIR/cubeb"
-fi
-# Patch cubeb_audiounit.cpp to guard macOS-only declarations with !TARGET_OS_IPHONE
-# (lines 74-96 use AudioObjectPropertyAddress, kAudioHardwareProperty*, etc.)
-AUDIOUNIT_FILE="$CUBEB_SRC/src/cubeb_audiounit.cpp"
-if [ -f "$AUDIOUNIT_FILE" ] && grep -q "kAudioHardwarePropertyDefaultInputDevice" "$AUDIOUNIT_FILE" 2>/dev/null; then
-    echo "  Patching cubeb_audiounit.cpp: guarding macOS-only declarations"
-    python3 -c "
-import sys
-path = sys.argv[1]
-with open(path, 'r') as f:
-    content = f.read()
-old = '''const AudioObjectPropertyAddress DEFAULT_INPUT_DEVICE_PROPERTY_ADDRESS = {
-    kAudioHardwarePropertyDefaultInputDevice, kAudioObjectPropertyScopeGlobal,
-    kAudioObjectPropertyElementMaster};
-
-const AudioObjectPropertyAddress DEFAULT_OUTPUT_DEVICE_PROPERTY_ADDRESS = {
-    kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal,
-    kAudioObjectPropertyElementMaster};
-
-const AudioObjectPropertyAddress DEVICE_IS_ALIVE_PROPERTY_ADDRESS = {
-    kAudioDevicePropertyDeviceIsAlive, kAudioObjectPropertyScopeGlobal,
-    kAudioObjectPropertyElementMaster};
-
-const AudioObjectPropertyAddress DEVICES_PROPERTY_ADDRESS = {
-    kAudioHardwarePropertyDevices, kAudioObjectPropertyScopeGlobal,
-    kAudioObjectPropertyElementMaster};
-
-const AudioObjectPropertyAddress INPUT_DATA_SOURCE_PROPERTY_ADDRESS = {
-    kAudioDevicePropertyDataSource, kAudioDevicePropertyScopeInput,
-    kAudioObjectPropertyElementMaster};
-
-const AudioObjectPropertyAddress OUTPUT_DATA_SOURCE_PROPERTY_ADDRESS = {
-    kAudioDevicePropertyDataSource, kAudioDevicePropertyScopeOutput,
-    kAudioObjectPropertyElementMaster};'''
-new = '#if !TARGET_OS_IPHONE\n' + old + '\n#endif'
-if old in content:
-    content = content.replace(old, new, 1)
-    with open(path, 'w') as f:
-        f.write(content)
-    print('  Patch applied successfully')
-else:
-    print('  Pattern not found — may already be patched')
-" "$AUDIOUNIT_FILE" 2>&1
-fi
-build_lib "cubeb" "$CUBEB_SRC" \
-    -DBUILD_TESTS=OFF -DBUILD_TOOLS=OFF -DUSE_SANITIZERS=OFF
+# cubeb — SKIPPED for bringup. The vendored cubeb_audiounit.cpp is macOS-only
+# with insufficient #if TARGET_OS_IPHONE guards (AudioDeviceID, etc.).
+# BionicSX2 uses native AudioStream_iOS.mm with AVAudioEngine/AudioUnit directly.
+echo ">>> cubeb SKIPPED (bringup phase — macOS-only audiounit backend)"
+echo ">>> Using native iOS audio implementation in AudioStream_iOS.mm"
 
 # ============================================================
 # VERIFICATION
