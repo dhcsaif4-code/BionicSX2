@@ -114,6 +114,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/AudioStream_iOS.mm
         ios/platform/Filesystem_iOS.mm
         ios/platform/PCSX2Stubs.mm
+        ios/platform/PCSX2StubsCpp.mm
         ios/platform/Threading_iOS.cpp
         ios/platform/PageFaultHandler.cpp
         ios/ui/BionicSX2Bridge.mm
