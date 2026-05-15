@@ -372,7 +372,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${IOS_APP_SOURCES}
     )
 
-    target_link_libraries(BionicSX2_App PRIVATE BionicSX2)
+    target_link_libraries(BionicSX2_App PRIVATE
+        BionicSX2
+        "-framework Metal"
+        "-framework UIKit"
+        "-framework AVFoundation"
+        "-framework GameController"
+        "-framework CoreMotion"
+        "-framework AudioToolbox"
+    )
 
     target_compile_features(BionicSX2 PUBLIC cxx_std_20)
     target_compile_features(BionicSX2_App PRIVATE cxx_std_20)
