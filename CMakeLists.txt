@@ -372,14 +372,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${IOS_APP_SOURCES}
     )
 
+    # Force-load the entire static lib — app .o files don't reference core symbols
+    # so the linker would otherwise strip libBionicSX2.a to 85KB.
     target_link_libraries(BionicSX2_App PRIVATE
-        BionicSX2
+        -Wl,-force_load,$<TARGET_FILE:BionicSX2>
         "-framework Metal"
         "-framework UIKit"
+        "-framework Foundation"
+        "-framework AudioToolbox"
         "-framework AVFoundation"
         "-framework GameController"
         "-framework CoreMotion"
-        "-framework AudioToolbox"
+        "-framework QuartzCore"
+        "-framework CoreGraphics"
     )
 
     target_compile_features(BionicSX2 PUBLIC cxx_std_20)

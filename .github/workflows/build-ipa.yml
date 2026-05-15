@@ -51,16 +51,16 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
-      - name: Upload Core Library
-        uses: actions/upload-artifact@v4
-        with:
-          name: BionicSX2-Core
-          path: build-ios/libBionicSX2.a
-          retention-days: 7
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          cp -r build-ios/BionicSX2_App.app Payload/
+          zip -r BionicSX2.ipa Payload/
+          echo "IPA size: $(du -sh BionicSX2.ipa)"
 
-      - name: Upload App Bundle
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: BionicSX2-App
-          path: build-ios/BionicSX2_App.app/
+          name: BionicSX2-IPA
+          path: BionicSX2.ipa
           retention-days: 7
