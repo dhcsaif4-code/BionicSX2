@@ -1,0 +1,9 @@
+#pragma once
+#define ICON_PF_ARROW_DOWN ""
+#define ICON_PF_ARROW_RIGHT ""
+#define ICON_PF_ENTER ""
+#define ICON_PF_ESC ""
+#define ICON_PF_DUMBELL ""
+#define ICON_PF_ACHIEVEMENTS_MISSABLE ""
+#define ICON_PF_ACHIEVEMENTS_PROGRESSION ""
+#define ICON_PF_ACHIEVEMENTS_WIN ""
