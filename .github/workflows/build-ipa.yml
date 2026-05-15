@@ -32,6 +32,12 @@ jobs:
       - name: Build iOS Dependencies
         run: bash scripts/build_ios_deps.sh
 
+      - name: Check built libs
+        run: |
+          find ios-deps/install/lib -name "*.a" | sort
+          echo "---"
+          find ios-deps/build -maxdepth 1 -type d | sort
+
       - name: Configure BionicSX2
         run: |
           cmake -S . -B build-ios \
