@@ -3,11 +3,24 @@
 #import <Foundation/Foundation.h>
 #include "PrecompiledHeader.h"
 #include "common/Assertions.h"
+#include "common/CocoaTools.h"
+#include "common/Darwin/DarwinMisc.h"
+#include "common/Threading.h"
+#include "common/HostSys.h"
 #include "GS/GS.h"
 #include "GS/Renderers/SW/GSRendererSW.h"
 #include "GS/GSState.h"
-#include "R5900OpcodeTables.h"
 #include "GS/Renderers/Common/GSVertexTrace.h"
+#include "GameDatabase.h"
+#include "Host/AudioStream.h"
+#include "Input/InputManager.h"
+#include "DebugTools/DebugInterface.h"
+#include "SaveState.h"
+#include "R5900OpcodeTables.h"
+#include "Recording/InputRecording.h"
+#include "DebugTools/Breakpoints.h"
+#include "DebugTools/SymbolGuardian.h"
+#include "GSDumpReplayer.h"
 
 // AUDIT: VifUnpackSSE_Init forced no-op for iOS (Phase 0-B)
 void VifUnpackSSE_Init() {}

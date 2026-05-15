@@ -1,7 +1,7 @@
 // AUDIT REFERENCE: Section 8.3, 4.3
 // STATUS: NEW
 #import "BionicSX2Bridge.h"
-#include "ios/platform/iOSVMManager.h"
+#include "iOSVMManager.h"
 #include "GS/GS.h"
 #include "common/WindowInfo.h"
 #include "SIO/Pad/Pad.h"
