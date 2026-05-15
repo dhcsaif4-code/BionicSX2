@@ -24,6 +24,18 @@ mkdir -p "$BLD/zlib" && cd "$BLD/zlib"
 cmake "$SRC/zlib" $FLAGS
 make -j$(sysctl -n hw.logicalcpu) install
 
+# ── libpng ────────────────────────────────────────────
+cd "$SRC"
+[ -d libpng ] || git clone --depth 1 \
+  https://github.com/glennrp/libpng.git
+mkdir -p "$BLD/libpng" && cd "$BLD/libpng"
+cmake "$SRC/libpng" $FLAGS \
+  -DPNG_SHARED=OFF \
+  -DPNG_STATIC=ON \
+  -DPNG_TESTS=OFF \
+  -DZLIB_ROOT="$INSTALL"
+make -j$(sysctl -n hw.logicalcpu) install
+
 # ── zstd ──────────────────────────────────────────────
 cd "$SRC"
 [ -d zstd ] || git clone --depth 1 https://github.com/facebook/zstd.git
