@@ -68,24 +68,23 @@ jobs:
             find build-ios -name "*.a" -o -name "*.app" -type d 2>/dev/null
           fi
 
-      - name: Find .app location
+      - name: Create .app bundle and IPA
         run: |
-          echo "=== Searching for .app bundles ==="
-          find . -name "*.app" -type d 2>/dev/null
-          echo "=== Searching for BionicSX2 binary ==="
-          find . -name "BionicSX2" -type f 2>/dev/null
-          echo "=== build-ios/ contents ==="
-          ls -la build-ios/ 2>/dev/null || echo "build-ios/ empty or missing"
+          # Find the actual binary
+          BINARY=$(find . -name "BionicSX2" -type f \
+                   ! -name "*.cpp" ! -name "*.h" | head -1)
+          echo "Binary found at: $BINARY"
+          echo "Binary size: $(du -sh $BINARY)"
 
-      - name: Create IPA
-        run: |
-          APP=$(find . -name "*.app" -type d | head -1)
-          echo "Found .app at: $APP"
-          mkdir -p ipa-staging/Payload
-          cp -r "$APP" ipa-staging/Payload/
-          cd ipa-staging
-          zip -r ../BionicSX2.ipa Payload/
-          cd ..
+          # Build proper .app structure
+          mkdir -p BionicSX2.app/
+          cp "$BINARY" BionicSX2.app/BionicSX2
+          cp ios/Info.plist BionicSX2.app/Info.plist
+
+          # Package as IPA
+          mkdir -p Payload
+          cp -r BionicSX2.app Payload/
+          zip -r BionicSX2.ipa Payload/
           echo "IPA size: $(du -sh BionicSX2.ipa)"
 
       - name: Upload IPA

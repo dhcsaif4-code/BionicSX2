@@ -16,11 +16,16 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>MinimumOSVersion</key>
-    <string>15.0</string>
+    <string>16.0</string>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
         <string>arm64</string>
         <string>metal</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UIBackgroundModes</key>
     <array>
