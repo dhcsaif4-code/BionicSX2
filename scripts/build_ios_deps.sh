@@ -133,7 +133,7 @@ fi
 # lzma/xz (pcsx2/3rdparty/lzma — builds as pcsx2-lzma)
 if [ -d "$REPO_ROOT/pcsx2/3rdparty/lzma" ]; then
     build_lib "lzma" "$REPO_ROOT/pcsx2/3rdparty/lzma" \
-        -DCMAKE_C_FLAGS="-march=armv8-a+crc"
+        -DCMAKE_C_FLAGS="-mcpu=apple-a14"
 fi
 
 # xxhash — header-only
