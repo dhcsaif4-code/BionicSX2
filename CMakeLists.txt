@@ -472,8 +472,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/fmt/include
         pcsx2/3rdparty/fast_float/include
         pcsx2/3rdparty/demangler/include
-        pcsx2/3rdparty/imgui
-        pcsx2/3rdparty/imgui/backends
+        pcsx2/3rdparty/imgui/include
+        pcsx2/3rdparty/imgui/src
         pcsx2/3rdparty/vixl/include
         pcsx2/3rdparty
     )
