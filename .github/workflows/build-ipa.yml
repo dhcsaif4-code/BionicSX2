@@ -51,6 +51,30 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
+      - name: Manual link — inject core into app binary
+        run: |
+          # Find all pieces
+          LIB=$(find build-ios -name "libBionicSX2.a" | head -1)
+          APP_BIN=$(find build-ios -name "BionicSX2_App" -type f | head -1)
+          echo "Library: $LIB ($(du -sh $LIB))"
+          echo "App binary: $APP_BIN ($(du -sh $APP_BIN))"
+
+          # Re-link manually using clang
+          clang++ \
+            -target arm64-apple-ios16.0 \
+            -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+            "$APP_BIN" "$LIB" \
+            -framework Metal \
+            -framework UIKit \
+            -framework AVFoundation \
+            -framework GameController \
+            -framework AudioToolbox \
+            -framework CoreMotion \
+            -framework Foundation \
+            -o build-ios/BionicSX2_App.app/BionicSX2_App
+
+          echo "Final binary: $(du -sh build-ios/BionicSX2_App.app/BionicSX2_App)"
+
       - name: Create IPA
         run: |
           mkdir -p Payload
