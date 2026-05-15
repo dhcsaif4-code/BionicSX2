@@ -282,7 +282,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
         # ---- Host ----
         pcsx2/pcsx2/Host/AudioStream.cpp
-        pcsx2/pcsx2/Host/CubebAudioStream.cpp
+        # CubebAudioStream.cpp — excluded on iOS (uses macOS CoreAudio)
 
         # ---- ImGui ----
         pcsx2/pcsx2/ImGui/FullscreenUI.cpp
@@ -396,7 +396,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/lib/libpng.a"
         "${IOS_DEPS}/lib/libz.a"
         "${IOS_DEPS}/lib/libSoundTouch.a"
-        "${IOS_DEPS}/lib/libcubeb.a"
         "${IOS_DEPS}/lib/libchdr.a"
         "-framework Metal"
         "-framework UIKit"

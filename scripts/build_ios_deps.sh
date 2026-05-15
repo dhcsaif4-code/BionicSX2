@@ -84,30 +84,7 @@ cmake "$SRC/soundtouch" $FLAGS \
   -DSOUNDTOUCH_BUILD_SHARED_LIBS=OFF
 make -j$(sysctl -n hw.logicalcpu) install
 
-# ── cubeb ─────────────────────────────────────────────
-cd "$SRC"
-[ -d cubeb ] || git clone --depth 1 \
-  https://github.com/mozilla/cubeb.git
-mkdir -p "$BLD/cubeb" && cd "$BLD/cubeb"
-sed -i.bak 's/find_package(Sanitizers)//' "$SRC/cubeb/CMakeLists.txt"
-sed -i.bak 's/add_sanitizers(cubeb)//' "$SRC/cubeb/CMakeLists.txt"
-cmake "$SRC/cubeb" $FLAGS \
-  -DBUILD_TESTS=OFF \
-  -DBUILD_TOOLS=OFF \
-  -DUSE_SANITIZERS=OFF \
-  -DCMAKE_DISABLE_FIND_PACKAGE_Sanitizers=ON \
-  -DUSE_AUDIOUNIT=ON \
-  -DUSE_COREAUDIO=OFF \
-  -DUSE_OSS=OFF \
-  -DUSE_ALSA=OFF \
-  -DUSE_PULSE=OFF \
-  -DUSE_JACK=OFF \
-  -DUSE_SNDIO=OFF \
-  -DUSE_SUN=OFF \
-  -DUSE_OPENSL=OFF \
-  -DUSE_WASAPI=OFF \
-  -DUSE_WINMM=OFF
-make -j$(sysctl -n hw.logicalcpu) install
+# cubeb — cannot build for iOS (macOS-only CoreAudio backend), stubbed
 
 # ── rcheevos ──────────────────────────────────────────
 cd "$SRC"

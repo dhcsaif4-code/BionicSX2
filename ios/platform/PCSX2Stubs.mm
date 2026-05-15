@@ -236,6 +236,24 @@ extern "C" int plutosvg_document_render(plutosvg_document_t*, void*, plutovg_can
 extern "C" void plutosvg_document_destroy(plutosvg_document_t*) {}
 
 // =====================================================================
+// cubeb stubs (cannot build for iOS — macOS-only CoreAudio)
+// =====================================================================
+extern "C" {
+  int cubeb_init(void** ctx, const char* name, const char* backend) { *ctx = nullptr; return 0; }
+  void cubeb_destroy(void* ctx) {}
+  int cubeb_stream_init(void* ctx, void** stm, const char* name, void* in, void* in_params, void* out, void* out_params, unsigned int latency, void* cb, void* state_cb, void* user) { *stm = nullptr; return 0; }
+  void cubeb_stream_destroy(void* stm) {}
+  int cubeb_stream_start(void* stm) { return 0; }
+  int cubeb_stream_stop(void* stm) { return 0; }
+  int cubeb_stream_get_latency(void* stm, unsigned int* latency) { *latency = 0; return 0; }
+  int cubeb_stream_set_volume(void* stm, float volume) { return 0; }
+  const char* cubeb_get_backend_id(void* ctx) { return "ios-stub"; }
+  int cubeb_get_max_channel_count(void* ctx, unsigned int* max) { *max = 2; return 0; }
+  int cubeb_get_min_latency(void* ctx, void* params, unsigned int* latency) { *latency = 256; return 0; }
+  int cubeb_get_preferred_sample_rate(void* ctx, unsigned int* rate) { *rate = 44100; return 0; }
+}
+
+// =====================================================================
 // LZMA/7-Zip stubs (ios-deps builds lzma but PCSX2 uses 7z directly)
 // =====================================================================
 extern "C" void CrcGenerateTable(void) {}
