@@ -209,13 +209,16 @@ else
         -DCMAKE_CXX_FLAGS="-DSOUNDTOUCH_DISABLE_X86_OPTIMIZATIONS"
 fi
 
-# cubeb
-if [ -d "$REPO_ROOT/pcsx2/3rdparty/cubeb" ]; then
+# cubeb — CMakeLists.txt is at the repo root, not in src/
+if [ -f "$REPO_ROOT/pcsx2/3rdparty/cubeb/CMakeLists.txt" ]; then
+    build_lib "cubeb" "$REPO_ROOT/pcsx2/3rdparty/cubeb" \
+        -DBUILD_TESTS=OFF -DBUILD_TOOLS=OFF -DUSE_SANITIZERS=OFF
+elif [ -f "$REPO_ROOT/pcsx2/3rdparty/cubeb/src/CMakeLists.txt" ]; then
     build_lib "cubeb" "$REPO_ROOT/pcsx2/3rdparty/cubeb/src" \
         -DBUILD_TESTS=OFF -DBUILD_TOOLS=OFF -DUSE_SANITIZERS=OFF
 else
     ensure_src "cubeb" "https://github.com/mozilla/cubeb.git" >/dev/null
-    build_lib "cubeb" "$SRC_DIR/cubeb/src" \
+    build_lib "cubeb" "$SRC_DIR/cubeb" \
         -DBUILD_TESTS=OFF -DBUILD_TOOLS=OFF -DUSE_SANITIZERS=OFF
 fi
 
