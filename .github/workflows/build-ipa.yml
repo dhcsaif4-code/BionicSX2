@@ -68,28 +68,29 @@ jobs:
             find build-ios -name "*.a" -o -name "*.app" -type d 2>/dev/null
           fi
 
-      - name: Create IPA manually
+      - name: Find .app location
         run: |
-          set -euxo pipefail
-          APP_DIR="build-ios/BionicSX2.app"
-          if [ ! -d "$APP_DIR" ]; then
-            echo "Looking for .app bundle..."
-            APP_DIR=$(find build-ios -name "*.app" -type d 2>/dev/null | head -1)
-          fi
-          if [ -z "$APP_DIR" ] || [ ! -d "$APP_DIR" ]; then
-            echo "ERROR: .app bundle not found"
-            exit 1
-          fi
-          echo "Using app bundle: $APP_DIR"
-          mkdir -p build-ios/Payload
-          cp -r "$APP_DIR" build-ios/Payload/
-          cd build-ios
-          zip -r BionicSX2.ipa Payload/
-          echo "IPA created: $(du -sh BionicSX2.ipa)"
+          echo "=== Searching for .app bundles ==="
+          find . -name "*.app" -type d 2>/dev/null
+          echo "=== Searching for BionicSX2 binary ==="
+          find . -name "BionicSX2" -type f 2>/dev/null
+          echo "=== build-ios/ contents ==="
+          ls -la build-ios/ 2>/dev/null || echo "build-ios/ empty or missing"
+
+      - name: Create IPA
+        run: |
+          APP=$(find . -name "*.app" -type d | head -1)
+          echo "Found .app at: $APP"
+          mkdir -p ipa-staging/Payload
+          cp -r "$APP" ipa-staging/Payload/
+          cd ipa-staging
+          zip -r ../BionicSX2.ipa Payload/
+          cd ..
+          echo "IPA size: $(du -sh BionicSX2.ipa)"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: BionicSX2-IPA
-          path: build-ios/BionicSX2.ipa
+          path: BionicSX2.ipa
           retention-days: 7
