@@ -36,6 +36,20 @@ build_lib() {
     local NAME="$1"; local SRC="$2"; shift 2
     echo ">>> Building $NAME (src: $SRC)"
     mkdir -p "$BUILD_DIR/$NAME"
+
+    # CMake 4.x requires cmake_minimum_required in all CMakeLists.txt.
+    # Vendored libraries may not have it. Add it if missing.
+    if [ -f "$SRC/CMakeLists.txt" ]; then
+        if ! grep -q "cmake_minimum_required" "$SRC/CMakeLists.txt" 2>/dev/null; then
+            echo "  Patching $SRC/CMakeLists.txt: adding cmake_minimum_required"
+            sed -i '' '1s/^/cmake_minimum_required(VERSION 3.20)\nproject('"$NAME"')\n/' "$SRC/CMakeLists.txt"
+        fi
+        if ! grep -q "^project(" "$SRC/CMakeLists.txt" 2>/dev/null; then
+            echo "  Patching $SRC/CMakeLists.txt: adding project()"
+            sed -i '' '1s/^/project('"$NAME"')\n/' "$SRC/CMakeLists.txt"
+        fi
+    fi
+
     cmake -S "$SRC" -B "$BUILD_DIR/$NAME" \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
