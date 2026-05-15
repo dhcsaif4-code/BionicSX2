@@ -388,7 +388,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/lib/libzstd.a"
         "${IOS_DEPS}/lib/liblz4.a"
         "${IOS_DEPS}/lib/libfreetype.a"
-        "${IOS_DEPS}/lib/libzip.a"
         "${IOS_DEPS}/lib/libpng.a"
         "${IOS_DEPS}/lib/libz.a"
         "-framework Metal"

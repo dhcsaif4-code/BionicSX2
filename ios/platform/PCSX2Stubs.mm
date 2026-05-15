@@ -143,6 +143,29 @@ extern "C" void* _aligned_malloc(size_t size, size_t align) {
 }
 extern "C" void _aligned_free(void* ptr) { free(ptr); }
 
+// libzip stubs — excluded from iOS bringup build
+extern "C" {
+  void* zip_open(const char*, int, int*) { return nullptr; }
+  void* zip_open_from_source(void*, int, void*) { return nullptr; }
+  int   zip_close(void*) { return -1; }
+  const char* zip_strerror(void*) { return "stubbed"; }
+  int   zip_name_locate(void*, const char*, int) { return -1; }
+  void* zip_fopen_index(void*, int, int) { return nullptr; }
+  int   zip_fclose(void*) { return -1; }
+  long  zip_fread(void*, void*, size_t) { return -1; }
+  int   zip_stat_index(void*, int, int, void*) { return -1; }
+  int   zip_add(void*, const char*, void*) { return -1; }
+  int   zip_file_add(void*, const char*, void*, int) { return -1; }
+  int   zip_set_file_compression(void*, int, int, int) { return -1; }
+  void* zip_source_buffer(void*, const void*, size_t, int) { return nullptr; }
+  void* zip_source_buffer_create(const void*, size_t, int, void*) { return nullptr; }
+  void* zip_source_file_create(const char*, int, int, void*) { return nullptr; }
+  int   zip_source_free(void*) { return -1; }
+  int   zip_source_begin_write(void*) { return -1; }
+  int   zip_source_commit_write(void*) { return -1; }
+  int   zip_source_write(void*, const void*, size_t) { return -1; }
+}
+
 // Misc
 extern "C" void pxOnAssertFail(const char*, int, const char*, const char*) {}
 extern "C" void GetValidDrive() {}

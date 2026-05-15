@@ -66,26 +66,11 @@ LZMA=$(find_src lzma \
 FREETYPE=$(find_src freetype \
   "$ROOT/ios-deps/src/freetype")
 
-LIBZIP=$(find_src libzip \
-  "$ROOT/ios-deps/src/libzip")
-
 build_lib zlib "$ZLIB"
 build_lib zstd "$ZSTD" -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_SHARED=OFF
 build_lib lz4  "$LZ4"  -DLZ4_BUILD_CLI=OFF
 build_lib lzma "$LZMA"
 build_lib freetype "$FREETYPE" -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BZIP2=ON
-build_lib libzip "$LIBZIP" \
-  -DBUILD_TOOLS=OFF \
-  -DBUILD_REGRESS=OFF \
-  -DBUILD_EXAMPLES=OFF \
-  -DBUILD_DOC=OFF \
-  -DENABLE_LZMA=OFF \
-  -DENABLE_ZSTD=OFF \
-  -DENABLE_BZIP2=OFF \
-  -DENABLE_OPENSSL=OFF \
-  -DENABLE_MBEDTLS=OFF \
-  -DENABLE_GNUTLS=OFF \
-  -DCMAKE_C_FLAGS="-U_WIN32 -U__WIN32__ -UWIN32"
 
 echo "=== Built libraries ==="
 find "$INSTALL_DIR" -name "*.a" | sort
