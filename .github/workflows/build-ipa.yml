@@ -51,6 +51,13 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
+      - name: Build with full error output
+        run: |
+          cd build-ios
+          make -k 2>&1 | grep -E "error:|fatal error:|undefined|cannot" \
+            | grep -v "warning" \
+            | head -30
+
       - name: Create IPA
         run: |
           mkdir -p Payload
