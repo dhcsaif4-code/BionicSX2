@@ -29,16 +29,23 @@ bool CocoaTools::CreateMetalLayer(WindowInfo* wi)
 		return ret;
 	}
 
+	// PORTED: iOS — layer is created by MetalViewController which overrides
+	// layerClass to return [CAMetalLayer class]. Layer has already been set.
+	// If no layer exists on the view, create one and add as sublayer.
+	CAMetalLayer* existingLayer = (__bridge CAMetalLayer*)wi->surface_handle;
+	if (existingLayer)
+	{
+		[existingLayer setContentsScale:[[UIScreen mainScreen] scale]];
+		return true;
+	}
+
+	// PORTED: NSView → UIView (Audit Section 4.3)
 	CAMetalLayer* layer = [CAMetalLayer layer];
 	if (!layer)
 	{
 		Console.Error("Failed to create Metal layer.");
 		return false;
 	}
-
-	// PORTED: NSView → UIView (Audit Section 4.3)
-	UIView* view = (__bridge UIView*)wi->window_handle;
-	view.layer = layer;
 	[layer setContentsScale:[[UIScreen mainScreen] scale]];
 	wi->surface_handle = (__bridge_retained void*)layer;
 	return true;
