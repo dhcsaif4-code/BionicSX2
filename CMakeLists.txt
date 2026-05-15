@@ -153,7 +153,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     target_link_libraries(BionicSX2_App PRIVATE BionicSX2)
 
-    target_compile_features(BionicSX2 INTERFACE cxx_std_17)
+    target_compile_features(BionicSX2 PUBLIC cxx_std_17)
     target_compile_features(BionicSX2_App PRIVATE cxx_std_17)
 
     target_compile_options(BionicSX2 PRIVATE
@@ -204,8 +204,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         PCSX2_TARGET_IOS=1
         TARGET_OS_IOS=1
         VIXL_CODE_BUFFER_MMAP=0
-        ARCH_ARM64=1
     )
+    # ARCH_ARM64 is defined by Pcsx2Defs.h — do not duplicate
 
     # Phase 0-B: Exclude SW JIT files from iOS build
     # These are NOT added to sources for iOS
