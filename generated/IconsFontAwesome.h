@@ -68,3 +68,4 @@
 #define ICON_FA_POWER_OFF ""
 #define ICON_FA_XMARK ""
 #define ICON_FA_SQUARE_XMARK ""
+#define ICON_FA_STOPWATCH ""
