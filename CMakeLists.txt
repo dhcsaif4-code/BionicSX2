@@ -85,7 +85,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/FiFo.cpp
         pcsx2/pcsx2/FPU.cpp
         pcsx2/pcsx2/FW.cpp
-        pcsx2/pcsx2/GameDatabase.cpp
+        # pcsx2/pcsx2/GameDatabase.cpp  # needs ryml (rapidyaml) — excluded
         pcsx2/pcsx2/GameList.cpp
         pcsx2/pcsx2/Gif.cpp
         pcsx2/pcsx2/Gif_Logger.cpp
@@ -97,7 +97,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/pcsx2/Hw.cpp
         pcsx2/pcsx2/HwRead.cpp
         pcsx2/pcsx2/HwWrite.cpp
-        pcsx2/pcsx2/INISettingsInterface.cpp
+        # pcsx2/pcsx2/INISettingsInterface.cpp  # needs simpleini — excluded
         pcsx2/pcsx2/Interpreter.cpp
         pcsx2/pcsx2/IopBios.cpp
         pcsx2/pcsx2/IopCounters.cpp
