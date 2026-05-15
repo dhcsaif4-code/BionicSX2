@@ -104,6 +104,8 @@ OBJS=()
 for f in "$RC_SRC"/rc_*.c "$RC_SRC"/rapi/*.c \
           "$RC_SRC"/rhash/*.c "$RC_SRC"/rurl/*.c; do
   [ -f "$f" ] || continue
+  # Skip libretro integration — not needed for PCSX2
+  [[ "$f" == *"rc_libretro"* ]] && continue
   OBJ="$OBJ_DIR/$(basename ${f%.c}).o"
   xcrun clang \
     -target arm64-apple-ios16.0 \
