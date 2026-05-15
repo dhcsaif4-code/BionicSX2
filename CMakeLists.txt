@@ -174,6 +174,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/common       # for #include "Pcsx2Defs.h" without prefix
         pcsx2/3rdparty/fmt/include
         pcsx2/3rdparty/fast_float/include
+        pcsx2/3rdparty/ccc/src
         pcsx2/3rdparty
     )
 
