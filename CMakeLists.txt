@@ -461,6 +461,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         -Wno-macro-redefined # ARCH_ARM64 redefined in Pcsx2Defs.h
     )
 
+    # Catch-all: collect ALL available 3rdparty include directories
+    # so newly added libraries resolve without editing CMakeLists.txt.
+    # Each glob is expanded at cmake-configure time, not build time.
+    file(GLOB THIRDPARTY_INCLUDE_DIRS
+        pcsx2/3rdparty/*/include
+        pcsx2/3rdparty/*/src
+    )
+    # Also add the root 3rdparty and key variant directories
+    list(APPEND THIRDPARTY_INCLUDE_DIRS
+        pcsx2/3rdparty
+        pcsx2/3rdparty/promptfont
+        pcsx2/3rdparty/soundtouch/soundtouch
+        pcsx2/3rdparty/libzip/lib
+        pcsx2/3rdparty/cubeb/include
+        pcsx2/3rdparty/imgui/src
+    )
+
     target_include_directories(BionicSX2 PRIVATE
         "${IOS_DEPS}/include"
         "${CMAKE_SOURCE_DIR}/generated"
@@ -469,28 +486,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2              # for #include "common/xxx.h" and "pcsx2/xxx.h" style
         pcsx2/pcsx2        # for direct #include "GS/xxx.h" style
         pcsx2/common       # for #include "Pcsx2Defs.h" without prefix
-        pcsx2/3rdparty/fmt/include
-        pcsx2/3rdparty/fast_float/include
-        pcsx2/3rdparty/ccc/src
-        pcsx2/3rdparty/demangler/include
-        pcsx2/3rdparty/simpleini/include
-        pcsx2/3rdparty/libzip/lib
-        pcsx2/3rdparty/cpuinfo/include
-        pcsx2/3rdparty/discord-rpc/include
-        pcsx2/3rdparty/libchdr/include
-        pcsx2/3rdparty/ffmpeg/include
-        pcsx2/3rdparty/include
-        pcsx2/3rdparty/lzma/include
-        pcsx2/3rdparty/freesurround/include
-        pcsx2/3rdparty/rapidjson/include
-        pcsx2/3rdparty/promptfont
-        pcsx2/3rdparty/soundtouch/include
-        pcsx2/3rdparty/cubeb/include
-        pcsx2/3rdparty/imgui/include
-        pcsx2/3rdparty/imgui/src
-        pcsx2/3rdparty/vixl/include
-        pcsx2/3rdparty/rcheevos/include
-        pcsx2/3rdparty
+        ${THIRDPARTY_INCLUDE_DIRS}
     )
 
     target_link_libraries(BionicSX2 PRIVATE

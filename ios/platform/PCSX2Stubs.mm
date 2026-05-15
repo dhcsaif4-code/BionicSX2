@@ -113,3 +113,50 @@ extern "C" void GSVertexSW_InitStatic() {}
 extern "C" void ReadOSDConfigParames() {}
 extern "C" void GSDumpReplayer_IsReplaying() {}
 extern "C" void GSDumpReplayer_LoadDump() {}
+
+// =====================================================================
+// libjpeg stubs (ios-deps does not include libjpeg-turbo for bringup)
+// =====================================================================
+#include <csetjmp>
+struct jpeg_error_mgr;
+struct jpeg_compress_struct;
+struct jpeg_decompress_struct;
+
+extern "C" void jpeg_std_error(jpeg_error_mgr*) {}
+extern "C" void jpeg_create_compress(jpeg_compress_struct*, int, size_t) {}
+extern "C" void jpeg_create_decompress(jpeg_decompress_struct*, int, size_t) {}
+extern "C" void jpeg_set_defaults(jpeg_compress_struct*) {}
+extern "C" void jpeg_set_quality(jpeg_compress_struct*, int, int) {}
+extern "C" void jpeg_start_compress(jpeg_compress_struct*, int) {}
+extern "C" int jpeg_write_scanlines(jpeg_compress_struct*, unsigned char**, int) { return 0; }
+extern "C" void jpeg_finish_compress(jpeg_compress_struct*) {}
+extern "C" void jpeg_destroy_compress(jpeg_compress_struct*) {}
+extern "C" int jpeg_read_header(jpeg_decompress_struct*, int) { return 0; }
+extern "C" int jpeg_start_decompress(jpeg_decompress_struct*) { return 0; }
+extern "C" int jpeg_read_scanlines(jpeg_decompress_struct*, unsigned char**, int) { return 0; }
+extern "C" void jpeg_finish_decompress(jpeg_decompress_struct*) {}
+extern "C" void jpeg_destroy_decompress(jpeg_decompress_struct*) {}
+extern "C" void jpeg_mem_src(jpeg_decompress_struct*, const unsigned char*, unsigned long) {}
+
+// =====================================================================
+// plutovg stubs (not in ios-deps for bringup)
+// =====================================================================
+struct plutovg_surface_t;
+struct plutovg_canvas_t;
+extern "C" plutovg_surface_t* plutovg_surface_create_for_data(unsigned char*, int, int, int) { return nullptr; }
+extern "C" void plutovg_surface_destroy(plutovg_surface_t*) {}
+extern "C" plutovg_canvas_t* plutovg_canvas_create(plutovg_surface_t*) { return nullptr; }
+extern "C" void plutovg_canvas_destroy(plutovg_canvas_t*) {}
+extern "C" void plutovg_canvas_scale(plutovg_canvas_t*, double, double) {}
+extern "C" void plutovg_canvas_translate(plutovg_canvas_t*, double, double) {}
+extern "C" void plutovg_convert_argb_to_rgba(unsigned char*, const unsigned char*, int, int, int) {}
+
+// =====================================================================
+// plutosvg stubs (not in ios-deps for bringup)
+// =====================================================================
+struct plutosvg_document_t;
+extern "C" plutosvg_document_t* plutosvg_document_load_from_data(const char*, size_t) { return nullptr; }
+extern "C" float plutosvg_document_get_width(plutosvg_document_t*) { return 0.0f; }
+extern "C" float plutosvg_document_get_height(plutosvg_document_t*) { return 0.0f; }
+extern "C" int plutosvg_document_render(plutosvg_document_t*, void*, plutovg_canvas_t*, void*, void*, void*) { return 0; }
+extern "C" void plutosvg_document_destroy(plutosvg_document_t*) {}

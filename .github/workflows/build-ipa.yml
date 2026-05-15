@@ -48,7 +48,8 @@ jobs:
       - name: Build BionicSX2
         run: |
           set -euxo pipefail
-          cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)"
+          # -k tells make to keep going past errors, surfacing ALL failures in one run
+          cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
       - name: Verify Build Output
         run: |
