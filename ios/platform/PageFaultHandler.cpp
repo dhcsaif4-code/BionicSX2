@@ -13,6 +13,8 @@
 #include "common/Error.h"
 #include "common/Pcsx2Types.h"
 #include "common/HostSys.h"
+#include "common/Darwin/DarwinMisc.h"
+#include "common/Threading.h"
 
 #include <csignal>
 #include <cstring>
