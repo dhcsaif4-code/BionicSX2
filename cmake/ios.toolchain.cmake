@@ -9,8 +9,10 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set(PKG_CONFIG_EXECUTABLE "" CACHE FILEPATH "" FORCE)
-set(CMAKE_FIND_ROOT_PATH "${CMAKE_SOURCE_DIR}/ios-deps/install")
-set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/ios-deps/install" CACHE PATH "" FORCE)
+# CMAKE_FIND_ROOT_PATH and CMAKE_PREFIX_PATH must be set by the caller
+# (either CMakeLists.txt or build_lib in build_ios_deps.sh) because
+# CMAKE_SOURCE_DIR varies per sub-project build.
+# These are set at project configure time, not in the toolchain.
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)

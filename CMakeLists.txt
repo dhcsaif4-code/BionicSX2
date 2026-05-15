@@ -24,7 +24,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # Phase 0-D2: Register missing global-variable source files
     add_compile_definitions(ARCH_ARM64=1)
 
+    set(CMAKE_FIND_ROOT_PATH "${IOS_DEPS}")
     list(PREPEND CMAKE_PREFIX_PATH "${IOS_DEPS}")
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
     find_package(ZLIB      QUIET)
     find_package(PNG       QUIET)

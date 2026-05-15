@@ -39,6 +39,8 @@ build_lib() {
     cmake -S "$SRC" -B "$BUILD_DIR/$NAME" \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+        -DCMAKE_FIND_ROOT_PATH="$INSTALL_DIR" \
+        -DCMAKE_PREFIX_PATH="$INSTALL_DIR" \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=OFF \
         "$@"
@@ -142,19 +144,13 @@ build_lib "libpng" "$SRC_DIR/libpng" \
 # libzip (depends on zstd + zlib)
 if [ -d "$REPO_ROOT/pcsx2/3rdparty/libzip" ]; then
     build_lib "libzip" "$REPO_ROOT/pcsx2/3rdparty/libzip" \
-        -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF \
-        -DBUILD_DOC=OFF -DENABLE_COMMONCRYPTO=ON -DENABLE_GNUTLS=OFF \
-        -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=OFF \
-        -DZLIB_ROOT="$INSTALL_DIR" \
-        -Dzstd_DIR="$INSTALL_DIR/lib/cmake/zstd"
+        -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_SHARED_LIBS=OFF \
+        -DCMAKE_MODULE_PATH="$REPO_ROOT/cmake"
 else
     ensure_src "libzip" "https://github.com/nih-at/libzip.git" "v1.11.2" >/dev/null
     build_lib "libzip" "$SRC_DIR/libzip" \
-        -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF \
-        -DBUILD_DOC=OFF -DENABLE_COMMONCRYPTO=ON -DENABLE_GNUTLS=OFF \
-        -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=OFF \
-        -DZLIB_ROOT="$INSTALL_DIR" \
-        -Dzstd_DIR="$INSTALL_DIR/lib/cmake/zstd"
+        -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_SHARED_LIBS=OFF \
+        -DCMAKE_MODULE_PATH="$REPO_ROOT/cmake"
 fi
 
 # freetype (depends on zlib + libpng)
