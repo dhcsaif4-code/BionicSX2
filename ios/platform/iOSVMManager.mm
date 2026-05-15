@@ -4,6 +4,7 @@
 #import <Foundation/Foundation.h>
 #include "VMManager.h"
 #include "GS/GS.h"
+#include "GS/GSRegs.h"        // GSVSyncMode
 #include "pcsx2/Memory.h"
 #include "pcsx2/R5900.h"
 #include "pcsx2/Hw.h"
@@ -37,7 +38,7 @@ bool StartVM(const char* isoPath) {
     cpuReset();
 
     // Step 4: initialize GS Metal backend (Audit Sec 4.1)
-    if (!GSopen(EmuConfig.GS, GSRendererType::Metal, nullptr)) {
+    if (!GSopen(EmuConfig.GS, GSRendererType::Metal, nullptr, GSVSyncMode::Disabled, false)) {
         NSLog(@"[BionicSX2] GSopen failed");
         SysMemory::Release();
         s_initialized = false;
