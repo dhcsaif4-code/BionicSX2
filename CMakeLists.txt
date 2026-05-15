@@ -168,8 +168,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/include"
         ios/platform
         metal
-        pcsx2/pcsx2
-        pcsx2/common
+        pcsx2              # for #include "common/xxx.h" and "pcsx2/xxx.h" style
+        pcsx2/pcsx2        # for direct #include "GS/xxx.h" style
+        pcsx2/common       # for #include "Pcsx2Defs.h" without prefix
         pcsx2/3rdparty/fmt/include
     )
 
