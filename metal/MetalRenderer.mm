@@ -128,7 +128,7 @@ void MetalRenderer::DoFXAA(GSTexture*, GSTexture*) {}
 void MetalRenderer::DoShadeBoost(GSTexture*, GSTexture*, const float[4]) {}
 bool MetalRenderer::DoCAS(GSTexture*, GSTexture*, bool, const std::array<u32, NUM_CAS_CONSTANTS>&) { return false; }
 void MetalRenderer::DoStretchRect(GSTexture*, const GSVector4&, GSTexture*, const GSVector4&, GSHWDrawConfig::ColorMaskSelector, ShaderConvert, bool) {}
-GSDevice::RenderAPI MetalRenderer::GetRenderAPI() const { return RenderAPI::Metal; }
+RenderAPI MetalRenderer::GetRenderAPI() const { return RenderAPI::Metal; }
 bool MetalRenderer::HasSurface() const { return m_layer != nil; }
 void MetalRenderer::DestroySurface() {}
 bool MetalRenderer::UpdateWindow() { return true; }
