@@ -51,19 +51,22 @@ jobs:
           # -k tells make to keep going past errors, surfacing ALL failures in one run
           cmake --build build-ios --config Release -j"$(sysctl -n hw.logicalcpu)" -- -k
 
-      - name: Manual link — inject core into app binary
+      - name: Relink app with core library
         run: |
-          # Find all pieces
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           LIB=$(find build-ios -name "libBionicSX2.a" | head -1)
-          APP_BIN=$(find build-ios -name "BionicSX2_App" -type f | head -1)
-          echo "Library: $LIB ($(du -sh $LIB))"
-          echo "App binary: $APP_BIN ($(du -sh $APP_BIN))"
 
-          # Re-link manually using clang
+          # Collect all .o files from the app target
+          OBJ_DIR="build-ios/CMakeFiles/BionicSX2_App.dir"
+          OBJS=$(find "$OBJ_DIR" -name "*.o" | tr '\n' ' ')
+          echo "Object files: $OBJS"
+          echo "Library: $LIB ($(du -sh $LIB))"
+
+          # Link everything together into final binary
           clang++ \
             -target arm64-apple-ios16.0 \
-            -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
-            "$APP_BIN" "$LIB" \
+            -isysroot "$SDK" \
+            $OBJS "$LIB" \
             -framework Metal \
             -framework UIKit \
             -framework AVFoundation \
@@ -71,9 +74,11 @@ jobs:
             -framework AudioToolbox \
             -framework CoreMotion \
             -framework Foundation \
+            -framework CoreGraphics \
+            -framework QuartzCore \
             -o build-ios/BionicSX2_App.app/BionicSX2_App
 
-          echo "Final binary: $(du -sh build-ios/BionicSX2_App.app/BionicSX2_App)"
+          echo "Final size: $(du -sh build-ios/BionicSX2_App.app/BionicSX2_App)"
 
       - name: Create IPA
         run: |
