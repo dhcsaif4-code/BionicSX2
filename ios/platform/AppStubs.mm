@@ -78,7 +78,7 @@ namespace ImGui {
 
 // ── Forward declarations ─────────────────────────────
 struct SettingsInterface;
-struct InputBindingKey {};
+struct InputBindingInfo {};
 struct HotkeyInfo;
 struct cdvdSubQ;
 struct Error;
