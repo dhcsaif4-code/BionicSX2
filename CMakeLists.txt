@@ -86,7 +86,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ${COMMON_DIR}/Image.cpp — excluded on iOS, uses webp/jpeg, stubbed via Image_iOS.cpp
         ${COMMON_DIR}/StringUtil.cpp
         ${COMMON_DIR}/SmallString.cpp
-        ${COMMON_DIR}/Log.cpp
         ${COMMON_DIR}/Timer.cpp
         ${COMMON_DIR}/DynamicLibrary.cpp
         ${COMMON_DIR}/HTTPDownloader.cpp
@@ -155,7 +154,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${PCSX2_DIR}/PerformanceMetrics.cpp
         ${PCSX2_DIR}/PINE.cpp
         ${PCSX2_DIR}/R3000A.cpp
-        pcsx2/3rdparty/fmt/src/format.cc
         ${PCSX2_DIR}/R3000AInterpreter.cpp
         ${PCSX2_DIR}/R3000AOpcodeTables.cpp
         ${PCSX2_DIR}/R5900.cpp
@@ -436,10 +434,32 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${IOS_METAL_SOURCES}
     )
 
+    # Log and fmt — add real sources only if submodule is populated
+    if(EXISTS "${COMMON_DIR}/Log.cpp")
+        target_sources(BionicSX2 PRIVATE ${COMMON_DIR}/Log.cpp)
+    else()
+        message(STATUS "MISSING SOURCE: ${COMMON_DIR}/Log.cpp")
+    endif()
+
+    set(FMT_SRC "${CMAKE_SOURCE_DIR}/pcsx2/3rdparty/fmt/src/format.cc")
+    if(EXISTS "${FMT_SRC}")
+        target_sources(BionicSX2 PRIVATE ${FMT_SRC})
+        target_compile_definitions(BionicSX2 PRIVATE FMT_HEADER_ONLY=0)
+    else()
+        message(STATUS "MISSING SOURCE: ${FMT_SRC}")
+    endif()
+
     add_executable(BionicSX2_App
         ${IOS_SWIFT_SOURCES}
         ${IOS_APP_SOURCES}
     )
+
+    # Fallback: if Log.cpp not available from submodule, use stub file
+    if(NOT EXISTS "${COMMON_DIR}/Log.cpp")
+        target_sources(BionicSX2_App PRIVATE
+            ios/platform/FmtLogStubs.cpp
+        )
+    endif()
 
     # Force-load the entire static lib — app .o files don't reference core symbols
     # so the linker would otherwise strip libBionicSX2.a to 85KB.
