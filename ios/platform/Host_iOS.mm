@@ -10,11 +10,14 @@
 #include <string>
 #include <vector>
 
-using FileSelectorCallback = std::function<void(const std::string&)>;
-using FileSelectorFilters = std::vector<std::string>;
-
-namespace Achievements {
-enum class LoginRequestReason : int;
+// Forward declarations + implementations for Host:: functions not declared in any existing header
+namespace Host {
+  bool ShouldPreferHostFileSelector() { return false; }
+  void OpenHostFileSelectorAsync(std::string_view, bool,
+    std::function<void(const std::string&)> cb, std::vector<std::string>, std::string_view) {
+    cb(std::string{});
+  }
+  void OnAchievementsLoginRequested(int) {}
 }
 
 const char* Host::TranslateToCString(const std::string_view context, const std::string_view msg) { return msg.data(); }
@@ -81,13 +84,6 @@ SettingsInterface* Host::GetSettingsInterface() { return nullptr; }
 void Host::SetDefaultUISettings(SettingsInterface& si) {}
 std::unique_ptr<ProgressCallback> Host::CreateHostProgressCallback() { return nullptr; }
 int Host::LocaleSensitiveCompare(std::string_view lhs, std::string_view rhs) { return 0; }
-bool Host::ShouldPreferHostFileSelector() { return false; }
-void Host::OpenHostFileSelectorAsync(std::string_view title, bool select_directory,
-    FileSelectorCallback callback, FileSelectorFilters filters,
-    std::string_view initial_directory) {
-  callback(std::string());
-}
-void Host::OnAchievementsLoginRequested(Achievements::LoginRequestReason) {}
 
 namespace Host { namespace Internal {
 SettingsInterface* GetBaseSettingsLayer() { return nullptr; }
