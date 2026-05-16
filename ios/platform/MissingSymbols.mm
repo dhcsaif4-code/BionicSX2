@@ -125,7 +125,7 @@ template<> bool MemoryInterface::IdempotentWrite<uint8_t>(uint32_t, uint8_t) { r
 // GROUP H — FolderMemoryCard + FolderMemoryCardAggregator
 // ════════════════════════════════════════════════════════════════════════════
 struct McdSizeInfo;
-namespace Pcsx2Config { struct McdOptions {}; }
+namespace Pcsx2Config { struct McdOptions {}; struct GSOptions {}; }
 
 struct FileAccessHelper { ~FileAccessHelper(); };
 FileAccessHelper::~FileAccessHelper() {}
