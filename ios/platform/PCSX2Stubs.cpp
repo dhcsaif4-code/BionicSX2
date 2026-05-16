@@ -1,13 +1,20 @@
+#include <TargetConditionals.h>
 #include "common/Pcsx2Types.h"
 #include "common/Threading.h"
 #include <memory>
 #include <stdlib.h>
 #include <fmt/core.h>
+#include <string>
+#include <vector>
 
 // =====================================================================
 // All C-linkage stubs in one extern "C" block
 // =====================================================================
 extern "C" {
+
+// g_Alloc/g_Free (7-zip/LZMA)
+void* (*g_Alloc)(size_t) = malloc;
+void (*g_Free)(void*) = free;
 
 // DEV9
 void DEV9init() {}
@@ -270,6 +277,7 @@ uint64_t Xzs_GetNumBlocks(void*) { return 0; }
 int Xzs_ReadBackward(void*, void*, int64_t*, void*, void*) { return 0; }
 
 } // extern "C"
+
 extern "C" void dVifUnpack_0(const unsigned char*, bool) {}
 extern "C" void dVifUnpack_1(const unsigned char*, bool) {}
 
@@ -295,4 +303,34 @@ namespace Threading {
 struct ImFontBuilderIO;
 namespace ImGuiFreeType {
   const ImFontBuilderIO* GetFontLoader() { return nullptr; }
+}
+
+// =====================================================================
+// SDLInputSource stubs — SDL does not exist on iOS
+// =====================================================================
+namespace SDLInputSource {
+  void ResetRGBForAllPlayers(SettingsInterface&) {}
+}
+
+// =====================================================================
+// USB namespace stubs — not functional in bringup
+// =====================================================================
+#include "pcsx2/Input/InputManager.h"
+namespace USB {
+  std::string GetConfigDevice(const SettingsInterface&, u32) { return {}; }
+  std::string GetConfigSubKey(std::string_view, std::string_view) { return {}; }
+  std::string GetConfigSection(int) { return {}; }
+  std::string GetConfigSubType(const SettingsInterface&, u32, std::string_view) { return {}; }
+  std::vector<InputBindingKey> GetDeviceBindings(std::string_view, u32) { return {}; }
+  std::vector<InputBindingKey> GetDeviceBindings(u32) { return {}; }
+  std::string GetDeviceIconName(u32) { return {}; }
+  float GetDeviceBindValue(u32, u32) { return 0.0f; }
+  void SetDeviceBindValue(u32, u32, float) {}
+  void InputDeviceConnected(std::string_view) {}
+  void InputDeviceDisconnected(std::string_view) {}
+  void CheckForConfigChanges(const Pcsx2Config&) {}
+  std::string DeviceTypeIndexToName(int) { return {}; }
+  int DeviceTypeNameToIndex(std::string_view) { return -1; }
+  void SetDefaultConfiguration(SettingsInterface*) {}
+  void DoState(StateWrapper&) {}
 }

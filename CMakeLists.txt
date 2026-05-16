@@ -91,6 +91,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${COMMON_DIR}/HTTPDownloader.cpp
         ${COMMON_DIR}/ProgressCallback.cpp
         ${COMMON_DIR}/SettingsWrapper.cpp
+        ${COMMON_DIR}/Error.cpp
+        ${COMMON_DIR}/MD5Digest.cpp
 
         # ---- imgui (3rdparty) ----
         pcsx2/3rdparty/imgui/src/imgui.cpp
@@ -294,6 +296,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${PCSX2_DIR}/DebugTools/SymbolGuardian.cpp
         ${PCSX2_DIR}/DebugTools/SymbolImporter.cpp
 
+        # ---- ccc (debug symbol parsing, used by DebugTools) ----
+        pcsx2/3rdparty/ccc/src/ccc/ast.cpp
+        pcsx2/3rdparty/ccc/src/ccc/elf.cpp
+        pcsx2/3rdparty/ccc/src/ccc/elf_symtab.cpp
+        pcsx2/3rdparty/ccc/src/ccc/importer_flags.cpp
+        pcsx2/3rdparty/ccc/src/ccc/mdebug_analysis.cpp
+        pcsx2/3rdparty/ccc/src/ccc/mdebug_importer.cpp
+        pcsx2/3rdparty/ccc/src/ccc/mdebug_section.cpp
+        pcsx2/3rdparty/ccc/src/ccc/mdebug_symbols.cpp
+        pcsx2/3rdparty/ccc/src/ccc/sndll.cpp
+        pcsx2/3rdparty/ccc/src/ccc/stabs.cpp
+        pcsx2/3rdparty/ccc/src/ccc/stabs_to_ast.cpp
+        pcsx2/3rdparty/ccc/src/ccc/symbol_database.cpp
+        pcsx2/3rdparty/ccc/src/ccc/symbol_file.cpp
+        pcsx2/3rdparty/ccc/src/ccc/symbol_table.cpp
+        pcsx2/3rdparty/ccc/src/ccc/util.cpp
+
         # ---- Recording ----
         ${PCSX2_DIR}/Recording/InputRecording.cpp
         ${PCSX2_DIR}/Recording/InputRecordingControls.cpp
@@ -308,8 +327,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ---- ImGui ----
         ${PCSX2_DIR}/ImGui/FullscreenUI.cpp
         # FullscreenUI_Settings.cpp excluded — includes DEV9/pcap_io.h and USB/USB.h unconditionally
-        # ImGuiFullscreen.cpp excluded — needs plutosvg for SVG icons, not functional in bringup
-        # ${PCSX2_DIR}/ImGui/ImGuiFullscreen.cpp
+        ${PCSX2_DIR}/ImGui/ImGuiFullscreen.cpp
         ${PCSX2_DIR}/ImGui/ImGuiManager.cpp
         ${PCSX2_DIR}/ImGui/ImGuiOverlays.cpp
 
@@ -361,10 +379,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/CocoaTools_iOS.mm
         ios/platform/AudioStream_iOS.mm
         ios/platform/Filesystem_iOS.mm
-        ios/platform/PCSX2Stubs.mm
+        ios/platform/PCSX2Stubs.cpp
         ios/platform/Threading_iOS.cpp
         ios/platform/PageFaultHandler.cpp
         ios/platform/Image_iOS.cpp
+        ios/platform/iOSHost.mm
         ios/ui/BionicSX2Bridge.mm
     )
 
@@ -427,6 +446,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/lib/libchdr-static.a"
         "${IOS_DEPS}/lib/libchdr-lzma.a"
         "${IOS_DEPS}/lib/libcpuinfo.a"
+        "${IOS_DEPS}/lib/librcheevos.a"
         "-framework Metal"
         "-framework UIKit"
         "-framework Foundation"
@@ -470,6 +490,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/include        # xxhash.h, pcap.h, Icons* (no subdir)
         pcsx2/3rdparty/simpleini/include
         pcsx2/3rdparty/freesurround/include
+        pcsx2/3rdparty/ccc/src
     )
 
     # freetype headers — built into ios-deps (Phase 3, Tier 3)
