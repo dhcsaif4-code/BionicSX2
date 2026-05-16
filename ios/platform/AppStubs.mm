@@ -107,61 +107,6 @@ namespace isa_native {
         void PrintStats() {}
     };
 }
-namespace bc7decomp { struct color_rgba; }
-
-// ── SDLInputSource — inline implementation ─────────────
-class SDLInputSource {
-public:
-    SDLInputSource() {}
-    void ResetRGBForAllPlayers(SettingsInterface&) {}
-};
-
-// ── IOCtlSrc — physical disc, RED on iOS (Audit Sec 2.6) ─
-class IOCtlSrc {
-public:
-    IOCtlSrc(std::string) {}
-    ~IOCtlSrc() {}
-    bool Reopen(Error*) { return false; }
-    bool DiscReady() { return false; }
-    int  GetMediaType() const { return -1; }
-    unsigned int GetSectorCount() const { return 0; }
-    int  GetLayerBreakAddress() const { return 0; }
-    bool ReadTOC() const { return false; }
-    bool ReadTrackSubQ(cdvdSubQ*) const { return false; }
-    bool ReadSectors2048(unsigned int, unsigned int, unsigned char*) const { return false; }
-    bool ReadSectors2352(unsigned int, unsigned int, unsigned char*) const { return false; }
-};
-
-// ── SaveStateBase::vuJITFreeze — JIT disabled on iOS ───
-class SaveStateBase {
-public:
-    void vuJITFreeze() {}
-};
-
-// ── RGBA8Image — image loading stub ────────────────────
-class RGBA8Image {
-public:
-    RGBA8Image() {}
-    RGBA8Image(RGBA8Image&&) {}
-    bool LoadFromBuffer(const char*, const void*, size_t) { return false; }
-};
-
-// ── MemoryInterface — Patch system write operations ────
-class MemoryInterface {
-public:
-    void IdempotentWrite8(unsigned int, unsigned char) {}
-    void IdempotentWrite16(unsigned int, unsigned short) {}
-    void IdempotentWrite32(unsigned int, unsigned int) {}
-    void IdempotentWrite64(unsigned int, unsigned long long) {}
-    void IdempotentWriteBytes(unsigned int, void*, unsigned int) {}
-};
-
-// ── HTTPDownloader — use CFNet backend on iOS ──────────
-class HTTPDownloader {
-public:
-    static std::unique_ptr<HTTPDownloader> Create(std::string) { return nullptr; }
-};
-
 // ══════════════════════════════════════════════════════════════
 // C-ABI stubs — moved from CStubs.c (C files produce wrong ABI)
 // These must use C++ linkage to match callers in libBionicSX2.a

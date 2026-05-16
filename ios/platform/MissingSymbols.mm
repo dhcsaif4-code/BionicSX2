@@ -13,10 +13,6 @@
 #include <locale>
 #include <atomic>
 
-// NOTE: fmt headers exist in pcsx2/3rdparty/fmt/include/fmt/
-// but we avoid #include to prevent pulling in massive template code.
-// Instead we manually define minimal complete types that match the ABI.
-
 // ── Primitive types (matches PCSX2 typedefs) ─────────────────
 typedef unsigned char  u8;
 typedef unsigned short u16;
@@ -97,60 +93,39 @@ namespace isa_native {
 }
 
 // ══════════════════════════════════════════════════════════════
-// GROUP 5: Log:: — complete types, no forward declarations
+// GROUP 5: Log:: — using real fmt types via <fmt/format.h>
+// PCSX2 builds fmt as a compiled library (not header-only, no FMT_HEADER_ONLY).
+// On iOS, libfmt.a is NOT linked, so we provide stubs for non-inline fmt symbols.
 // ══════════════════════════════════════════════════════════════
+#include <fmt/format.h>
+#include <cstdarg>
 
-// Define minimal complete types matching fmt::v12 ABI
-namespace fmt { namespace v12 {
-    template<typename Char>
-    class basic_string_view {
-        const Char* data_;
-        size_t size_;
-    public:
-        basic_string_view() : data_(nullptr), size_(0) {}
-        const Char* data() const { return data_; }
-        size_t size() const { return size_; }
-    };
-    using string_view = basic_string_view<char>;
+// Must match PCSX2's exact enum types for correct name mangling
+enum LOGLEVEL {
+    LOGLEVEL_NONE,
+    LOGLEVEL_ERROR,
+    LOGLEVEL_WARNING,
+    LOGLEVEL_INFO,
+    LOGLEVEL_DEV,
+    LOGLEVEL_DEBUG,
+    LOGLEVEL_TRACE,
+    LOGLEVEL_COUNT,
+};
 
-    struct context {};
-
-    template<typename Context>
-    class basic_format_args {
-        // Matches real fmt ABI: desc_ (8 bytes) + pointer (8 bytes) = 16 bytes
-        unsigned long long desc_;
-        const void* data_;
-    public:
-        basic_format_args() : desc_(0), data_(nullptr) {}
-    };
-    using format_args = basic_format_args<context>;
-
-    class locale_ref {
-        const void* locale_;
-    public:
-        locale_ref() : locale_(nullptr) {}
-        template<typename T> T get() const;
-    };
-
-    namespace detail {
-        template<typename T> class buffer {
-            // Matches real fmt ABI: ptr_, size_, capacity_, grow_ (function ptr)
-            // No virtual functions in the real class
-            T* ptr_;
-            size_t size_;
-            size_t capacity_;
-            void (*grow_)(buffer&, size_t);
-        public:
-            buffer() : ptr_(nullptr), size_(0), capacity_(0), grow_(nullptr) {}
-        };
-    }
-}}
-
-typedef int LOGLEVEL;
-typedef int ConsoleColors;
+enum ConsoleColors {
+    Color_Default,
+    Color_Black, Color_Green, Color_Red, Color_Blue,
+    Color_Magenta, Color_Orange, Color_Gray,
+    Color_Cyan, Color_Yellow, Color_White,
+    Color_StrongBlack, Color_StrongRed, Color_StrongGreen,
+    Color_StrongBlue, Color_StrongMagenta, Color_StrongOrange,
+    Color_StrongGray, Color_StrongCyan, Color_StrongYellow,
+    Color_StrongWhite,
+    ConsoleColors_Count,
+};
 
 namespace Log {
-    LOGLEVEL GetMaxLevel()               { return 4; }
+    LOGLEVEL GetMaxLevel()               { return LOGLEVEL_INFO; }
     bool IsConsoleOutputEnabled()        { return true; }
     bool IsFileOutputEnabled()           { return false; }
     void SetConsoleOutputLevel(LOGLEVEL) {}
@@ -160,18 +135,21 @@ namespace Log {
         NSLog(@"[PCSX2] %.*s", (int)msg.size(), msg.data());
     }
     void Writev(LOGLEVEL, ConsoleColors,
-                const char* fmt_str, char*) {
+                const char* fmt_str, va_list) {
         NSLog(@"[PCSX2] %s", fmt_str);
     }
     void WriteFmtArgs(LOGLEVEL, ConsoleColors,
-                      fmt::v12::string_view,
-                      fmt::v12::format_args) {}
+                      fmt::string_view fmt_str,
+                      fmt::format_args) {
+        NSLog(@"[PCSX2] %.*s", (int)fmt_str.size(), fmt_str.data());
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
-// GROUP 6: fmt::v12 — stubs
+// GROUP 6: fmt::v12 — stubs for non-inline functions from libfmt.a
+// Uses `inline namespace v12` matching the real fmt headers exactly.
 // ══════════════════════════════════════════════════════════════
-namespace fmt { namespace v12 {
+namespace fmt { inline namespace v12 {
     void report_error(const char* msg) {
         NSLog(@"[fmt] %s", msg);
     }
@@ -183,9 +161,9 @@ namespace fmt { namespace v12 {
 
     namespace detail {
         void vformat_to(buffer<char>&, string_view,
-                        format_args, ...) {}
+                        format_args, locale_ref) {}
 
-        bool is_printable(unsigned int) { return true; }
+        bool is_printable(uint32_t) { return true; }
     }
 
     template<>
@@ -445,3 +423,59 @@ namespace USB {
 // ══════════════════════════════════════════════════════════════
 struct HotkeyInfo {};
 const HotkeyInfo* g_host_hotkeys = nullptr;
+
+// ══════════════════════════════════════════════════════════════
+// GROUP 23: LZMA/XZ C stubs — GS dump code needs these but
+// they are never called at runtime on iOS.
+// ══════════════════════════════════════════════════════════════
+extern "C" {
+    // LookToRead
+    void LookToRead2_CreateVTable(void*, int) {}
+    void LookToRead2_Init(void*) {}
+
+    // Xz unpacker
+    void XzProps_Init(void*) {}
+    int  XzUnpacker_Code(void*, void*, size_t*, const void*,
+                         size_t*, int, void*) { return 0; }
+    void XzUnpacker_Construct(void*, void*) {}
+    void XzUnpacker_Free(void*) {}
+    void XzUnpacker_Init(void*) {}
+    int  XzUnpacker_PrepareToRandomBlockDecoding(void*) { return 0; }
+    void XzUnpacker_SetOutBuf(void*, void*, size_t) {}
+    int  Xz_Encode(void*, void*, void*, void*, void*, void*,
+                   void*, void*) { return 0; }
+
+    // Xzs (XZ stream)
+    void Xzs_Construct(void*, void*) {}
+    void Xzs_Free(void*, void*) {}
+    unsigned int Xzs_GetNumBlocks(void*) { return 0; }
+    int  Xzs_ReadBackward(void*, void*, void*, void*, void*) { return 0; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// GROUP 24: ZSTD C stubs — GS dump compression/decompression
+// ══════════════════════════════════════════════════════════════
+extern "C" {
+    // ZSTD compression stream
+    void* ZSTD_createCStream(void) { return nullptr; }
+    size_t ZSTD_freeCStream(void*) { return 0; }
+    size_t ZSTD_CCtx_setParameter(void*, int, int) { return 0; }
+    size_t ZSTD_compressStream2(void*, void*, void*,
+                                size_t*, size_t*, int) { return 0; }
+    size_t ZSTD_CStreamInSize(void) { return 0; }
+    size_t ZSTD_CStreamOutSize(void) { return 0; }
+    size_t ZSTD_compressBound(size_t) { return 0; }
+    size_t ZSTD_compress(void*, size_t, const void*,
+                         size_t, int) { return 0; }
+    size_t ZSTD_decompress(void*, size_t, const void*,
+                           size_t) { return 0; }
+    unsigned ZSTD_isError(size_t) { return 1; }
+    size_t ZSTD_getFrameContentSize(const void*, size_t) { return 0; }
+    void*  ZSTD_createDStream(void) { return nullptr; }
+    size_t ZSTD_freeDStream(void*) { return 0; }
+    size_t ZSTD_initDStream(void*) { return 0; }
+    size_t ZSTD_decompressStream(void*, void*, size_t*,
+                                 size_t*) { return 0; }
+    size_t ZSTD_DStreamInSize(void) { return 0; }
+    size_t ZSTD_DStreamOutSize(void) { return 0; }
+}
