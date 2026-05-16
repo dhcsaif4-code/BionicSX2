@@ -6,7 +6,7 @@
 #include <cstdarg>
 
 // ── LOGLEVEL / ConsoleColors (match pcsx2 enums exactly) ─────────────────────
-enum LOGLEVEL : u8 { LOGLEVEL_NONE = 0, LOGLEVEL_ERROR, LOGLEVEL_WARNING,
+enum LOGLEVEL : unsigned char { LOGLEVEL_NONE = 0, LOGLEVEL_ERROR, LOGLEVEL_WARNING,
                      LOGLEVEL_PERF, LOGLEVEL_INFO, LOGLEVEL_VERBOSE,
                      LOGLEVEL_DEBUG, LOGLEVEL_TRACE, LOGLEVEL_COUNT };
 enum ConsoleColors : int { Color_Default = 0 };
