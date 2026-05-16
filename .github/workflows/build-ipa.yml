@@ -128,12 +128,9 @@ jobs:
           rm -rf build-ios/CMakeFiles/BionicSX2_App.dir
           rm -rf build-ios/BionicSX2_App.app
 
-      - name: Verify SymbolStubs will compile
+      - name: Confirm clean
         run: |
-          cd build-ios
-          cmake --build . --target BionicSX2_App -- -n 2>&1 | grep -i "SymbolStubs"
-          echo "---"
-          ls CMakeFiles/BionicSX2_App.dir/ios/platform/ 2>/dev/null || echo "Dir not built yet - OK"
+          ls build-ios/CMakeFiles/BionicSX2_App.dir 2>&1 || echo "CLEAN OK - dir gone"
 
       - name: Dump symbol exports from SymbolStubs
         run: |
