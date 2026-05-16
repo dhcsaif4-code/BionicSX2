@@ -132,17 +132,22 @@ jobs:
         run: |
           ls build-ios/CMakeFiles/BionicSX2_App.dir 2>&1 || echo "CLEAN OK - dir gone"
 
-      - name: Dump symbol exports from SymbolStubs
-        run: |
-          nm build-ios/CMakeFiles/BionicSX2_App.dir/ios/platform/SymbolStubs.cpp.o \
-            | grep -E " T " \
-            | grep -E "Log|GSDrawScanline|applyGameFixes|GameDatabaseSchema"
-
       - name: Build App Target
         run: |
           cd build-ios
           make BionicSX2_App 2>&1
           echo "App exit code: $?"
+
+      - name: Dump symbol exports from SymbolStubs
+        run: |
+          nm build-ios/CMakeFiles/BionicSX2_App.dir/ios/platform/SymbolStubs.cpp.o \
+            | grep -E " T " \
+            | grep -E "Log|GSDrawScanline|applyGameFixes|GameDatabaseSchema"
+          echo "=== Undefined in libBionicSX2.a ==="
+          nm build-ios/libBionicSX2.a 2>/dev/null \
+            | grep -E " U " \
+            | grep -E "Log|GSDrawScanline|applyGameFixes|GameDatabaseSchema" \
+            | sort -u
 
       - name: Create IPA
         run: |
