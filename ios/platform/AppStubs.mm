@@ -2,6 +2,12 @@
 // Linked directly into BionicSX2_App target (NOT into libBionicSX2.a)
 // All stubs use C++ linkage (mangled) — callers in libBionicSX2.a use C++ ABI
 
+// vtlb_DynBackpatchLoadStore — must be C++ linkage to match vtlb.cpp call site
+void vtlb_DynBackpatchLoadStore(
+    unsigned long, unsigned int, unsigned int, unsigned int,
+    unsigned int,  unsigned int, unsigned char, unsigned char,
+    unsigned char, bool, bool, bool) {}
+
 #include <cstdlib>
 #include <cstdint>
 #include <cstdio>

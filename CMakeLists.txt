@@ -86,6 +86,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ${COMMON_DIR}/Image.cpp — excluded on iOS, uses webp/jpeg, stubbed via Image_iOS.cpp
         ${COMMON_DIR}/StringUtil.cpp
         ${COMMON_DIR}/SmallString.cpp
+        ${COMMON_DIR}/Log.cpp
         ${COMMON_DIR}/Timer.cpp
         ${COMMON_DIR}/DynamicLibrary.cpp
         ${COMMON_DIR}/HTTPDownloader.cpp
@@ -154,6 +155,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${PCSX2_DIR}/PerformanceMetrics.cpp
         ${PCSX2_DIR}/PINE.cpp
         ${PCSX2_DIR}/R3000A.cpp
+        pcsx2/3rdparty/fmt/src/format.cc
         ${PCSX2_DIR}/R3000AInterpreter.cpp
         ${PCSX2_DIR}/R3000AOpcodeTables.cpp
         ${PCSX2_DIR}/R5900.cpp
@@ -400,8 +402,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui/AppDelegate.mm
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
-        ios/platform/FmtLogStubs.cpp
-        ios/platform/VtlbStub.c
+        ios/platform/GSDrawScanlineStub.s
+    )
+
+    set_source_files_properties(ios/platform/GSDrawScanlineStub.s
+        PROPERTIES LANGUAGE ASM
     )
 
     # Metal renderer (Phase 11-12)
