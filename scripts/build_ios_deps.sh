@@ -286,8 +286,22 @@ sed -i '' \
 echo "compat.h patched: Windows stat64/fseeki64 -> POSIX stat/fseeko"
 
 # Patch ZIP_OFF_MAX: not generated correctly on iOS; add fallback
-sed -i '' 's/#include "zipconf.h"/#include "zipconf.h"\n#ifndef ZIP_OFF_MAX\n#define ZIP_OFF_MAX INT64_MAX\n#endif/' \
-  libzip/lib/zip_source_file_stdio_named.c
+python3 << 'PYEOF'
+filepath = "libzip/lib/zip_source_file_stdio_named.c"
+with open(filepath, 'r') as f:
+    lines = f.readlines()
+insert_at = 0
+for i, line in enumerate(lines):
+    stripped = line.strip()
+    if stripped and not stripped.startswith('/*') and not stripped.startswith('*') and not stripped.startswith('//'):
+        insert_at = i
+        break
+guard = '#ifndef ZIP_OFF_MAX\n#include <stdint.h>\n#define ZIP_OFF_MAX INT64_MAX\n#endif\n\n'
+lines.insert(insert_at, guard)
+with open(filepath, 'w') as f:
+    f.writelines(lines)
+print(f"ZIP_OFF_MAX guard inserted at line {insert_at+1}")
+PYEOF
 echo "ZIP_OFF_MAX fallback added"
 
 mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
