@@ -1,481 +1,170 @@
-// MissingSymbols.mm — Self-contained stubs, NO external headers
-// All types redeclared manually to avoid #include dependency
-// AUDIT REFERENCE: Phase 0-F all categories
-// BionicSX2 iOS Port
+// BionicSX2 iOS Port — MissingSymbols.mm
+// AUDIT REFERENCE: Phase 0-A, Sections 2.3-ADDENDUM, 13.7
+// STATUS: YELLOW — all stubs for iOS dead-code paths
 
 #import <Foundation/Foundation.h>
-#include <stdlib.h>
+#include "PrecompiledHeader.h"
+#include <stdint.h>
+#include <stddef.h>
 #include <string>
-#include <string_view>
 #include <vector>
 #include <memory>
-#include <optional>
-#include <locale>
-#include <atomic>
+#include <functional>
 
-// ── Primitive types (matches PCSX2 typedefs) ─────────────────
-typedef unsigned char  u8;
-typedef unsigned short u16;
-typedef unsigned int   u32;
-typedef unsigned long long u64;
-typedef signed char    s8;
-typedef signed short   s16;
-typedef signed int     s32;
-typedef signed long long s64;
+// ─── Forward declarations ───────────────────────────────────────────────────
+struct Error;
+struct McdSizeInfo;
+struct cdvdSubQ;
+struct cdvdTD;
+struct Pcsx2Config;
+namespace Pcsx2Config { struct McdOptions; struct GSOptions; }
+struct SettingsInterface;
+struct ProgressCallback;
+struct AudioStreamParameters;
+enum class AudioBackend : uint8_t;
+enum class Achievements { enum LoginRequestReason : uint8_t; };
+struct rc_client_t;
 
-// ══════════════════════════════════════════════════════════════
-// GROUP 1: C-ABI symbols (_prefix) — extern "C" required
-// ══════════════════════════════════════════════════════════════
-extern "C" {
-    // Discord
-    void Discord_Initialize(const char*, void*, int, const char*) {}
-    void Discord_Shutdown(void) {}
-    void Discord_RunCallbacks(void) {}
-    void Discord_UpdatePresence(const void*) {}
-    void Discord_ClearPresence(void) {}
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP A — RGBA8Image
+// ════════════════════════════════════════════════════════════════════════════
+#include "common/Image.h"
 
-    // CRC / 7z
-    void CrcGenerateTable(void) {}
-    void Crc64GenerateTable(void) {}
+RGBA8Image::RGBA8Image() = default;
+RGBA8Image::RGBA8Image(RGBA8Image&&) = default;
+bool RGBA8Image::LoadFromBuffer(const char* filename, const void* data, size_t data_size) { return false; }
 
-    // cplus_demangle
-    char* cplus_demangle(const char*, int) { return nullptr; }
-    int   cplus_demangle_opname(const char*, void*, int) { return 0; }
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP B — isa_native::GSDrawScanline  (SW rasterizer — dead on iOS/Metal)
+// ════════════════════════════════════════════════════════════════════════════
+#include "GS/Renderers/SW/GSDrawScanline.h"
 
-    // _g_Alloc (7z allocator)
-    typedef struct {
-        void* (*Alloc)(void*, size_t);
-        void  (*Free)(void*, void*);
-    } ISzAllocT;
-    static void* _sz_alloc(void*, size_t s) { return malloc(s); }
-    static void  _sz_free(void*, void* p)   { free(p); }
-    ISzAllocT g_Alloc = { _sz_alloc, _sz_free };
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 2: vtlb_DynBackpatchLoadStore — C++ ABI
-// ══════════════════════════════════════════════════════════════
-void vtlb_DynBackpatchLoadStore(
-    unsigned long, unsigned int, unsigned int, unsigned int,
-    unsigned int,  unsigned int, unsigned char, unsigned char,
-    unsigned char, bool, bool, bool) {}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 3: dVifUnpack explicit template specializations
-// ══════════════════════════════════════════════════════════════
-template<int idx> void dVifUnpack(const u8*, bool);
-template<> void dVifUnpack<0>(const u8*, bool) {}
-template<> void dVifUnpack<1>(const u8*, bool) {}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 4: isa_native::GSDrawScanline — complete class body
-// ══════════════════════════════════════════════════════════════
 namespace isa_native {
-    struct GSRasterizerData {};
-    struct GSScanlineLocalData {};
-    struct GSVector4i {};
-    struct GSVertexSW {};
-
-    class GSDrawScanline {
-    public:
-        int _pad[4] = {};
-        GSDrawScanline() {}
-        ~GSDrawScanline() {}
-        void BeginDraw(const GSRasterizerData&,
-                       GSScanlineLocalData&) {}
-        void DrawRect(const GSVector4i&,
-                      const GSVertexSW&,
-                      GSScanlineLocalData&) {}
-        void SetupDraw(GSRasterizerData&) {}
-        void ResetCodeCache() {}
-        void PrintStats() {}
-    };
+  GSDrawScanline::GSDrawScanline()  {}
+  GSDrawScanline::~GSDrawScanline() {}
+  void GSDrawScanline::PrintStats()   {}
+  void GSDrawScanline::ResetCodeCache() {}
+  void GSDrawScanline::BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
+  void GSDrawScanline::SetupDraw(GSRasterizerData&) {}
+  void GSDrawScanline::DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
 }
 
-// ══════════════════════════════════════════════════════════════
-// GROUP 5: Log:: — using real fmt types via <fmt/format.h>
-// PCSX2 builds fmt as a compiled library (not header-only, no FMT_HEADER_ONLY).
-// On iOS, libfmt.a is NOT linked, so we provide stubs for non-inline fmt symbols.
-// ══════════════════════════════════════════════════════════════
-#include <fmt/format.h>
-#include <cstdarg>
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP C — AudioStream backends (Cubeb + SDL — not available on iOS)
+// ════════════════════════════════════════════════════════════════════════════
+#include "common/AudioStream.h"
 
-// Must match PCSX2's exact enum types for correct name mangling
-enum LOGLEVEL {
-    LOGLEVEL_NONE,
-    LOGLEVEL_ERROR,
-    LOGLEVEL_WARNING,
-    LOGLEVEL_INFO,
-    LOGLEVEL_DEV,
-    LOGLEVEL_DEBUG,
-    LOGLEVEL_TRACE,
-    LOGLEVEL_COUNT,
-};
+std::vector<std::string> AudioStream::GetCubebDriverNames() { return {}; }
+std::vector<std::string> AudioStream::GetCubebOutputDevices(const char*) { return {}; }
+std::unique_ptr<AudioStream> AudioStream::CreateCubebAudioStream(
+    uint32_t, const AudioStreamParameters&, const char*, const char*, bool, Error*) { return nullptr; }
+std::unique_ptr<AudioStream> AudioStream::CreateSDLAudioStream(
+    uint32_t, const AudioStreamParameters&, bool, Error*) { return nullptr; }
 
-enum ConsoleColors {
-    Color_Default,
-    Color_Black, Color_Green, Color_Red, Color_Blue,
-    Color_Magenta, Color_Orange, Color_Gray,
-    Color_Cyan, Color_Yellow, Color_White,
-    Color_StrongBlack, Color_StrongRed, Color_StrongGreen,
-    Color_StrongBlue, Color_StrongMagenta, Color_StrongOrange,
-    Color_StrongGray, Color_StrongCyan, Color_StrongYellow,
-    Color_StrongWhite,
-    ConsoleColors_Count,
-};
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP D — SaveStateBase::vuJITFreeze  (JIT freeze — interpreter only on iOS)
+// ════════════════════════════════════════════════════════════════════════════
+#include "SaveState.h"
+void SaveStateBase::vuJITFreeze() {}
 
-namespace Log {
-    LOGLEVEL GetMaxLevel()               { return LOGLEVEL_INFO; }
-    bool IsConsoleOutputEnabled()        { return true; }
-    bool IsFileOutputEnabled()           { return false; }
-    void SetConsoleOutputLevel(LOGLEVEL) {}
-    void SetFileOutputLevel(LOGLEVEL, std::string) {}
-    void SetTimestampsEnabled(bool)      {}
-    void Write(LOGLEVEL, ConsoleColors, std::string_view msg) {
-        NSLog(@"[PCSX2] %.*s", (int)msg.size(), msg.data());
-    }
-    void Writev(LOGLEVEL, ConsoleColors,
-                const char* fmt_str, va_list) {
-        NSLog(@"[PCSX2] %s", fmt_str);
-    }
-    void WriteFmtArgs(LOGLEVEL, ConsoleColors,
-                      fmt::string_view fmt_str,
-                      fmt::format_args) {
-        NSLog(@"[PCSX2] %.*s", (int)fmt_str.size(), fmt_str.data());
-    }
-}
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP E — HTTPDownloader::Create
+// ════════════════════════════════════════════════════════════════════════════
+#include "common/HTTPDownloader.h"
+std::unique_ptr<HTTPDownloader> HTTPDownloader::Create(std::string) { return nullptr; }
 
-// ══════════════════════════════════════════════════════════════
-// GROUP 6: fmt::v12 — stubs for non-inline functions from libfmt.a
-// Uses `inline namespace v12` matching the real fmt headers exactly.
-// ══════════════════════════════════════════════════════════════
-namespace fmt { inline namespace v12 {
-    void report_error(const char* msg) {
-        NSLog(@"[fmt] %s", msg);
-    }
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP F — SDLInputSource  (SDL input — use GameController.framework on iOS)
+// ════════════════════════════════════════════════════════════════════════════
+#include "SDLInputSource.h"
+SDLInputSource::SDLInputSource() {}
+void SDLInputSource::ResetRGBForAllPlayers(SettingsInterface&) {}
 
-    std::string vformat(string_view fmt_str, format_args) {
-        return std::string(fmt_str.data(),
-                           fmt_str.data() + fmt_str.size());
-    }
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP G — MemoryInterface IdempotentWrite  (used by Patch.cpp)
+// ════════════════════════════════════════════════════════════════════════════
+#include "Patch.h"
+void MemoryInterface::IdempotentWrite8(uint32_t, uint8_t)   {}
+void MemoryInterface::IdempotentWrite16(uint32_t, uint16_t) {}
+void MemoryInterface::IdempotentWrite32(uint32_t, uint32_t) {}
+void MemoryInterface::IdempotentWrite64(uint32_t, uint64_t) {}
+void MemoryInterface::IdempotentWriteBytes(uint32_t, void*, uint32_t) {}
+template<> bool MemoryInterface::IdempotentWrite<uint8_t>(uint32_t, uint8_t) { return false; }
 
-    namespace detail {
-        void vformat_to(buffer<char>&, string_view,
-                        format_args, locale_ref) {}
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP H — FolderMemoryCard + FolderMemoryCardAggregator
+// ════════════════════════════════════════════════════════════════════════════
+#include "SIO/Memcard/MemoryCardFile.h"
 
-        bool is_printable(uint32_t) { return true; }
-    }
+FileAccessHelper::~FileAccessHelper() {}
 
-    template<>
-    std::locale locale_ref::get<std::locale>() const {
-        return std::locale::classic();
-    }
-}}
+FolderMemoryCard::FolderMemoryCard()  {}
+bool FolderMemoryCard::IsFormatted() const { return false; }
+bool FolderMemoryCard::Open(std::string, const Pcsx2Config::McdOptions&, uint32_t, bool, std::string, bool) { return false; }
+void FolderMemoryCard::Close(bool) {}
 
-// ══════════════════════════════════════════════════════════════
-// GROUP 7: Threading::WorkSema — exact signatures
-// ══════════════════════════════════════════════════════════════
+FolderMemoryCardAggregator::FolderMemoryCardAggregator() {}
+void FolderMemoryCardAggregator::Open()  {}
+void FolderMemoryCardAggregator::Close() {}
+void FolderMemoryCardAggregator::SetFiltering(bool) {}
+bool FolderMemoryCardAggregator::IsPresent(uint32_t) { return false; }
+bool FolderMemoryCardAggregator::IsPSX(uint32_t)     { return false; }
+uint64_t FolderMemoryCardAggregator::GetCRC(uint32_t) { return 0; }
+void FolderMemoryCardAggregator::GetSizeInfo(uint32_t, McdSizeInfo&) {}
+bool FolderMemoryCardAggregator::Read(uint32_t, uint8_t*, uint32_t, int) { return false; }
+bool FolderMemoryCardAggregator::Save(uint32_t, const uint8_t*, uint32_t, int) { return false; }
+bool FolderMemoryCardAggregator::EraseBlock(uint32_t, uint32_t) { return false; }
+void FolderMemoryCardAggregator::NextFrame(uint32_t) {}
+bool FolderMemoryCardAggregator::ReIndex(uint32_t, bool, const std::string&) { return false; }
+
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP I — IOCtlSrc  (disc drive ioctl — no physical drive on iOS)
+// ════════════════════════════════════════════════════════════════════════════
+#include "CDVD/CDVDdiscReader.h"
+
+IOCtlSrc::IOCtlSrc(std::string)  {}
+IOCtlSrc::~IOCtlSrc() {}
+bool IOCtlSrc::Reopen(Error*)    { return false; }
+bool IOCtlSrc::DiscReady()       { return false; }
+int  IOCtlSrc::GetMediaType() const      { return -1; }
+uint32_t IOCtlSrc::GetSectorCount() const { return 0; }
+uint32_t IOCtlSrc::GetLayerBreakAddress() const { return 0; }
+bool IOCtlSrc::ReadTOC() const              { return false; }
+bool IOCtlSrc::ReadTrackSubQ(cdvdSubQ*) const { return false; }
+bool IOCtlSrc::ReadSectors2048(uint32_t, uint32_t, uint8_t*) const { return false; }
+bool IOCtlSrc::ReadSectors2352(uint32_t, uint32_t, uint8_t*) const { return false; }
+
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP J — Threading::WorkSema
+// ════════════════════════════════════════════════════════════════════════════
+#include "common/Threading.h"
+
 namespace Threading {
-    class WorkSema {
-        std::atomic<int> _state{0};
-    public:
-        void WaitForWork()          {}
-        void WaitForWorkWithSpin()  {}
-        bool CheckForWork()         { return false; }
-        void WaitForEmpty()         {}
-        void WaitForEmptyWithSpin() {}
-        void Kill()                 {}
-        void Reset()                {}
-        void NotifyOfWork(int = 1)  {}
-    };
+  void WorkSema::WaitForWork()         {}
+  void WorkSema::WaitForWorkWithSpin() {}
+  void WorkSema::WaitForEmpty()        {}
+  void WorkSema::WaitForEmptyWithSpin(){}
+  bool WorkSema::CheckForWork()        { return false; }
+  void WorkSema::Kill()                {}
+  void WorkSema::Reset()               {}
 }
 
-// ══════════════════════════════════════════════════════════════
-// GROUP 8: AudioStream backends
-// ══════════════════════════════════════════════════════════════
-struct AudioStreamParameters {};
-struct Error {};
-
-class AudioStream {
-public:
-    struct DeviceInfo { std::string name, display_name; };
-    static std::unique_ptr<AudioStream>
-    CreateCubebAudioStream(u32, const AudioStreamParameters&,
-        const char*, const char*, bool, Error*)
-        { return nullptr; }
-    static std::unique_ptr<AudioStream>
-    CreateSDLAudioStream(u32, const AudioStreamParameters&,
-        bool, Error*)
-        { return nullptr; }
-    static std::vector<std::string>
-    GetCubebDriverNames()
-        { return {}; }
-    static std::vector<DeviceInfo>
-    GetCubebOutputDevices(const char*)
-        { return {}; }
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 9: SDLInputSource
-// ══════════════════════════════════════════════════════════════
-struct SettingsInterface {};
-
-class SDLInputSource {
-public:
-    SDLInputSource() {}
-    void ResetRGBForAllPlayers(SettingsInterface&) {}
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 10: IOCtlSrc — physical disc RED on iOS
-// ══════════════════════════════════════════════════════════════
-struct cdvdSubQ {};
-
-class IOCtlSrc {
-public:
-    IOCtlSrc(std::string) {}
-    ~IOCtlSrc() {}
-    bool Reopen(Error*)           { return false; }
-    bool DiscReady()              { return false; }
-    s32  GetMediaType() const     { return -1; }
-    u32  GetSectorCount() const   { return 0; }
-    s32  GetLayerBreakAddress() const { return 0; }
-    bool ReadTOC() const          { return false; }
-    bool ReadTrackSubQ(cdvdSubQ*) const { return false; }
-    bool ReadSectors2048(u32, u32, u8*) const { return false; }
-    bool ReadSectors2352(u32, u32, u8*) const { return false; }
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 11: MemoryInterface
-// ══════════════════════════════════════════════════════════════
-class MemoryInterface {
-public:
-    template<typename T>
-    bool IdempotentWrite(u32, T)  { return true; }
-    void IdempotentWrite8(u32, u8)   {}
-    void IdempotentWrite16(u32, u16) {}
-    void IdempotentWrite32(u32, u32) {}
-    void IdempotentWrite64(u32, u64) {}
-    void IdempotentWriteBytes(u32, void*, u32) {}
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 12: FolderMemoryCard
-// ══════════════════════════════════════════════════════════════
-struct McdSizeInfo {};
-namespace Pcsx2Config { struct McdOptions {}; }
-
-class FileAccessHelper {
-public:
-    ~FileAccessHelper() {}
-};
-
-class FolderMemoryCard {
-public:
-    FolderMemoryCard() {}
-    ~FolderMemoryCard() {}
-    bool Open(std::string, const Pcsx2Config::McdOptions&,
-              u32, bool, std::string, bool) { return false; }
-    void Close(bool) {}
-    bool IsFormatted() const { return false; }
-};
-
-class FolderMemoryCardAggregator {
-public:
-    FolderMemoryCardAggregator() {}
-    void Open()              {}
-    void Close()             {}
-    void SetFiltering(bool)  {}
-    bool IsPresent(u32)      { return false; }
-    bool IsPSX(u32)          { return false; }
-    void GetSizeInfo(u32, McdSizeInfo&) {}
-    bool Read(u32, u8*, u32, int)  { return false; }
-    bool Save(u32, const u8*, u32, int) { return false; }
-    bool EraseBlock(u32, u32)      { return false; }
-    u64  GetCRC(u32)               { return 0; }
-    void NextFrame(u32)            {}
-    bool ReIndex(u32, bool, const std::string&) { return false; }
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 13: GameDatabase / GameDatabaseSchema
-// ══════════════════════════════════════════════════════════════
-namespace Pcsx2Config { struct GSOptions {}; }
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP K — GameDatabaseSchema::GameEntry
+// ════════════════════════════════════════════════════════════════════════════
+#include "GameDatabase.h"
 
 namespace GameDatabaseSchema {
-    struct GameEntry {
-        void applyGameFixes(void*, bool) const {}
-        void applyGSHardwareFixes(void*) const {}
-        std::string memcardFiltersAsString() const { return {}; }
-        const void* findPatch(u32) const { return nullptr; }
-    };
-}
-namespace GameDatabase {
-    const GameDatabaseSchema::GameEntry*
-    findGame(std::string_view) { return nullptr; }
+  void GameEntry::applyGameFixes(Pcsx2Config&, bool) const {}
+  void GameEntry::applyGSHardwareFixes(Pcsx2Config::GSOptions&) const {}
+  std::string GameEntry::memcardFiltersAsString() const { return {}; }
+  const Patch* GameEntry::findPatch(uint32_t) const { return nullptr; }
 }
 
-// ══════════════════════════════════════════════════════════════
-// GROUP 14: SaveStateBase::vuJITFreeze
-// ══════════════════════════════════════════════════════════════
-class SaveStateBase {
-public:
-    void vuJITFreeze() {}
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 15: HTTPDownloader
-// ══════════════════════════════════════════════════════════════
-class HTTPDownloader {
-public:
-    static std::unique_ptr<HTTPDownloader>
-    Create(std::string) { return nullptr; }
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 16: bc7decomp
-// ══════════════════════════════════════════════════════════════
-namespace bc7decomp {
-    struct color_rgba { u8 r, g, b, a; };
-    bool unpack_bc7(const void*, color_rgba*) { return false; }
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 17: RGBA8Image
-// ══════════════════════════════════════════════════════════════
-class RGBA8Image {
-public:
-    RGBA8Image() {}
-    RGBA8Image(RGBA8Image&&) {}
-    bool LoadFromBuffer(const char*, const void*,
-                        size_t) { return false; }
-};
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 18: FullscreenUI missing functions
-// ══════════════════════════════════════════════════════════════
-struct ImFont {};
-
-namespace FullscreenUI {
-    using FontPair = std::pair<ImFont*, float>;
-    void SwitchToSettings() {}
-    void SwitchToGameSettings() {}
-    void SwitchToGameSettings(const std::string&) {}
-    void DrawSettingsWindow() {}
-    void DrawInputBindingWindow() {}
-    void CancelAllHddOperations() {}
-    void SetSettingsChanged(SettingsInterface*) {}
-    void PopulateGameListDirectoryCache(SettingsInterface*) {}
-    bool IsEditingGameSettings(SettingsInterface*) { return false; }
-    SettingsInterface* GetEditingSettingsInterface()
-        { return nullptr; }
-    SettingsInterface* GetEditingSettingsInterface(bool)
-        { return nullptr; }
-    bool GetEffectiveBoolSetting(SettingsInterface*,
-        const char*, const char*, bool b) { return b; }
-    void DrawFolderSetting(SettingsInterface*,
-        const char*, const char*, const char*,
-        const std::string&, float, FontPair, FontPair) {}
-    void DrawToggleSetting(SettingsInterface*,
-        const char*, const char*, const char*, const char*,
-        bool, bool, bool, float, FontPair, FontPair) {}
-    void DrawIntListSetting(SettingsInterface*,
-        const char*, const char*, const char*, const char*,
-        int, const char* const*, size_t,
-        bool, int, bool, float, FontPair, FontPair) {}
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 19: Host::OnAchievementsLoginRequested
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
+// GROUP L — Host callbacks
+// ════════════════════════════════════════════════════════════════════════════
+#include "Host.h"
 namespace Host {
-    void OnAchievementsLoginRequested(int) {}
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 20: InputManager keyboard
-// ══════════════════════════════════════════════════════════════
-namespace InputManager {
-    std::optional<u32>
-    ConvertHostKeyboardStringToCode(std::string_view)
-        { return std::nullopt; }
-    std::string
-    ConvertHostKeyboardCodeToString(u32) { return {}; }
-    std::optional<std::string>
-    ConvertHostKeyboardCodeToIcon(u32) { return std::nullopt; }
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 21: USB:: — correct signatures (SettingsInterface ref)
-// ══════════════════════════════════════════════════════════════
-namespace USB {
-    std::string_view GetConfigDevice(
-        const SettingsInterface&, u32) { return ""; }
-    std::string_view GetConfigSubType(
-        const SettingsInterface&, u32,
-        std::string_view) { return ""; }
-    void SetDefaultConfiguration(SettingsInterface*) {}
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 22: _g_host_hotkeys
-// ══════════════════════════════════════════════════════════════
-struct HotkeyInfo {};
-const HotkeyInfo* g_host_hotkeys = nullptr;
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 23: LZMA/XZ C stubs — GS dump code needs these but
-// they are never called at runtime on iOS.
-// ══════════════════════════════════════════════════════════════
-extern "C" {
-    // LookToRead
-    void LookToRead2_CreateVTable(void*, int) {}
-    void LookToRead2_Init(void*) {}
-
-    // Xz unpacker
-    void XzProps_Init(void*) {}
-    int  XzUnpacker_Code(void*, void*, size_t*, const void*,
-                         size_t*, int, void*) { return 0; }
-    void XzUnpacker_Construct(void*, void*) {}
-    void XzUnpacker_Free(void*) {}
-    void XzUnpacker_Init(void*) {}
-    int  XzUnpacker_PrepareToRandomBlockDecoding(void*) { return 0; }
-    void XzUnpacker_SetOutBuf(void*, void*, size_t) {}
-    int  Xz_Encode(void*, void*, void*, void*, void*, void*,
-                   void*, void*) { return 0; }
-
-    // Xzs (XZ stream)
-    void Xzs_Construct(void*, void*) {}
-    void Xzs_Free(void*, void*) {}
-    unsigned int Xzs_GetNumBlocks(void*) { return 0; }
-    int  Xzs_ReadBackward(void*, void*, void*, void*, void*) { return 0; }
-}
-
-// ══════════════════════════════════════════════════════════════
-// GROUP 24: ZSTD C stubs — GS dump compression/decompression
-// ══════════════════════════════════════════════════════════════
-extern "C" {
-    // ZSTD compression stream
-    void* ZSTD_createCStream(void) { return nullptr; }
-    size_t ZSTD_freeCStream(void*) { return 0; }
-    size_t ZSTD_CCtx_setParameter(void*, int, int) { return 0; }
-    size_t ZSTD_compressStream2(void*, void*, void*,
-                                size_t*, size_t*, int) { return 0; }
-    size_t ZSTD_CStreamInSize(void) { return 0; }
-    size_t ZSTD_CStreamOutSize(void) { return 0; }
-    size_t ZSTD_compressBound(size_t) { return 0; }
-    size_t ZSTD_compress(void*, size_t, const void*,
-                         size_t, int) { return 0; }
-    size_t ZSTD_decompress(void*, size_t, const void*,
-                           size_t) { return 0; }
-    unsigned ZSTD_isError(size_t) { return 1; }
-    size_t ZSTD_getFrameContentSize(const void*, size_t) { return 0; }
-    void*  ZSTD_createDStream(void) { return nullptr; }
-    size_t ZSTD_freeDStream(void*) { return 0; }
-    size_t ZSTD_initDStream(void*) { return 0; }
-    size_t ZSTD_decompressStream(void*, void*, size_t*,
-                                 size_t*) { return 0; }
-    size_t ZSTD_DStreamInSize(void) { return 0; }
-    size_t ZSTD_DStreamOutSize(void) { return 0; }
+  void OnAchievementsLoginRequested(Achievements::LoginRequestReason) {}
 }
