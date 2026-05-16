@@ -3,10 +3,10 @@
 #include "common/Threading.h"
 #include <memory>
 #include <stdlib.h>
+#include <stdio.h>
 #include <fmt/core.h>
 #include <string>
 #include <vector>
-#include <libkern/OSCacheControl.h>
 
 // =====================================================================
 // All C-linkage stubs in one extern "C" block
@@ -166,7 +166,7 @@ void Discord_ClearPresence() {}
 
 // Misc
 void pxOnAssertFail(const char* msg, int line, const char* file, const char* func) {
-  NSLog(@"[BionicSX2] Assert: %s:%d %s — %s", file, line, func, msg);
+  fprintf(stderr, "[BionicSX2] Assert: %s:%d %s — %s\n", file, line, func, msg);
   abort();
 }
 void ShortSpin() {}
@@ -191,11 +191,6 @@ void DecompressBlockBC1(unsigned int, unsigned int, unsigned int, const unsigned
 void DecompressBlockBC2(unsigned int, unsigned int, unsigned int, const unsigned char*, unsigned char*) {}
 void DecompressBlockBC3(unsigned int, unsigned int, unsigned int, const unsigned char*, unsigned char*) {}
 void bc7decomp_unpack_bc7(const uint8_t*, uint32_t*) {}
-
-// __clear_cache — compiler runtime for ARM64; needed when __builtin___clear_cache is used
-extern "C" void __clear_cache(char* begin, char* end) {
-  sys_icache_invalidate(begin, (size_t)(end - begin));
-}
 
 // libzip
 void* zip_open(const char*, int, int*) { return nullptr; }
