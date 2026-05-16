@@ -84,9 +84,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${COMMON_DIR}/FastJmp.cpp
         ${COMMON_DIR}/FileSystem.cpp
         ${COMMON_DIR}/Image.cpp
-        ${COMMON_DIR}/Log.cpp
         ${COMMON_DIR}/StringUtil.cpp
-        ${COMMON_DIR}/Threading.cpp
         ${COMMON_DIR}/Timer.cpp
 
         # ---- imgui (3rdparty) ----

@@ -292,6 +292,27 @@ namespace Common {
 }
 
 // =====================================================================
+// Log stubs — Log.cpp does not exist in the repo
+// =====================================================================
+#include <fmt/core.h>
+namespace Log {
+  void Write(const char*, const char*,
+             const char*, const char*) {}
+  void WriteFmtArgs(const char*, const char*,
+                    const char*, fmt::string_view,
+                    fmt::format_args) {}
+}
+
+// =====================================================================
+// Threading stubs — Threading.cpp does not exist in the repo
+// =====================================================================
+namespace Threading {
+  void WorkSema::WaitForWork() {}
+  void WorkSema::WaitForEmpty() {}
+  void WorkSema::NotifyOfWork() {}
+}
+
+// =====================================================================
 // Misc stubs
 // =====================================================================
 extern "C" void pxOnAssertFail(const char*, int, const char*, const char*) {}
