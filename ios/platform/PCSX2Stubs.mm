@@ -305,8 +305,7 @@ namespace Log {
 // =====================================================================
 namespace Threading {
   void WorkSema::WaitForWork() {}
-  void WorkSema::WaitForEmpty() {}
-  void WorkSema::NotifyOfWork() {}
+  bool WorkSema::WaitForEmpty() { return true; }
 }
 
 // =====================================================================
