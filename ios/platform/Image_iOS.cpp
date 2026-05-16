@@ -1,11 +1,11 @@
 #include "common/Image.h"
-namespace RGBA8Image {
-  std::optional<std::vector<u8>> LoadFromFile(
-    const char* path, u32* width, u32* height) {
-    return std::nullopt;
-  }
-  bool SaveToFile(const char* path, u32 width,
-    u32 height, const u8* data) {
-    return false;
-  }
+
+bool RGBA8Image::LoadFromFile(const char* filename)
+{
+  return false;
+}
+
+bool RGBA8Image::SaveToFile(const char* filename, u8 quality) const
+{
+  return false;
 }
