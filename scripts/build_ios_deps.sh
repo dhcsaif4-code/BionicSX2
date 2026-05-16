@@ -37,6 +37,9 @@ cmake "$SRC/libpng" $FLAGS \
   -DZLIB_ROOT="$INSTALL"
 make -j$(sysctl -n hw.logicalcpu)
 find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+cp "$SRC/libpng"/*.h "$INSTALL/include/" 2>/dev/null || true
+find "$BLD/libpng" -name "pnglibconf.h" \
+  -exec cp {} "$INSTALL/include/" \;
 
 # ── zstd ──────────────────────────────────────────────
 cd "$SRC"
