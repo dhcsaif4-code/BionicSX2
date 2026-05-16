@@ -448,14 +448,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_executable(BionicSX2_App
         ${IOS_SWIFT_SOURCES}
         ${IOS_APP_SOURCES}
+        pcsx2/3rdparty/fmt/src/format.cc
     )
 
-    # Fallback: if Log.cpp not available from submodule, use stub file
-    if(NOT EXISTS "${COMMON_DIR}/Log.cpp")
-        target_sources(BionicSX2_App PRIVATE
-            ios/platform/FmtLogStubs.cpp
-        )
-    endif()
+    set_source_files_properties(
+        ios/platform/GSDrawScanlineStub.s
+        PROPERTIES LANGUAGE ASM
+    )
 
     # Force-load the entire static lib — app .o files don't reference core symbols
     # so the linker would otherwise strip libBionicSX2.a to 85KB.

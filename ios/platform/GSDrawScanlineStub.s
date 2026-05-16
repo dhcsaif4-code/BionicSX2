@@ -1,7 +1,9 @@
 .text
+
+// ── isa_native::GSDrawScanline — all 8 methods ──────────
 .globl __ZN10isa_native13GSDrawScanlineC1Ev
 .globl __ZN10isa_native13GSDrawScanlineD1Ev
-.globl __ZN10isa_native13GSDrawScanlineD2Ev  
+.globl __ZN10isa_native13GSDrawScanlineD2Ev
 .globl __ZN10isa_native13GSDrawScanline9BeginDrawERKNS0_17GSRasterizerDataERK20GSScanlineLocalData
 .globl __ZN10isa_native13GSDrawScanline9SetupDrawERNS0_17GSRasterizerDataE
 .globl __ZN10isa_native13GSDrawScanline8DrawRectERK10GSVector4iRK10GSVertexSWR20GSScanlineLocalData
@@ -18,6 +20,7 @@ __ZN10isa_native13GSDrawScanline10PrintStatsEv:
 __ZN10isa_native13GSDrawScanline14ResetCodeCacheEv:
     ret
 
+// ── GameDatabaseSchema::GameEntry::applyGameFixes ───────
 .globl __ZNK24GameDatabaseSchema9GameEntry13applyGameFixesER11Pcsx2Configb
 __ZNK24GameDatabaseSchema9GameEntry13applyGameFixesER11Pcsx2Configb:
     ret
