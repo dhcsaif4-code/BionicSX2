@@ -87,11 +87,20 @@ mkdir -p "$BLD/xz2" && cd "$BLD/xz2"
 cmake "$SRC/xz" $FLAGS -DBUILD_TESTING=OFF
 make -j$(sysctl -n hw.logicalcpu)
 find . -name "liblzma.a" -exec cp {} "$INSTALL/lib/" \;
-find "$SRC/xz/src/liblzma/api" -name "*.h" \
-  -exec cp {} "$INSTALL/include/" \; 2>/dev/null || true
+# Copy lzma headers correctly
 mkdir -p "$INSTALL/include/lzma"
+
+# Copy all sub-headers first
 find "$SRC/xz/src/liblzma/api/lzma" -name "*.h" \
-  -exec cp {} "$INSTALL/include/lzma/" \; 2>/dev/null || true
+  -exec cp {} "$INSTALL/include/lzma/" \;
+
+# Copy the main umbrella header last
+cp "$SRC/xz/src/liblzma/api/lzma.h" \
+  "$INSTALL/include/lzma.h"
+
+# Verify
+ls "$INSTALL/include/lzma.h" && echo "lzma.h OK"
+ls "$INSTALL/include/lzma/" | head -5
 
 # ── freetype ──────────────────────────────────────────
 cd "$SRC"
