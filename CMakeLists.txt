@@ -399,6 +399,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui/main.mm
         ios/ui/AppDelegate.mm
         ios/platform/AppStubs.mm
+        ios/platform/CStubs.c
     )
 
     # Metal renderer (Phase 11-12)
@@ -478,6 +479,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set_source_files_properties(
         ios/platform/PCSX2Stubs.cpp
         PROPERTIES LANGUAGE CXX
+    )
+
+    # Pure C stubs — ensure C language so extern "C" is never needed
+    set_source_files_properties(
+        ios/platform/CStubs.c
+        PROPERTIES LANGUAGE C
     )
 
     # Catch-all: collect ALL available 3rdparty include directories
