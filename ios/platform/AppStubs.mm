@@ -251,10 +251,7 @@ extern "C" {
   struct DiscordRichPresence;
   struct DiscordEventHandlers;
   void Discord_Initialize(const char*, DiscordEventHandlers*, int, const char*) {}
-  void Discord_Shutdown() {}
-  void Discord_RunCallbacks() {}
   void Discord_UpdatePresence(const DiscordRichPresence*) {}
-  void Discord_ClearPresence() {}
 }
 
 // ── GROUP C: 7z / LZMA — GS dump dead code on iOS ───────────────────────────
@@ -264,10 +261,6 @@ extern "C" {
   static void* _stub_alloc(void*, size_t s) { return malloc(s); }
   static void  _stub_free(void*, void* p)   { free(p); }
   ISzAlloc g_Alloc = { _stub_alloc, _stub_free };
-
-  // CRC tables
-  void CrcGenerateTable(void)  {}
-  void Crc64GenerateTable(void) {}
 
   // XzUnpacker
   struct CXzUnpacker; struct CXzs; struct ILookInStream;
@@ -373,12 +366,6 @@ namespace bc7decomp {
 namespace fmt { namespace v12 {
   void report_error(const char*) {}
 } }
-
-// cplus_demangle — debug symbol demangling
-extern "C" {
-  char* cplus_demangle(const char*, int) { return nullptr; }
-  int   cplus_demangle_opname(const char*, char*, int) { return 0; }
-}
 
 // fmt::v12 locale and vformat — must match ABI exactly
 // These are defined as weak stubs; if libfmt.a is linked they will be overridden
