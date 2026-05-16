@@ -49,6 +49,15 @@ jobs:
           echo "---"
           find ios-deps/build -maxdepth 1 -type d | sort
 
+      - name: Verify ios-deps headers
+        run: |
+          echo "=== All headers in ios-deps/install ==="
+          find ios-deps/install/include -name "*.h" | sort
+          echo "=== All libs in ios-deps/install ==="
+          find ios-deps/install/lib -name "*.a" | sort
+          echo "=== png.h location ==="
+          find . -name "png.h" -not -path "./.git/*"
+
       - name: Configure BionicSX2
         run: |
           cmake -S . -B build-ios \
