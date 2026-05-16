@@ -83,7 +83,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ---- common/ (pcsx2/common) ----
         ${COMMON_DIR}/FastJmp.cpp
         ${COMMON_DIR}/FileSystem.cpp
-        ${COMMON_DIR}/Image.cpp
+        # ${COMMON_DIR}/Image.cpp — excluded on iOS, uses webp/jpeg, stubbed via Image_iOS.cpp
         ${COMMON_DIR}/StringUtil.cpp
         ${COMMON_DIR}/Timer.cpp
 
@@ -350,6 +350,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/PCSX2Stubs.mm
         ios/platform/Threading_iOS.cpp
         ios/platform/PageFaultHandler.cpp
+        ios/platform/Image_iOS.cpp
         ios/ui/BionicSX2Bridge.mm
     )
 
