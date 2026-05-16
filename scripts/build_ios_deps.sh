@@ -236,6 +236,35 @@ cp -r "$SRC/cpuinfo/include/." "$INSTALL/include/"
 cd "$SRC"
 [ -d libzip ] || git clone --depth 1 \
   https://github.com/nih-at/libzip.git
+
+# Patch _s functions (Windows-only, not available on iOS)
+python3 << 'PYEOF'
+import os, re, glob
+lib_dir = "libzip/lib"
+replacements = [
+    (r'strncpy_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'strncpy(\1, \2, \3)'),
+    (r'strcpy_s\s*\(([^,]+),\s*[^,]+,\s*([^)]+)\)', r'strcpy(\1, \2)'),
+    (r'memcpy_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'memcpy(\1, \2, \3)'),
+    (r'memmove_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'memmove(\1, \2, \3)'),
+    (r'strncat_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'strncat(\1, \2, \3)'),
+]
+patched = []
+for filepath in glob.glob(os.path.join(lib_dir, "*.c")):
+    with open(filepath, 'r') as f:
+        content = f.read()
+    original = content
+    for pattern, replacement in replacements:
+        content = re.sub(pattern, replacement, content)
+    if content != original:
+        content = content.replace('strncpy(', '(void)strncpy(')
+        with open(filepath, 'w') as f:
+            f.write(content)
+        patched.append(filepath)
+        print(f"Patched: {filepath}")
+if not patched:
+    print("No _s functions found — nothing to patch")
+PYEOF
+
 mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
 cmake "$SRC/libzip" $FLAGS \
   -DENABLE_COMMONCRYPTO=ON \
