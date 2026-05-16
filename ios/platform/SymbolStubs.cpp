@@ -43,6 +43,10 @@ namespace Log {
 // Structs must be defined inside isa_native namespace
 // so NS_ back-reference in mangled name is correct
 
+// Global structs must be declared BEFORE isa_native uses them
+struct GSVector4i {};
+struct GSVertexSW {};
+
 namespace isa_native {
 
   struct GSScanlineLocalData {};
@@ -59,9 +63,6 @@ namespace isa_native {
   };
 
 } // namespace isa_native
-
-struct GSVector4i {};
-struct GSVertexSW {};
 
 // GameDatabaseSchema — global namespace
 struct Pcsx2Config {};
