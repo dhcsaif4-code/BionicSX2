@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(BionicSX2)
+project(BionicSX2 LANGUAGES C CXX ASM)
 
 # ============================================================================
 # AUDIT REFERENCE: Sections 10.1, 10.2, 1.4, 1.5, Phase 14
@@ -448,10 +448,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_executable(BionicSX2_App
         ${IOS_SWIFT_SOURCES}
         ${IOS_APP_SOURCES}
+        ios/platform/FmtLogStubs.cpp
         pcsx2/3rdparty/fmt/src/format.cc
     )
 
-    # NOTE: No LANGUAGE ASM property needed — CMake/Clang auto-detect .s files
+    # NOTE: ASM language now enabled in project() — .s files compile automatically
 
     # Force-load the entire static lib — app .o files don't reference core symbols
     # so the linker would otherwise strip libBionicSX2.a to 85KB.
