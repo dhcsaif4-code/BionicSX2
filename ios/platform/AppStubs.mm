@@ -210,3 +210,184 @@ extern "C" void __clear_cache(void* start, void* end) {
             static_cast<char*>(end) - static_cast<char*>(start)));
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// WAVE-2 STUBS — AppStubs.mm addition
+// AUDIT REFERENCE: Phase 0-A, Sections 2.3-ADDENDUM, 13.7
+// ════════════════════════════════════════════════════════════════════════════
+
+#include <stdint.h>
+#include <stddef.h>
+#include <string>
+#include <string_view>
+#include <vector>
+
+// ── GROUP A: Log system ──────────────────────────────────────────────────────
+// LOGLEVEL and ConsoleColors must match the ABI in libBionicSX2.a
+// They are plain enums (not enum class) in PCSX2's common/Logging.h
+enum LOGLEVEL : uint32_t { LOGLEVEL_NONE=0, LOGLEVEL_ERROR, LOGLEVEL_WARNING, LOGLEVEL_PERF, LOGLEVEL_INFO, LOGLEVEL_VERBOSE, LOGLEVEL_DEV, LOGLEVEL_DEBUG, LOGLEVEL_TRACE, LOGLEVEL_BULK };
+enum ConsoleColors : uint32_t { Color_Default=0, Color_Black, Color_Green, Color_Red, Color_Blue, Color_Magenta, Color_Orange, Color_Gray, Color_Cyan, Color_Yellow, Color_White, Color_StrongBlack, Color_StrongRed, Color_StrongGreen, Color_StrongBlue, Color_StrongMagenta, Color_StrongOrange, Color_StrongGray, Color_StrongCyan, Color_StrongYellow, Color_StrongWhite, Color_Count };
+
+namespace fmt { namespace v12 {
+  struct string_view_stub { const char* data_; size_t size_; };
+  struct format_args_stub {};
+  struct locale_ref_stub {};
+  struct buffer_stub {};
+} }
+
+namespace Log {
+  void Write(LOGLEVEL, ConsoleColors, std::string_view) {}
+  void Writev(LOGLEVEL, ConsoleColors, const char*, char*) {}
+  void WriteFmtArgs(LOGLEVEL, ConsoleColors, fmt::v12::string_view_stub, fmt::v12::format_args_stub) {}
+  LOGLEVEL GetMaxLevel() { return LOGLEVEL_NONE; }
+  bool IsConsoleOutputEnabled() { return false; }
+  bool IsFileOutputEnabled()    { return false; }
+  void SetConsoleOutputLevel(LOGLEVEL) {}
+  void SetFileOutputLevel(LOGLEVEL, std::string) {}
+  void SetTimestampsEnabled(bool) {}
+}
+
+// ── GROUP B: Discord RPC — dead on iOS ──────────────────────────────────────
+extern "C" {
+  struct DiscordRichPresence;
+  struct DiscordEventHandlers;
+  void Discord_Initialize(const char*, DiscordEventHandlers*, int, const char*) {}
+  void Discord_Shutdown() {}
+  void Discord_RunCallbacks() {}
+  void Discord_UpdatePresence(const DiscordRichPresence*) {}
+  void Discord_ClearPresence() {}
+}
+
+// ── GROUP C: 7z / LZMA — GS dump dead code on iOS ───────────────────────────
+extern "C" {
+  // ISzAlloc global
+  struct ISzAlloc { void* (*Alloc)(void*, size_t); void (*Free)(void*, void*); };
+  static void* _stub_alloc(void*, size_t s) { return malloc(s); }
+  static void  _stub_free(void*, void* p)   { free(p); }
+  ISzAlloc g_Alloc = { _stub_alloc, _stub_free };
+
+  // CRC tables
+  void CrcGenerateTable(void)  {}
+  void Crc64GenerateTable(void) {}
+
+  // XzUnpacker
+  struct CXzUnpacker; struct CXzs; struct ILookInStream;
+  void XzUnpacker_Construct(CXzUnpacker*, const ISzAlloc*) {}
+  void XzUnpacker_Free(CXzUnpacker*) {}
+  void XzUnpacker_Init(CXzUnpacker*) {}
+  void XzUnpacker_PrepareToRandomBlockDecoding(CXzUnpacker*) {}
+  void XzUnpacker_SetOutBuf(CXzUnpacker*, uint8_t*, size_t) {}
+  int  XzUnpacker_Code(CXzUnpacker*, uint8_t*, size_t*, const uint8_t*, size_t*, int, int, size_t*) { return 0; }
+
+  // Xzs
+  void Xzs_Construct(CXzs*) {}
+  void Xzs_Free(CXzs*, const ISzAlloc*) {}
+  int  Xzs_ReadBackward(CXzs*, ILookInStream*, int64_t*, void*, const ISzAlloc*) { return 0; }
+  int64_t Xzs_GetNumBlocks(const CXzs*) { return 0; }
+
+  // Xz encode
+  void XzProps_Init(void*) {}
+  int  Xz_Encode(void*, void*, void*, void*, void*) { return 0; }
+
+  // LookToRead2
+  void LookToRead2_CreateVTable(void*, int) {}
+}
+
+// ── GROUP D: ZSTD — GS dump compression, dead on iOS ────────────────────────
+extern "C" {
+  struct ZSTD_CStream; enum ZSTD_EndDirective { ZSTD_e_continue=0, ZSTD_e_flush, ZSTD_e_end };
+  ZSTD_CStream* ZSTD_createCStream(void) { return nullptr; }
+  size_t ZSTD_freeCStream(ZSTD_CStream*) { return 0; }
+  size_t ZSTD_CCtx_setParameter(ZSTD_CStream*, int, int) { return 0; }
+  size_t ZSTD_compressStream2(ZSTD_CStream*, void*, void*, ZSTD_EndDirective) { return 0; }
+}
+
+// ── GROUP E: dVifUnpack JIT — interpreter path only on iOS ──────────────────
+// These are C++ template instantiations — must match mangled names exactly
+// Stubs go in extern "C++" scope (default)
+template<int idx> void dVifUnpack(const uint8_t*, bool) {}
+template void dVifUnpack<0>(const uint8_t*, bool);
+template void dVifUnpack<1>(const uint8_t*, bool);
+
+// ── GROUP F: vtlb_DynBackpatchLoadStore — extern "C" fix ────────────────────
+// The linker note says: found '_vtlb_DynBackpatchLoadStore' — missing extern "C"
+// Remove any existing C++ version and replace with proper extern "C"
+extern "C" {
+  void vtlb_DynBackpatchLoadStore(uintptr_t, uint32_t, uint32_t, uint32_t,
+    uint32_t, uint32_t, uint8_t, uint8_t, uint8_t, bool, bool, bool) {}
+}
+
+// ── GROUP G: FullscreenUI settings functions ─────────────────────────────────
+struct SettingsInterface;
+struct ImFont;
+namespace FullscreenUI {
+  using FontPair = std::pair<ImFont*, float>;
+  void SwitchToSettings() {}
+  void SwitchToGameSettings() {}
+  void SwitchToGameSettings(const std::string&) {}
+  void DrawSettingsWindow() {}
+  void DrawInputBindingWindow() {}
+  void CancelAllHddOperations() {}
+  void SetSettingsChanged(SettingsInterface*) {}
+  void PopulateGameListDirectoryCache(SettingsInterface*) {}
+  bool IsEditingGameSettings(SettingsInterface*) { return false; }
+  bool GetEffectiveBoolSetting(SettingsInterface*, const char*, const char*, bool def) { return def; }
+  SettingsInterface* GetEditingSettingsInterface() { return nullptr; }
+  SettingsInterface* GetEditingSettingsInterface(bool) { return nullptr; }
+  void DrawFolderSetting(SettingsInterface*, const char*, const char*, const char*,
+    const std::string&, float, FontPair, FontPair) {}
+  void DrawToggleSetting(SettingsInterface*, const char*, const char*, const char*,
+    const char*, bool, bool, bool, float, FontPair, FontPair) {}
+  void DrawIntListSetting(SettingsInterface*, const char*, const char*, const char*,
+    const char*, int, const char* const*, size_t, bool, int, bool, float, FontPair, FontPair) {}
+}
+
+// ── GROUP H: Miscellaneous ───────────────────────────────────────────────────
+
+// GameDatabase::findGame
+namespace GameDatabaseSchema { struct GameEntry {}; }
+namespace GameDatabase {
+  const GameDatabaseSchema::GameEntry* findGame(std::string_view) { return nullptr; }
+}
+
+// InputManager keyboard host stubs
+namespace InputManager {
+  uint32_t ConvertHostKeyboardStringToCode(std::string_view) { return 0; }
+  std::string ConvertHostKeyboardCodeToString(uint32_t) { return {}; }
+  const char* ConvertHostKeyboardCodeToIcon(uint32_t) { return nullptr; }
+}
+
+// USB stubs
+namespace USB {
+  std::string GetConfigDevice(const SettingsInterface&, uint32_t) { return {}; }
+  std::string GetConfigSubType(const SettingsInterface&, uint32_t, std::string_view) { return {}; }
+  void SetDefaultConfiguration(SettingsInterface*) {}
+}
+
+// bc7decomp — texture decompression, stub on iOS
+namespace bc7decomp {
+  struct color_rgba { uint8_t r,g,b,a; };
+  bool unpack_bc7(const void*, color_rgba*) { return false; }
+}
+
+// fmt::v12 non-inline functions
+namespace fmt { namespace v12 {
+  void report_error(const char*) {}
+} }
+
+// cplus_demangle — debug symbol demangling
+extern "C" {
+  char* cplus_demangle(const char*, int) { return nullptr; }
+  int   cplus_demangle_opname(const char*, char*, int) { return 0; }
+}
+
+// fmt::v12 locale and vformat — must match ABI exactly
+// These are defined as weak stubs; if libfmt.a is linked they will be overridden
+namespace fmt { namespace v12 {
+  namespace detail {
+    void vformat_to(void*, string_view_stub, format_args_stub, locale_ref_stub) {}
+    bool is_printable(uint32_t) { return true; }
+  }
+  std::string vformat(string_view_stub, format_args_stub) { return {}; }
+  std::string locale_ref_get_locale() { return {}; }
+} }
+
