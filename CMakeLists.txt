@@ -6,15 +6,19 @@ project(BionicSX2)
 # STATUS: NEW
 # ============================================================================
 
+set(COMMON_DIR "${CMAKE_SOURCE_DIR}/pcsx2/common")
+set(PCSX2_DIR  "${CMAKE_SOURCE_DIR}/pcsx2/pcsx2")
+
+if(NOT EXISTS "${COMMON_DIR}/FastJmp.cpp")
+  message(FATAL_ERROR "COMMON_DIR wrong: ${COMMON_DIR}")
+endif()
+if(NOT EXISTS "${PCSX2_DIR}/GS/GS.cpp")
+  message(FATAL_ERROR "PCSX2_DIR wrong: ${PCSX2_DIR}")
+endif()
+
 # iOS guard block — Phase 14 (Audit Sec 10.1, 10.2)
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(IOS_DEPS "${CMAKE_SOURCE_DIR}/ios-deps/install")
-
-    if(EXISTS "${CMAKE_SOURCE_DIR}/pcsx2/common/Log.cpp")
-      set(COMMON_DIR "${CMAKE_SOURCE_DIR}/pcsx2/common")
-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/common/Log.cpp")
-      set(COMMON_DIR "${CMAKE_SOURCE_DIR}/common")
-    endif()
 
     # Disable everything that doesn't exist on iOS
     set(ENABLE_QT     OFF CACHE BOOL "" FORCE)   # Audit Sec 1.1 — RED
@@ -92,222 +96,222 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/imgui/src/imgui_widgets.cpp
         pcsx2/3rdparty/imgui/misc/freetype/imgui_freetype.cpp
 
-        # ---- EE Core, IOP, VU, System (pcsx2/pcsx2/) ----
-        pcsx2/pcsx2/Achievements.cpp
-        pcsx2/pcsx2/BuildVersion.cpp
-        pcsx2/pcsx2/Cache.cpp
-        pcsx2/pcsx2/COP0.cpp
-        pcsx2/pcsx2/COP2.cpp
-        pcsx2/pcsx2/Counters.cpp
-        pcsx2/pcsx2/Dmac.cpp
-        pcsx2/pcsx2/Elfheader.cpp
-        pcsx2/pcsx2/FiFo.cpp
-        pcsx2/pcsx2/FPU.cpp
-        pcsx2/pcsx2/FW.cpp
-        # pcsx2/pcsx2/GameDatabase.cpp  # needs ryml (rapidyaml) — excluded
-        pcsx2/pcsx2/GameList.cpp
-        pcsx2/pcsx2/Gif.cpp
-        pcsx2/pcsx2/Gif_Logger.cpp
-        pcsx2/pcsx2/Gif_Unit.cpp
-        pcsx2/pcsx2/GS.cpp
-        pcsx2/pcsx2/GSDumpReplayer.cpp
-        pcsx2/pcsx2/Host.cpp
-        pcsx2/pcsx2/Hotkeys.cpp
-        pcsx2/pcsx2/Hw.cpp
-        pcsx2/pcsx2/HwRead.cpp
-        pcsx2/pcsx2/HwWrite.cpp
-        # pcsx2/pcsx2/INISettingsInterface.cpp  # needs simpleini — excluded
-        pcsx2/pcsx2/Interpreter.cpp
-        pcsx2/pcsx2/IopBios.cpp
-        pcsx2/pcsx2/IopCounters.cpp
-        pcsx2/pcsx2/IopDma.cpp
-        pcsx2/pcsx2/IopGte.cpp
-        pcsx2/pcsx2/IopHw.cpp
-        pcsx2/pcsx2/IopIrq.cpp
-        pcsx2/pcsx2/IopMem.cpp
-        # pcsx2/pcsx2/IopModuleNames.cpp  # debug-only, macro expansion issues
-        pcsx2/pcsx2/LayeredSettingsInterface.cpp
-        pcsx2/pcsx2/Mdec.cpp
-        pcsx2/pcsx2/Memory.cpp
-        pcsx2/pcsx2/MMI.cpp
-        pcsx2/pcsx2/MTGS.cpp
-        pcsx2/pcsx2/MTVU.cpp
-        pcsx2/pcsx2/Patch.cpp
-        pcsx2/pcsx2/Pcsx2Config.cpp
-        pcsx2/pcsx2/PerformanceMetrics.cpp
-        pcsx2/pcsx2/PINE.cpp
-        pcsx2/pcsx2/R3000A.cpp
-        pcsx2/pcsx2/R3000AInterpreter.cpp
-        pcsx2/pcsx2/R3000AOpcodeTables.cpp
-        pcsx2/pcsx2/R5900.cpp
-        pcsx2/pcsx2/R5900OpcodeImpl.cpp
-        pcsx2/pcsx2/R5900OpcodeTables.cpp
-        pcsx2/pcsx2/SaveState.cpp
-        pcsx2/pcsx2/ShiftJisToUnicode.cpp
-        pcsx2/pcsx2/Sif.cpp
-        pcsx2/pcsx2/Sif0.cpp
-        pcsx2/pcsx2/Sif1.cpp
-        pcsx2/pcsx2/sif2.cpp
-        pcsx2/pcsx2/SourceLog.cpp
-        pcsx2/pcsx2/SPR.cpp
-        pcsx2/pcsx2/StateWrapper.cpp
-        pcsx2/pcsx2/Vif.cpp
-        pcsx2/pcsx2/Vif0_Dma.cpp
-        pcsx2/pcsx2/Vif1_Dma.cpp
-        pcsx2/pcsx2/Vif1_MFIFO.cpp
-        pcsx2/pcsx2/Vif_Codes.cpp
-        pcsx2/pcsx2/Vif_Transfer.cpp
-        pcsx2/pcsx2/Vif_Unpack.cpp
-        pcsx2/pcsx2/VMManager.cpp
-        pcsx2/pcsx2/vtlb.cpp
-        pcsx2/pcsx2/VU0.cpp
-        pcsx2/pcsx2/VU0micro.cpp
-        pcsx2/pcsx2/VU0microInterp.cpp
-        pcsx2/pcsx2/VU1micro.cpp
-        pcsx2/pcsx2/VU1microInterp.cpp
-        pcsx2/pcsx2/VUflags.cpp
-        pcsx2/pcsx2/VUmicro.cpp
-        pcsx2/pcsx2/VUmicroMem.cpp
-        pcsx2/pcsx2/VUops.cpp
+        # ---- EE Core, IOP, VU, System (${PCSX2_DIR}/) ----
+        ${PCSX2_DIR}/Achievements.cpp
+        ${PCSX2_DIR}/BuildVersion.cpp
+        ${PCSX2_DIR}/Cache.cpp
+        ${PCSX2_DIR}/COP0.cpp
+        ${PCSX2_DIR}/COP2.cpp
+        ${PCSX2_DIR}/Counters.cpp
+        ${PCSX2_DIR}/Dmac.cpp
+        ${PCSX2_DIR}/Elfheader.cpp
+        ${PCSX2_DIR}/FiFo.cpp
+        ${PCSX2_DIR}/FPU.cpp
+        ${PCSX2_DIR}/FW.cpp
+        # ${PCSX2_DIR}/GameDatabase.cpp  # needs ryml (rapidyaml) — excluded
+        ${PCSX2_DIR}/GameList.cpp
+        ${PCSX2_DIR}/Gif.cpp
+        ${PCSX2_DIR}/Gif_Logger.cpp
+        ${PCSX2_DIR}/Gif_Unit.cpp
+        ${PCSX2_DIR}/GS.cpp
+        ${PCSX2_DIR}/GSDumpReplayer.cpp
+        ${PCSX2_DIR}/Host.cpp
+        ${PCSX2_DIR}/Hotkeys.cpp
+        ${PCSX2_DIR}/Hw.cpp
+        ${PCSX2_DIR}/HwRead.cpp
+        ${PCSX2_DIR}/HwWrite.cpp
+        # ${PCSX2_DIR}/INISettingsInterface.cpp  # needs simpleini — excluded
+        ${PCSX2_DIR}/Interpreter.cpp
+        ${PCSX2_DIR}/IopBios.cpp
+        ${PCSX2_DIR}/IopCounters.cpp
+        ${PCSX2_DIR}/IopDma.cpp
+        ${PCSX2_DIR}/IopGte.cpp
+        ${PCSX2_DIR}/IopHw.cpp
+        ${PCSX2_DIR}/IopIrq.cpp
+        ${PCSX2_DIR}/IopMem.cpp
+        # ${PCSX2_DIR}/IopModuleNames.cpp  # debug-only, macro expansion issues
+        ${PCSX2_DIR}/LayeredSettingsInterface.cpp
+        ${PCSX2_DIR}/Mdec.cpp
+        ${PCSX2_DIR}/Memory.cpp
+        ${PCSX2_DIR}/MMI.cpp
+        ${PCSX2_DIR}/MTGS.cpp
+        ${PCSX2_DIR}/MTVU.cpp
+        ${PCSX2_DIR}/Patch.cpp
+        ${PCSX2_DIR}/Pcsx2Config.cpp
+        ${PCSX2_DIR}/PerformanceMetrics.cpp
+        ${PCSX2_DIR}/PINE.cpp
+        ${PCSX2_DIR}/R3000A.cpp
+        ${PCSX2_DIR}/R3000AInterpreter.cpp
+        ${PCSX2_DIR}/R3000AOpcodeTables.cpp
+        ${PCSX2_DIR}/R5900.cpp
+        ${PCSX2_DIR}/R5900OpcodeImpl.cpp
+        ${PCSX2_DIR}/R5900OpcodeTables.cpp
+        ${PCSX2_DIR}/SaveState.cpp
+        ${PCSX2_DIR}/ShiftJisToUnicode.cpp
+        ${PCSX2_DIR}/Sif.cpp
+        ${PCSX2_DIR}/Sif0.cpp
+        ${PCSX2_DIR}/Sif1.cpp
+        ${PCSX2_DIR}/sif2.cpp
+        ${PCSX2_DIR}/SourceLog.cpp
+        ${PCSX2_DIR}/SPR.cpp
+        ${PCSX2_DIR}/StateWrapper.cpp
+        ${PCSX2_DIR}/Vif.cpp
+        ${PCSX2_DIR}/Vif0_Dma.cpp
+        ${PCSX2_DIR}/Vif1_Dma.cpp
+        ${PCSX2_DIR}/Vif1_MFIFO.cpp
+        ${PCSX2_DIR}/Vif_Codes.cpp
+        ${PCSX2_DIR}/Vif_Transfer.cpp
+        ${PCSX2_DIR}/Vif_Unpack.cpp
+        ${PCSX2_DIR}/VMManager.cpp
+        ${PCSX2_DIR}/vtlb.cpp
+        ${PCSX2_DIR}/VU0.cpp
+        ${PCSX2_DIR}/VU0micro.cpp
+        ${PCSX2_DIR}/VU0microInterp.cpp
+        ${PCSX2_DIR}/VU1micro.cpp
+        ${PCSX2_DIR}/VU1microInterp.cpp
+        ${PCSX2_DIR}/VUflags.cpp
+        ${PCSX2_DIR}/VUmicro.cpp
+        ${PCSX2_DIR}/VUmicroMem.cpp
+        ${PCSX2_DIR}/VUops.cpp
 
         # ---- CDVD ----
-        pcsx2/pcsx2/CDVD/BlockdumpFileReader.cpp
-        pcsx2/pcsx2/CDVD/CDVD.cpp
-        pcsx2/pcsx2/CDVD/CDVDcommon.cpp
-        pcsx2/pcsx2/CDVD/CDVDdiscReader.cpp
-        pcsx2/pcsx2/CDVD/CDVDdiscThread.cpp
-        pcsx2/pcsx2/CDVD/CDVDisoReader.cpp
-        pcsx2/pcsx2/CDVD/ChdFileReader.cpp
-        pcsx2/pcsx2/CDVD/CsoFileReader.cpp
-        pcsx2/pcsx2/CDVD/FlatFileReader.cpp
-        pcsx2/pcsx2/CDVD/GzippedFileReader.cpp
-        pcsx2/pcsx2/CDVD/InputIsoFile.cpp
-        pcsx2/pcsx2/CDVD/IsoHasher.cpp
-        pcsx2/pcsx2/CDVD/IsoReader.cpp
-        pcsx2/pcsx2/CDVD/OutputIsoFile.cpp
-        pcsx2/pcsx2/CDVD/Ps1CD.cpp
-        pcsx2/pcsx2/CDVD/ThreadedFileReader.cpp
+        ${PCSX2_DIR}/CDVD/BlockdumpFileReader.cpp
+        ${PCSX2_DIR}/CDVD/CDVD.cpp
+        ${PCSX2_DIR}/CDVD/CDVDcommon.cpp
+        ${PCSX2_DIR}/CDVD/CDVDdiscReader.cpp
+        ${PCSX2_DIR}/CDVD/CDVDdiscThread.cpp
+        ${PCSX2_DIR}/CDVD/CDVDisoReader.cpp
+        ${PCSX2_DIR}/CDVD/ChdFileReader.cpp
+        ${PCSX2_DIR}/CDVD/CsoFileReader.cpp
+        ${PCSX2_DIR}/CDVD/FlatFileReader.cpp
+        ${PCSX2_DIR}/CDVD/GzippedFileReader.cpp
+        ${PCSX2_DIR}/CDVD/InputIsoFile.cpp
+        ${PCSX2_DIR}/CDVD/IsoHasher.cpp
+        ${PCSX2_DIR}/CDVD/IsoReader.cpp
+        ${PCSX2_DIR}/CDVD/OutputIsoFile.cpp
+        ${PCSX2_DIR}/CDVD/Ps1CD.cpp
+        ${PCSX2_DIR}/CDVD/ThreadedFileReader.cpp
 
         # ---- SIO, SIO/Pad, SIO/Memcard, SIO/Multitap ----
-        pcsx2/pcsx2/SIO/Sio.cpp
-        pcsx2/pcsx2/SIO/Sio0.cpp
-        pcsx2/pcsx2/SIO/Sio2.cpp
-        pcsx2/pcsx2/SIO/Memcard/MemoryCardFile.cpp
-        # pcsx2/pcsx2/SIO/Memcard/MemoryCardFolder.cpp  # needs ryml — excluded for bringup
-        pcsx2/pcsx2/SIO/Memcard/MemoryCardProtocol.cpp
-        pcsx2/pcsx2/SIO/Multitap/MultitapProtocol.cpp
-        pcsx2/pcsx2/SIO/Pad/Pad.cpp
-        pcsx2/pcsx2/SIO/Pad/PadBase.cpp
-        pcsx2/pcsx2/SIO/Pad/PadDualshock2.cpp
-        pcsx2/pcsx2/SIO/Pad/PadGuitar.cpp
-        pcsx2/pcsx2/SIO/Pad/PadJogcon.cpp
-        pcsx2/pcsx2/SIO/Pad/PadNegcon.cpp
-        pcsx2/pcsx2/SIO/Pad/PadNotConnected.cpp
-        pcsx2/pcsx2/SIO/Pad/PadPopn.cpp
+        ${PCSX2_DIR}/SIO/Sio.cpp
+        ${PCSX2_DIR}/SIO/Sio0.cpp
+        ${PCSX2_DIR}/SIO/Sio2.cpp
+        ${PCSX2_DIR}/SIO/Memcard/MemoryCardFile.cpp
+        # ${PCSX2_DIR}/SIO/Memcard/MemoryCardFolder.cpp  # needs ryml — excluded for bringup
+        ${PCSX2_DIR}/SIO/Memcard/MemoryCardProtocol.cpp
+        ${PCSX2_DIR}/SIO/Multitap/MultitapProtocol.cpp
+        ${PCSX2_DIR}/SIO/Pad/Pad.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadBase.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadDualshock2.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadGuitar.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadJogcon.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadNegcon.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadNotConnected.cpp
+        ${PCSX2_DIR}/SIO/Pad/PadPopn.cpp
 
         # ---- GS Core ----
-        pcsx2/pcsx2/GS/GS.cpp
-        pcsx2/pcsx2/GS/GSBlock.cpp
-        pcsx2/pcsx2/GS/GSCapture.cpp
-        pcsx2/pcsx2/GS/GSClut.cpp
-        pcsx2/pcsx2/GS/GSDrawingContext.cpp
-        pcsx2/pcsx2/GS/GSDrawingEnvironment.cpp
-        pcsx2/pcsx2/GS/GSDump.cpp
-        pcsx2/pcsx2/GS/GSLocalMemory.cpp
-        pcsx2/pcsx2/GS/GSLocalMemoryMultiISA.cpp
-        pcsx2/pcsx2/GS/GSLzma.cpp
-        pcsx2/pcsx2/GS/GSPerfMon.cpp
-        pcsx2/pcsx2/GS/GSPng.cpp
-        pcsx2/pcsx2/GS/GSRingHeap.cpp
-        pcsx2/pcsx2/GS/GSState.cpp
-        pcsx2/pcsx2/GS/GSTables.cpp
-        pcsx2/pcsx2/GS/GSUtil.cpp
-        pcsx2/pcsx2/GS/GSVector.cpp
-        pcsx2/pcsx2/GS/GSXXH.cpp
-        pcsx2/pcsx2/GS/MultiISA.cpp
+        ${PCSX2_DIR}/GS/GS.cpp
+        ${PCSX2_DIR}/GS/GSBlock.cpp
+        ${PCSX2_DIR}/GS/GSCapture.cpp
+        ${PCSX2_DIR}/GS/GSClut.cpp
+        ${PCSX2_DIR}/GS/GSDrawingContext.cpp
+        ${PCSX2_DIR}/GS/GSDrawingEnvironment.cpp
+        ${PCSX2_DIR}/GS/GSDump.cpp
+        ${PCSX2_DIR}/GS/GSLocalMemory.cpp
+        ${PCSX2_DIR}/GS/GSLocalMemoryMultiISA.cpp
+        ${PCSX2_DIR}/GS/GSLzma.cpp
+        ${PCSX2_DIR}/GS/GSPerfMon.cpp
+        ${PCSX2_DIR}/GS/GSPng.cpp
+        ${PCSX2_DIR}/GS/GSRingHeap.cpp
+        ${PCSX2_DIR}/GS/GSState.cpp
+        ${PCSX2_DIR}/GS/GSTables.cpp
+        ${PCSX2_DIR}/GS/GSUtil.cpp
+        ${PCSX2_DIR}/GS/GSVector.cpp
+        ${PCSX2_DIR}/GS/GSXXH.cpp
+        ${PCSX2_DIR}/GS/MultiISA.cpp
 
         # ---- GS/Renderers/Common ----
-        pcsx2/pcsx2/GS/Renderers/Common/GSDevice.cpp
-        pcsx2/pcsx2/GS/Renderers/Common/GSDirtyRect.cpp
-        pcsx2/pcsx2/GS/Renderers/Common/GSFunctionMap.cpp
-        pcsx2/pcsx2/GS/Renderers/Common/GSRenderer.cpp
-        pcsx2/pcsx2/GS/Renderers/Common/GSTexture.cpp
-        pcsx2/pcsx2/GS/Renderers/Common/GSVertexTrace.cpp
-        pcsx2/pcsx2/GS/Renderers/Common/GSVertexTraceFMM.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSDevice.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSDirtyRect.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSFunctionMap.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSRenderer.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSTexture.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSVertexTrace.cpp
+        ${PCSX2_DIR}/GS/Renderers/Common/GSVertexTraceFMM.cpp
 
         # ---- GS/Renderers/Null ----
-        pcsx2/pcsx2/GS/Renderers/Null/GSRendererNull.cpp
+        ${PCSX2_DIR}/GS/Renderers/Null/GSRendererNull.cpp
 
         # ---- GS/Renderers/HW ----
-        pcsx2/pcsx2/GS/Renderers/HW/GSHwHack.cpp
-        pcsx2/pcsx2/GS/Renderers/HW/GSRendererHW.cpp
-        pcsx2/pcsx2/GS/Renderers/HW/GSRendererHWMultiISA.cpp
-        pcsx2/pcsx2/GS/Renderers/HW/GSTextureCache.cpp
-        pcsx2/pcsx2/GS/Renderers/HW/GSTextureReplacementLoaders.cpp
-        pcsx2/pcsx2/GS/Renderers/HW/GSTextureReplacements.cpp
+        ${PCSX2_DIR}/GS/Renderers/HW/GSHwHack.cpp
+        ${PCSX2_DIR}/GS/Renderers/HW/GSRendererHW.cpp
+        ${PCSX2_DIR}/GS/Renderers/HW/GSRendererHWMultiISA.cpp
+        ${PCSX2_DIR}/GS/Renderers/HW/GSTextureCache.cpp
+        ${PCSX2_DIR}/GS/Renderers/HW/GSTextureReplacementLoaders.cpp
+        ${PCSX2_DIR}/GS/Renderers/HW/GSTextureReplacements.cpp
 
         # ---- GS/Renderers/SW ----
-        pcsx2/pcsx2/GS/Renderers/SW/GSDrawScanline.cpp
+        ${PCSX2_DIR}/GS/Renderers/SW/GSDrawScanline.cpp
         # GSDrawScanlineCodeGenerator.arm64.cpp — excluded on iOS (pulls in vixl JIT)
-        pcsx2/pcsx2/GS/Renderers/SW/GSRasterizer.cpp
-        pcsx2/pcsx2/GS/Renderers/SW/GSRendererSW.cpp
+        ${PCSX2_DIR}/GS/Renderers/SW/GSRasterizer.cpp
+        ${PCSX2_DIR}/GS/Renderers/SW/GSRendererSW.cpp
         # GSSetupPrimCodeGenerator.arm64.cpp — excluded on iOS (pulls in vixl JIT)
-        pcsx2/pcsx2/GS/Renderers/SW/GSTextureCacheSW.cpp
+        ${PCSX2_DIR}/GS/Renderers/SW/GSTextureCacheSW.cpp
 
         # ---- IPU ----
-        pcsx2/pcsx2/IPU/IPU.cpp
-        pcsx2/pcsx2/IPU/IPU_Fifo.cpp
-        pcsx2/pcsx2/IPU/IPU_MultiISA.cpp
-        pcsx2/pcsx2/IPU/IPUdither.cpp
-        pcsx2/pcsx2/IPU/IPUdma.cpp
-        pcsx2/pcsx2/IPU/yuv2rgb.cpp
+        ${PCSX2_DIR}/IPU/IPU.cpp
+        ${PCSX2_DIR}/IPU/IPU_Fifo.cpp
+        ${PCSX2_DIR}/IPU/IPU_MultiISA.cpp
+        ${PCSX2_DIR}/IPU/IPUdither.cpp
+        ${PCSX2_DIR}/IPU/IPUdma.cpp
+        ${PCSX2_DIR}/IPU/yuv2rgb.cpp
 
         # ---- DebugTools ----
-        pcsx2/pcsx2/DebugTools/BiosDebugData.cpp
-        pcsx2/pcsx2/DebugTools/Breakpoints.cpp
-        pcsx2/pcsx2/DebugTools/DebugInterface.cpp
-        pcsx2/pcsx2/DebugTools/DisR3000A.cpp
-        pcsx2/pcsx2/DebugTools/DisR5900asm.cpp
-        pcsx2/pcsx2/DebugTools/DisVU0Micro.cpp
-        pcsx2/pcsx2/DebugTools/DisVU1Micro.cpp
-        pcsx2/pcsx2/DebugTools/DisassemblyManager.cpp
-        pcsx2/pcsx2/DebugTools/ExpressionParser.cpp
-        pcsx2/pcsx2/DebugTools/MIPSAnalyst.cpp
-        pcsx2/pcsx2/DebugTools/MipsAssembler.cpp
-        pcsx2/pcsx2/DebugTools/MipsAssemblerTables.cpp
-        pcsx2/pcsx2/DebugTools/MipsStackWalk.cpp
-        pcsx2/pcsx2/DebugTools/SymbolGuardian.cpp
-        pcsx2/pcsx2/DebugTools/SymbolImporter.cpp
+        ${PCSX2_DIR}/DebugTools/BiosDebugData.cpp
+        ${PCSX2_DIR}/DebugTools/Breakpoints.cpp
+        ${PCSX2_DIR}/DebugTools/DebugInterface.cpp
+        ${PCSX2_DIR}/DebugTools/DisR3000A.cpp
+        ${PCSX2_DIR}/DebugTools/DisR5900asm.cpp
+        ${PCSX2_DIR}/DebugTools/DisVU0Micro.cpp
+        ${PCSX2_DIR}/DebugTools/DisVU1Micro.cpp
+        ${PCSX2_DIR}/DebugTools/DisassemblyManager.cpp
+        ${PCSX2_DIR}/DebugTools/ExpressionParser.cpp
+        ${PCSX2_DIR}/DebugTools/MIPSAnalyst.cpp
+        ${PCSX2_DIR}/DebugTools/MipsAssembler.cpp
+        ${PCSX2_DIR}/DebugTools/MipsAssemblerTables.cpp
+        ${PCSX2_DIR}/DebugTools/MipsStackWalk.cpp
+        ${PCSX2_DIR}/DebugTools/SymbolGuardian.cpp
+        ${PCSX2_DIR}/DebugTools/SymbolImporter.cpp
 
         # ---- Recording ----
-        pcsx2/pcsx2/Recording/InputRecording.cpp
-        pcsx2/pcsx2/Recording/InputRecordingControls.cpp
-        pcsx2/pcsx2/Recording/InputRecordingFile.cpp
-        pcsx2/pcsx2/Recording/PadData.cpp
-        pcsx2/pcsx2/Recording/Utilities/InputRecordingLogger.cpp
+        ${PCSX2_DIR}/Recording/InputRecording.cpp
+        ${PCSX2_DIR}/Recording/InputRecordingControls.cpp
+        ${PCSX2_DIR}/Recording/InputRecordingFile.cpp
+        ${PCSX2_DIR}/Recording/PadData.cpp
+        ${PCSX2_DIR}/Recording/Utilities/InputRecordingLogger.cpp
 
         # ---- Host ----
-        pcsx2/pcsx2/Host/AudioStream.cpp
+        ${PCSX2_DIR}/Host/AudioStream.cpp
         # CubebAudioStream.cpp — excluded on iOS (uses macOS CoreAudio)
 
         # ---- ImGui ----
-        pcsx2/pcsx2/ImGui/FullscreenUI.cpp
+        ${PCSX2_DIR}/ImGui/FullscreenUI.cpp
         # FullscreenUI_Settings.cpp excluded — includes DEV9/pcap_io.h and USB/USB.h unconditionally
         # ImGuiFullscreen.cpp excluded — needs plutosvg for SVG icons, not functional in bringup
-        # pcsx2/pcsx2/ImGui/ImGuiFullscreen.cpp
-        pcsx2/pcsx2/ImGui/ImGuiManager.cpp
-        pcsx2/pcsx2/ImGui/ImGuiOverlays.cpp
+        # ${PCSX2_DIR}/ImGui/ImGuiFullscreen.cpp
+        ${PCSX2_DIR}/ImGui/ImGuiManager.cpp
+        ${PCSX2_DIR}/ImGui/ImGuiOverlays.cpp
 
         # ---- Input ----
-        pcsx2/pcsx2/Input/InputManager.cpp
-        pcsx2/pcsx2/Input/InputSource.cpp
+        ${PCSX2_DIR}/Input/InputManager.cpp
+        ${PCSX2_DIR}/Input/InputSource.cpp
 
         # ---- PS2 ----
-        pcsx2/pcsx2/ps2/BiosTools.cpp
-        pcsx2/pcsx2/ps2/Iop/IopHwRead.cpp
-        pcsx2/pcsx2/ps2/Iop/IopHwWrite.cpp
-        pcsx2/pcsx2/ps2/Iop/PsxBios.cpp
-        pcsx2/pcsx2/ps2/pgif.cpp
+        ${PCSX2_DIR}/ps2/BiosTools.cpp
+        ${PCSX2_DIR}/ps2/Iop/IopHwRead.cpp
+        ${PCSX2_DIR}/ps2/Iop/IopHwWrite.cpp
+        ${PCSX2_DIR}/ps2/Iop/PsxBios.cpp
+        ${PCSX2_DIR}/ps2/pgif.cpp
 
         # ---- DEV9 — excluded on iOS per Phase 14 (Audit Sec 1.2 RED) ----
 
@@ -318,18 +322,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     # Phase 0-E: SPU2 internal files
     set(PCSX2_SPU2_SOURCES
-        pcsx2/pcsx2/SPU2/spu2.cpp
-        pcsx2/pcsx2/SPU2/spu2sys.cpp
-        pcsx2/pcsx2/SPU2/spu2freeze.cpp
-        pcsx2/pcsx2/SPU2/ADSR.cpp
-        pcsx2/pcsx2/SPU2/Dma.cpp
-        pcsx2/pcsx2/SPU2/Mixer.cpp
-        pcsx2/pcsx2/SPU2/ReadInput.cpp
-        pcsx2/pcsx2/SPU2/RegTable.cpp
-        pcsx2/pcsx2/SPU2/Reverb.cpp
-        pcsx2/pcsx2/SPU2/ReverbResample.cpp
-        pcsx2/pcsx2/SPU2/Debug.cpp
-        pcsx2/pcsx2/SPU2/Wavedump_wav.cpp
+        ${PCSX2_DIR}/SPU2/spu2.cpp
+        ${PCSX2_DIR}/SPU2/spu2sys.cpp
+        ${PCSX2_DIR}/SPU2/spu2freeze.cpp
+        ${PCSX2_DIR}/SPU2/ADSR.cpp
+        ${PCSX2_DIR}/SPU2/Dma.cpp
+        ${PCSX2_DIR}/SPU2/Mixer.cpp
+        ${PCSX2_DIR}/SPU2/ReadInput.cpp
+        ${PCSX2_DIR}/SPU2/RegTable.cpp
+        ${PCSX2_DIR}/SPU2/Reverb.cpp
+        ${PCSX2_DIR}/SPU2/ReverbResample.cpp
+        ${PCSX2_DIR}/SPU2/Debug.cpp
+        ${PCSX2_DIR}/SPU2/Wavedump_wav.cpp
     )
 
     # Phase 0-D: LnxHostSys for iOS (DarwinMisc excluded — uses macOS-only
@@ -459,7 +463,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui
         metal
         pcsx2              # for #include "common/xxx.h" and "pcsx2/xxx.h" style
-        pcsx2/pcsx2        # for direct #include "GS/xxx.h" style
+        ${PCSX2_DIR}        # for direct #include "GS/xxx.h" style
         ${COMMON_DIR}       # for #include "Pcsx2Defs.h" without prefix
         ${THIRDPARTY_INCLUDE_DIRS}
     )
@@ -504,14 +508,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     # Set Metal shader compilation
     set(PCSX2_METAL_SHADERS
-        pcsx2/pcsx2/GS/Renderers/Metal/cas.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/convert.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/present.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/merge.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/misc.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/interlace.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/tfx.metal
-        pcsx2/pcsx2/GS/Renderers/Metal/fxaa.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/cas.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/convert.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/present.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/merge.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/misc.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/interlace.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/tfx.metal
+        ${PCSX2_DIR}/GS/Renderers/Metal/fxaa.metal
     )
 
     # iOS app bundle settings
