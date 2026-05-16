@@ -137,32 +137,15 @@ jobs:
         run: |
           IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
-          echo "=== COMPILE ATTEMPT ==="
           xcrun --sdk iphoneos clang++ \
             -target arm64-apple-ios15.0 \
             -isysroot "$IOS_SDK" \
             -std=c++17 \
-            -ferror-limit=5 \
             -c ios/platform/SymbolStubs.cpp \
             -o /tmp/SymbolStubs_check.o
-          COMPILE_EXIT=$?
-          echo "Compile exit code: $COMPILE_EXIT"
 
-          if [ $COMPILE_EXIT -eq 0 ]; then
-            echo "=== EXPORTED T symbols ==="
-            xcrun nm /tmp/SymbolStubs_check.o \
-              | grep " T " \
-              | grep -E "GSDrawScanline|applyGameFixes|GameDatabase"
-
-            echo "=== REQUIRED U symbols ==="
-            xcrun nm build-ios/libBionicSX2.a 2>/dev/null \
-              | grep " U " \
-              | grep -E "GSDrawScanline|applyGameFixes|GameDatabase" \
-              | sort -u
-          else
-            echo "=== COMPILE FAILED — showing SymbolStubs.cpp content ==="
-            cat ios/platform/SymbolStubs.cpp
-          fi
+          echo "=== ALL EXPORTED T symbols ==="
+          xcrun nm /tmp/SymbolStubs_check.o | grep " T "
 
       - name: Build App Target
         run: |
