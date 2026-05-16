@@ -47,21 +47,6 @@ namespace Common {
     void InhibitScreensaver(bool inhibit) {}
 }
 
-// ── Threading::WorkSema ───────────────────────────────
-namespace Threading {
-    struct WorkSema {
-        void WaitForWork() {}
-        bool WaitForEmpty() { return true; }
-    };
-}
-
-// ── Log:: implementation ──────────────────────────────
-namespace Log {
-    void Write(const char*, const char*, const char*, const char*) {}
-    void WriteFmtArgs(const char*, const char*, const char*,
-        fmt::string_view, fmt::format_args) {}
-}
-
 // ── USB:: namespace stubs ─────────────────────────────
 #include <string_view>
 namespace USB {
@@ -101,12 +86,14 @@ namespace ImGui {
     }
 }
 
-// ── Forward declarations for types used in ImGui code ─
+// ── Forward declarations ─────────────────────────────
 struct SettingsInterface;
 struct InputBindingKey {};
 struct HotkeyInfo;
 struct cdvdSubQ;
+struct Error;
 
+// ── isa_native::GSDrawScanline — inline implementation ──
 namespace isa_native {
     struct GSRasterizerData;
     struct GSVector4i;
@@ -114,64 +101,68 @@ namespace isa_native {
     struct GSScanlineLocalData;
     class GSDrawScanline {
     public:
-        GSDrawScanline();
-        ~GSDrawScanline();
-        void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&);
-        void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&);
-        void SetupDraw(GSRasterizerData&);
-        void ResetCodeCache();
-        void PrintStats();
+        GSDrawScanline() {}
+        ~GSDrawScanline() {}
+        void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
+        void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
+        void SetupDraw(GSRasterizerData&) {}
+        void ResetCodeCache() {}
+        void PrintStats() {}
     };
 }
 namespace bc7decomp { struct color_rgba; }
 
-// Class declarations for new stubs
+// ── SDLInputSource — inline implementation ─────────────
 class SDLInputSource {
 public:
-    SDLInputSource();
-    void ResetRGBForAllPlayers(SettingsInterface&);
+    SDLInputSource() {}
+    void ResetRGBForAllPlayers(SettingsInterface&) {}
 };
 
-struct Error;
+// ── IOCtlSrc — physical disc, RED on iOS (Audit Sec 2.6) ─
 class IOCtlSrc {
 public:
-    IOCtlSrc(std::string path);
-    ~IOCtlSrc();
-    bool Reopen(Error*);
-    bool DiscReady();
-    s32 GetMediaType() const;
-    u32 GetSectorCount() const;
-    s32 GetLayerBreakAddress() const;
-    bool ReadTOC() const;
-    bool ReadTrackSubQ(cdvdSubQ*) const;
-    bool ReadSectors2048(u32, u32, u8*) const;
-    bool ReadSectors2352(u32, u32, u8*) const;
+    IOCtlSrc(std::string) {}
+    ~IOCtlSrc() {}
+    bool Reopen(Error*) { return false; }
+    bool DiscReady() { return false; }
+    int  GetMediaType() const { return -1; }
+    unsigned int GetSectorCount() const { return 0; }
+    int  GetLayerBreakAddress() const { return 0; }
+    bool ReadTOC() const { return false; }
+    bool ReadTrackSubQ(cdvdSubQ*) const { return false; }
+    bool ReadSectors2048(unsigned int, unsigned int, unsigned char*) const { return false; }
+    bool ReadSectors2352(unsigned int, unsigned int, unsigned char*) const { return false; }
 };
 
+// ── SaveStateBase::vuJITFreeze — JIT disabled on iOS ───
 class SaveStateBase {
 public:
-    void vuJITFreeze();
+    void vuJITFreeze() {}
 };
 
+// ── RGBA8Image — image loading stub ────────────────────
 class RGBA8Image {
 public:
-    RGBA8Image();
-    RGBA8Image(RGBA8Image&&);
-    bool LoadFromBuffer(const char*, const void*, size_t);
+    RGBA8Image() {}
+    RGBA8Image(RGBA8Image&&) {}
+    bool LoadFromBuffer(const char*, const void*, size_t) { return false; }
 };
 
+// ── MemoryInterface — Patch system write operations ────
 class MemoryInterface {
 public:
-    void IdempotentWrite8(u32 addr, u8 val);
-    void IdempotentWrite16(u32 addr, u16 val);
-    void IdempotentWrite32(u32 addr, u32 val);
-    void IdempotentWrite64(u32 addr, u64 val);
-    void IdempotentWriteBytes(u32 addr, void* data, u32 size);
+    void IdempotentWrite8(unsigned int, unsigned char) {}
+    void IdempotentWrite16(unsigned int, unsigned short) {}
+    void IdempotentWrite32(unsigned int, unsigned int) {}
+    void IdempotentWrite64(unsigned int, unsigned long long) {}
+    void IdempotentWriteBytes(unsigned int, void*, unsigned int) {}
 };
 
+// ── HTTPDownloader — use CFNet backend on iOS ──────────
 class HTTPDownloader {
 public:
-    static std::unique_ptr<HTTPDownloader> Create(std::string ua);
+    static std::unique_ptr<HTTPDownloader> Create(std::string) { return nullptr; }
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -262,82 +253,6 @@ char* cplus_demangle(const char* m, int o) { return nullptr; }
 int cplus_demangle_opname(const char* o, void* r, int f) { return 0; }
 
 // ══════════════════════════════════════════════════════════════
-// dVifUnpack templates — Category 1
-// ══════════════════════════════════════════════════════════════
-template<int vifidx> void dVifUnpack(const u8* data, bool isFill);
-template<> void dVifUnpack<0>(const u8* data, bool isFill) {}
-template<> void dVifUnpack<1>(const u8* data, bool isFill) {}
-
-// ══════════════════════════════════════════════════════════════
-// isa_native::GSDrawScanline — Category 1 (SW renderer stubs)
-// ══════════════════════════════════════════════════════════════
-namespace isa_native {
-    GSDrawScanline::GSDrawScanline() {}
-    GSDrawScanline::~GSDrawScanline() {}
-    void GSDrawScanline::BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
-    void GSDrawScanline::DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
-    void GSDrawScanline::SetupDraw(GSRasterizerData&) {}
-    void GSDrawScanline::ResetCodeCache() {}
-    void GSDrawScanline::PrintStats() {}
-}
-
-// ══════════════════════════════════════════════════════════════
-// SDLInputSource — stub entire class (SDL not on iOS)
-// ══════════════════════════════════════════════════════════════
-SDLInputSource::SDLInputSource() {}
-void SDLInputSource::ResetRGBForAllPlayers(SettingsInterface&) {}
-
-// ══════════════════════════════════════════════════════════════
-// IOCtlSrc — physical disc reader: RED on iOS (Audit Sec 2.6)
-// ══════════════════════════════════════════════════════════════
-IOCtlSrc::IOCtlSrc(std::string path) {}
-IOCtlSrc::~IOCtlSrc() {}
-bool IOCtlSrc::Reopen(Error*) { return false; }
-bool IOCtlSrc::DiscReady() { return false; }
-s32  IOCtlSrc::GetMediaType() const { return -1; }
-u32  IOCtlSrc::GetSectorCount() const { return 0; }
-s32  IOCtlSrc::GetLayerBreakAddress() const { return 0; }
-bool IOCtlSrc::ReadTOC() const { return false; }
-bool IOCtlSrc::ReadTrackSubQ(cdvdSubQ*) const { return false; }
-bool IOCtlSrc::ReadSectors2048(u32, u32, u8*) const { return false; }
-bool IOCtlSrc::ReadSectors2352(u32, u32, u8*) const { return false; }
-
-// ══════════════════════════════════════════════════════════════
-// SaveStateBase::vuJITFreeze — JIT disabled on iOS
-// ══════════════════════════════════════════════════════════════
-void SaveStateBase::vuJITFreeze() {}
-
-// ══════════════════════════════════════════════════════════════
-// bc7decomp
-// ══════════════════════════════════════════════════════════════
-namespace bc7decomp {
-    bool unpack_bc7(const void*, color_rgba*) { return false; }
-}
-
-// ══════════════════════════════════════════════════════════════
-// RGBA8Image
-// ══════════════════════════════════════════════════════════════
-RGBA8Image::RGBA8Image() {}
-RGBA8Image::RGBA8Image(RGBA8Image&&) {}
-bool RGBA8Image::LoadFromBuffer(const char*, const void*, size_t) { return false; }
-
-// ══════════════════════════════════════════════════════════════
-// MemoryInterface — Patch system write operations
-// ══════════════════════════════════════════════════════════════
-void MemoryInterface::IdempotentWrite8(u32 addr, u8 val) {}
-void MemoryInterface::IdempotentWrite16(u32 addr, u16 val) {}
-void MemoryInterface::IdempotentWrite32(u32 addr, u32 val) {}
-void MemoryInterface::IdempotentWrite64(u32 addr, u64 val) {}
-void MemoryInterface::IdempotentWriteBytes(u32 addr, void* data, u32 size) {}
-
-// ══════════════════════════════════════════════════════════════
-// HTTPDownloader::Create — use CFNet backend on iOS
-// ══════════════════════════════════════════════════════════════
-std::unique_ptr<HTTPDownloader> HTTPDownloader::Create(std::string ua) {
-    return nullptr;
-}
-
-// ══════════════════════════════════════════════════════════════
 // _g_host_hotkeys — empty hotkey list on iOS
 // ══════════════════════════════════════════════════════════════
 const HotkeyInfo* g_host_hotkeys = nullptr;
@@ -352,3 +267,132 @@ extern "C" void __clear_cache(void* start, void* end) {
         static_cast<size_t>(
             static_cast<char*>(end) - static_cast<char*>(start)));
 }
+
+// ══════════════════════════════════════════════════════════════
+// PASS 4 ADDITIONS — Linker Fix Pass 4
+// ══════════════════════════════════════════════════════════════
+
+// ── _g_Alloc — 7z allocator (C ABI global) ────────────────────
+extern "C" {
+    struct ISzAlloc {
+        void* (*Alloc)(void*, size_t);
+        void  (*Free)(void*, void*);
+    };
+    static void* SzAlloc(void*, size_t size) { return malloc(size); }
+    static void  SzFree(void*, void* addr)   { free(addr); }
+    ISzAlloc g_Alloc = { SzAlloc, SzFree };
+}
+
+// ── FullscreenUI missing functions ────────────────────────────
+namespace FullscreenUI {
+    void SwitchToSettings() {}
+    void SwitchToGameSettings() {}
+    void SwitchToGameSettings(const std::string&) {}
+    void DrawSettingsWindow() {}
+    void DrawInputBindingWindow() {}
+    void CancelAllHddOperations() {}
+    void SetSettingsChanged(void*) {}
+    void PopulateGameListDirectoryCache(void*) {}
+    bool IsEditingGameSettings(void*) { return false; }
+    void* GetEditingSettingsInterface() { return nullptr; }
+    void* GetEditingSettingsInterface(bool) { return nullptr; }
+    bool GetEffectiveBoolSetting(void*, const char*, const char*, bool b) { return b; }
+    void DrawFolderSetting(void*, const char*, const char*, const char*,
+        const std::string&, float, std::pair<void*,float>,
+        std::pair<void*,float>) {}
+    void DrawToggleSetting(void*, const char*, const char*, const char*,
+        const char*, bool, bool, bool, float,
+        std::pair<void*,float>, std::pair<void*,float>) {}
+    void DrawIntListSetting(void*, const char*, const char*, const char*,
+        const char*, int, const char* const*, size_t, bool, int, bool,
+        float, std::pair<void*,float>, std::pair<void*,float>) {}
+}
+
+// ── Log:: — correct signatures ────────────────────────────────
+namespace Log {
+    int GetMaxLevel() { return 0; }
+    bool IsConsoleOutputEnabled() { return true; }
+    bool IsFileOutputEnabled() { return false; }
+    void SetConsoleOutputLevel(int) {}
+    void SetFileOutputLevel(int, const std::string&) {}
+    void SetTimestampsEnabled(bool) {}
+    void Write(int, int, std::string_view) {}
+    void Writev(int, int, const char*, char*) {}
+    void WriteFmtArgs(int, int, std::string_view, const void*) {}
+}
+
+// ── Threading::WorkSema ───────────────────────────────────────
+namespace Threading {
+    struct WorkSema {
+        void WaitForWork() {}
+        void WaitForWorkWithSpin() {}
+        bool CheckForWork() { return false; }
+        void WaitForEmpty() {}
+        void WaitForEmptyWithSpin(){}
+        void Kill() {}
+        void Reset() {}
+    };
+}
+
+// ── FolderMemoryCard ─────────────────────────────────────────
+class FolderMemoryCard {
+public:
+    FolderMemoryCard() {}
+    ~FolderMemoryCard() {}
+    bool Open(const std::string&, const void*, unsigned int, bool,
+              const std::string&, bool) { return false; }
+    void Close(bool) {}
+    bool IsFormatted() const { return false; }
+};
+class FolderMemoryCardAggregator {
+public:
+    FolderMemoryCardAggregator() {}
+    void Open() {}
+    void Close() {}
+    void SetFiltering(bool) {}
+    bool IsPresent(unsigned int) { return false; }
+    bool IsPSX(unsigned int) { return false; }
+    void GetSizeInfo(unsigned int, void*) {}
+    bool Read(unsigned int, unsigned char*, unsigned int, int) { return false; }
+    bool Save(unsigned int, const unsigned char*, unsigned int, int) { return false; }
+    bool EraseBlock(unsigned int, unsigned int) { return false; }
+    unsigned long long GetCRC(unsigned int) { return 0; }
+    void NextFrame(unsigned int) {}
+    bool ReIndex(unsigned int, bool, const std::string&) { return false; }
+};
+
+// ── GameDatabase ─────────────────────────────────────────────
+namespace GameDatabase {
+    const void* findGame(std::string_view) { return nullptr; }
+}
+namespace GameDatabaseSchema {
+    struct GameEntry {
+        void applyGameFixes(void*, bool) const {}
+        void applyGSHardwareFixes(void*) const {}
+        std::string memcardFiltersAsString() const { return {}; }
+        const void* findPatch(unsigned int) const { return nullptr; }
+    };
+}
+
+// ── Host::OnAchievementsLoginRequested ────────────────────────
+namespace Host {
+    void OnAchievementsLoginRequested(int) {}
+}
+
+// ── InputManager keyboard stubs ──────────────────────────────
+namespace InputManager {
+    void* ConvertHostKeyboardStringToCode(std::string_view) { return nullptr; }
+    std::string ConvertHostKeyboardCodeToString(unsigned int) { return {}; }
+    void* ConvertHostKeyboardCodeToIcon(unsigned int) { return nullptr; }
+}
+
+// ── ImGui::InputText ──────────────────────────────────────────
+namespace ImGui {
+    bool InputText(const char*, std::string*, int, int (*)(void*), void*) { return false; }
+}
+
+// ── FileAccessHelper ──────────────────────────────────────────
+class FileAccessHelper {
+public:
+    ~FileAccessHelper() {}
+};
