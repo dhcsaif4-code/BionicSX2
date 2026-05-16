@@ -1,79 +1,51 @@
 // BionicSX2 — FmtLogStubs.cpp
-// Pure C++ (not ObjC++) so template specializations compile cleanly.
+// Uses REAL fmt headers so mangled names match libBionicSX2.a exactly.
 // AUDIT REFERENCE: Phase 0-A
+
+// Tell fmt this is NOT a header-only build — we provide the definitions here
+#define FMT_HEADER_ONLY 0
+
+#include "../../3rdparty/fmt/include/fmt/format.h"
+#include "../../3rdparty/fmt/include/fmt/format-inl.h"
 
 #include <string>
 #include <locale>
 #include <string_view>
-#include <cstdint>
 #include <cstdarg>
 
-// ── Minimal fmt v12 ABI types (must match 3rdparty/fmt layout) ───────────────
+// ── Provide the non-inline fmt symbols the linker needs ──────────────────────
 namespace fmt {
-inline namespace v12 {
-
-struct string_view_ref {
-    const char* data_;
-    std::size_t size_;
-};
-
-struct format_args_ref {
-    const void* types_;
-    const void* values_;
-    int         size_;
-};
-
-struct locale_ref {
-    const void* locale_;
-
-    template <typename Locale>
-    Locale get() const { return Locale(); }
-};
-
+FMT_BEGIN_NAMESPACE
 namespace detail {
-    struct buffer_base {
-        char*       ptr_     = nullptr;
-        std::size_t size_    = 0;
-        std::size_t capacity_= 0;
-        virtual void grow(std::size_t) {}
-        virtual ~buffer_base() {}
-    };
-
-    template <typename T>
-    struct buffer : buffer_base {};
-
-    void vformat_to(buffer<char>&, string_view_ref, format_args_ref, locale_ref) {}
-    bool is_printable(unsigned int) { return true; }
+    template void vformat_to(buffer<char>&, basic_string_view<char>,
+                             basic_format_args<context>, locale_ref);
+    FMT_FUNC bool is_printable(uint32_t cp);
+}
+FMT_FUNC std::string vformat(basic_string_view<char>, basic_format_args<context>);
+FMT_FUNC void report_error(const char*);
+template FMT_FUNC std::locale locale_ref::get<std::locale>() const;
+FMT_END_NAMESPACE
 }
 
-std::string vformat(string_view_ref, format_args_ref) { return {}; }
-void        report_error(const char*) {}
-
-// Explicit instantiation so the mangled symbol exists in this TU
-template std::locale locale_ref::get<std::locale>() const;
-
-} // v12
-} // fmt
-
-// ── Log namespace (LOGLEVEL / ConsoleColors are plain enums in PCSX2) ─────────
-// We reproduce the minimal enum values needed to match the ABI mangling.
+// ── LOGLEVEL / ConsoleColors — must match common/Logging.h ABI exactly ───────
 enum LOGLEVEL : unsigned int {
     LOGLEVEL_NONE=0, LOGLEVEL_ERROR, LOGLEVEL_WARNING, LOGLEVEL_PERF,
     LOGLEVEL_INFO, LOGLEVEL_VERBOSE, LOGLEVEL_DEV, LOGLEVEL_DEBUG,
     LOGLEVEL_TRACE, LOGLEVEL_BULK
 };
-enum ConsoleColors : unsigned int { Color_Default = 0 };
+enum ConsoleColors : unsigned int { Color_Default=0 };
 
+// ── Log stubs — use real fmt types so mangling matches ───────────────────────
 namespace Log {
     void Write(LOGLEVEL, ConsoleColors, std::string_view) {}
-    void Writev(LOGLEVEL, ConsoleColors, const char*, va_list) {}
-    void WriteFmtArgs(LOGLEVEL, ConsoleColors,
-                      fmt::v12::string_view_ref,
-                      fmt::v12::format_args_ref) {}
-    LOGLEVEL    GetMaxLevel()              { return LOGLEVEL_NONE; }
-    bool        IsConsoleOutputEnabled()   { return false; }
-    bool        IsFileOutputEnabled()      { return false; }
-    void        SetConsoleOutputLevel(LOGLEVEL) {}
-    void        SetFileOutputLevel(LOGLEVEL, std::string) {}
-    void        SetTimestampsEnabled(bool) {}
+    void Writev(LOGLEVEL, ConsoleColors, const char*, char*) {}
+    void WriteFmtArgs(LOGLEVEL level, ConsoleColors color,
+                      fmt::basic_string_view<char> fmt_str,
+                      fmt::basic_format_args<fmt::context> args) {}
+    LOGLEVEL GetMaxLevel()            { return LOGLEVEL_NONE; }
+    bool IsConsoleOutputEnabled()     { return false; }
+    bool IsFileOutputEnabled()        { return false; }
+    void SetConsoleOutputLevel(LOGLEVEL) {}
+    void SetFileOutputLevel(LOGLEVEL, std::string) {}
+    void SetTimestampsEnabled(bool)   {}
 }

@@ -12,11 +12,6 @@
 #include <string_view>
 #include <libkern/OSCacheControl.h>
 
-extern "C" void vtlb_DynBackpatchLoadStore(
-    unsigned long, unsigned int, unsigned int, unsigned int,
-    unsigned int,  unsigned int, unsigned char, unsigned char,
-    unsigned char, bool, bool, bool) {}
-
 // PCSX2 type aliases (Pcsx2Types.h unavailable — empty submodule)
 using u8  = std::uint8_t;
 using u16 = std::uint16_t;

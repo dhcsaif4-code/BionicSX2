@@ -30,12 +30,14 @@ bool RGBA8Image::LoadFromBuffer(const char*, const void*, size_t) { return false
 // ════════════════════════════════════════════════════════════════════════════
 namespace isa_native {
 
-struct GSRasterizerData { char _pad[256]; };
-struct GSScanlineLocalData { char _pad[512]; };
+// Opaque types — sized large enough to cover any real layout
+struct alignas(16) GSRasterizerData  { char _[1024]; };
+struct alignas(16) GSScanlineLocalData { char _[2048]; };
+struct alignas(16) GSVector4i { int x,y,z,w; };
+struct alignas(16) GSVertexSW { float x,y,z,w; };
 
 struct GSDrawScanline {
-    void* vtable_[16] = {};
-    char  state_[512] = {};
+    char state_[1024] = {};
 
     GSDrawScanline();
     ~GSDrawScanline();
@@ -43,16 +45,16 @@ struct GSDrawScanline {
     void ResetCodeCache();
     void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&);
     void SetupDraw(GSRasterizerData&);
-    void DrawRect(const void*, const void*, GSScanlineLocalData&);
+    void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&);
 };
 
 GSDrawScanline::GSDrawScanline()  {}
 GSDrawScanline::~GSDrawScanline() {}
-void GSDrawScanline::PrintStats()    {}
+void GSDrawScanline::PrintStats()     {}
 void GSDrawScanline::ResetCodeCache() {}
 void GSDrawScanline::BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
 void GSDrawScanline::SetupDraw(GSRasterizerData&) {}
-void GSDrawScanline::DrawRect(const void*, const void*, GSScanlineLocalData&) {}
+void GSDrawScanline::DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
 
 } // namespace isa_native
 
@@ -222,19 +224,18 @@ namespace Threading {
   void WorkSema::Reset()                {}
 }
 
-// ════════════════════════════════════════════════════════════════════════════
 // GROUP K — GameDatabaseSchema::GameEntry
-// ════════════════════════════════════════════════════════════════════════════
-struct Pcsx2ConfigFull { char _pad[4096]; };  // opaque stand-in
+// Pcsx2Config here is the root struct, not Pcsx2Config::McdOptions
+struct Pcsx2Config_Root { char _[8192]; };
 
 namespace GameDatabaseSchema {
   struct GameEntry {
-    void applyGameFixes(Pcsx2ConfigFull&, bool) const;
+    void applyGameFixes(Pcsx2Config_Root&, bool) const;
     void applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const;
     std::string memcardFiltersAsString() const;
     const void* findPatch(uint32_t) const;
   };
-  void GameEntry::applyGameFixes(Pcsx2ConfigFull&, bool) const {}
+  void GameEntry::applyGameFixes(Pcsx2Config_Root&, bool) const {}
   void GameEntry::applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const {}
   std::string GameEntry::memcardFiltersAsString() const { return {}; }
   const void* GameEntry::findPatch(uint32_t) const { return nullptr; }

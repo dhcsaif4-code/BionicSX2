@@ -401,6 +401,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
         ios/platform/FmtLogStubs.cpp
+        ios/platform/VtlbStub.cpp
     )
 
     # Metal renderer (Phase 11-12)
@@ -527,6 +528,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # BionicSX2_App needs fmt headers (and other 3rdparty) for MissingSymbols.mm
     target_include_directories(BionicSX2_App PRIVATE
         ios/platform
+        ${CMAKE_SOURCE_DIR}/3rdparty/fmt/include
         ${THIRDPARTY_INCLUDE_DIRS}
         $<$<BOOL:${IOS_DEPS}>:${IOS_DEPS}/include>
     )
