@@ -12,6 +12,11 @@
 #include <string_view>
 #include <libkern/OSCacheControl.h>
 
+extern "C" void vtlb_DynBackpatchLoadStore(
+    unsigned long, unsigned int, unsigned int, unsigned int,
+    unsigned int,  unsigned int, unsigned char, unsigned char,
+    unsigned char, bool, bool, bool) {}
+
 // PCSX2 type aliases (Pcsx2Types.h unavailable — empty submodule)
 using u8  = std::uint8_t;
 using u16 = std::uint16_t;
@@ -20,11 +25,6 @@ using u64 = std::uint64_t;
 using s32 = std::int32_t;
 using uptr = std::uintptr_t;
 
-// Forward decls for types whose headers are unavailable (empty submodule)
-namespace fmt {
-    using string_view = std::string_view;
-    struct format_args {};
-}
 struct StateWrapper;
 
 // ══════════════════════════════════════════════════════
@@ -144,12 +144,6 @@ void USBwrite32(u32 addr, u32 val) {}
 
 // VIF — Category 1 (Phase 0-B)
 void VifUnpackSSE_Init() {}
-
-// vtlb_DynBackpatchLoadStore — extern "C" required by callers in libBionicSX2.a
-extern "C" void vtlb_DynBackpatchLoadStore(
-    unsigned long, unsigned int, unsigned int, unsigned int,
-    unsigned int, unsigned int, unsigned char, unsigned char,
-    unsigned char, bool, bool, bool) {}
 
 // Misc
 void ShortSpin() {}
@@ -323,50 +317,4 @@ namespace bc7decomp {
   bool unpack_bc7(const void*, color_rgba*) { return false; }
 }
 
-// ── fmt::v12 real ABI stubs ──────────────────────────────────────────────────
-// These match the mangled names in libBionicSX2.a compiled with fmt v12
-#include <locale>
-#include <string>
 
-namespace fmt {
-inline namespace v12 {
-  namespace detail {
-    struct buffer_base { virtual ~buffer_base() {} };
-    template<typename T> struct buffer : buffer_base {};
-    struct locale_ref_impl {};
-  }
-
-  struct string_view_t { const char* data_; size_t size_; };
-  struct format_args_t {};
-  struct locale_ref {
-    detail::locale_ref_impl* impl_ = nullptr;
-    template<typename T> T get() const { return T(); }
-  };
-
-  namespace detail {
-    void vformat_to(buffer<char>&, string_view_t, format_args_t, locale_ref) {}
-    bool is_printable(unsigned int) { return true; }
-  }
-
-  std::string vformat(string_view_t, format_args_t) { return {}; }
-  void report_error(const char*) {}
-}
-}
-
-// ── Log stubs with correct fmt v12 ABI types ────────────────────────────────
-enum LOGLEVEL_T : unsigned int {
-  LL_NONE=0, LL_ERROR, LL_WARNING, LL_PERF, LL_INFO,
-  LL_VERBOSE, LL_DEV, LL_DEBUG, LL_TRACE, LL_BULK
-};
-enum ConsoleColors_T : unsigned int { CC_Default=0 };
-
-namespace Log {
-  void Write(unsigned int, unsigned int, const char*, size_t) {}
-  void Writev(unsigned int, unsigned int, const char*, char*) {}
-  unsigned int GetMaxLevel() { return 0; }
-  bool IsConsoleOutputEnabled() { return false; }
-  bool IsFileOutputEnabled()    { return false; }
-  void SetConsoleOutputLevel(unsigned int) {}
-  void SetFileOutputLevel(unsigned int, std::string) {}
-  void SetTimestampsEnabled(bool) {}
-}

@@ -29,28 +29,32 @@ bool RGBA8Image::LoadFromBuffer(const char*, const void*, size_t) { return false
 // GROUP B — isa_native::GSDrawScanline  (SW rasterizer stubs — Metal only on iOS)
 // ════════════════════════════════════════════════════════════════════════════
 namespace isa_native {
-  struct GSRasterizerData {};
-  struct GSScanlineLocalData {};
-  struct GSVector4i { int x,y,z,w; };
-  struct GSVertexSW { float x,y,z,w; };
 
-  struct GSDrawScanline {
+struct GSRasterizerData { char _pad[256]; };
+struct GSScanlineLocalData { char _pad[512]; };
+
+struct GSDrawScanline {
+    void* vtable_[16] = {};
+    char  state_[512] = {};
+
     GSDrawScanline();
     ~GSDrawScanline();
     void PrintStats();
     void ResetCodeCache();
     void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&);
     void SetupDraw(GSRasterizerData&);
-    void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&);
-  };
-  GSDrawScanline::GSDrawScanline()  {}
-  GSDrawScanline::~GSDrawScanline() {}
-  void GSDrawScanline::PrintStats()    {}
-  void GSDrawScanline::ResetCodeCache() {}
-  void GSDrawScanline::BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
-  void GSDrawScanline::SetupDraw(GSRasterizerData&) {}
-  void GSDrawScanline::DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
-}
+    void DrawRect(const void*, const void*, GSScanlineLocalData&);
+};
+
+GSDrawScanline::GSDrawScanline()  {}
+GSDrawScanline::~GSDrawScanline() {}
+void GSDrawScanline::PrintStats()    {}
+void GSDrawScanline::ResetCodeCache() {}
+void GSDrawScanline::BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
+void GSDrawScanline::SetupDraw(GSRasterizerData&) {}
+void GSDrawScanline::DrawRect(const void*, const void*, GSScanlineLocalData&) {}
+
+} // namespace isa_native
 
 // ════════════════════════════════════════════════════════════════════════════
 // GROUP C — AudioStream backends (Cubeb + SDL — unavailable on iOS)
@@ -221,19 +225,19 @@ namespace Threading {
 // ════════════════════════════════════════════════════════════════════════════
 // GROUP K — GameDatabaseSchema::GameEntry
 // ════════════════════════════════════════════════════════════════════════════
-struct Patch;
+struct Pcsx2ConfigFull { char _pad[4096]; };  // opaque stand-in
 
 namespace GameDatabaseSchema {
   struct GameEntry {
-    void applyGameFixes(void*, bool) const;
+    void applyGameFixes(Pcsx2ConfigFull&, bool) const;
     void applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const;
     std::string memcardFiltersAsString() const;
-    const Patch* findPatch(uint32_t) const;
+    const void* findPatch(uint32_t) const;
   };
-  void GameEntry::applyGameFixes(void*, bool) const {}
+  void GameEntry::applyGameFixes(Pcsx2ConfigFull&, bool) const {}
   void GameEntry::applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const {}
   std::string GameEntry::memcardFiltersAsString() const { return {}; }
-  const Patch* GameEntry::findPatch(uint32_t) const { return nullptr; }
+  const void* GameEntry::findPatch(uint32_t) const { return nullptr; }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
