@@ -267,6 +267,30 @@ if not patched:
     print("No _s functions found — nothing to patch")
 PYEOF
 
+# Patch compat.h: Windows stat64/fseeki64 -> POSIX stat/fseeko
+python3 << 'PYEOF'
+import re
+filepath = "libzip/lib/compat.h"
+with open(filepath, 'r') as f:
+    content = f.read()
+replacements = {
+    'typedef struct _stat64 zip_os_stat_t;': 'typedef struct stat zip_os_stat_t;',
+    '#define zip_os_stat  _stat64':          '#define zip_os_stat  stat',
+    '#define zip_os_fstat _fstat64':         '#define zip_os_fstat fstat',
+    '#define zip_os_fseek _fseeki64':        '#define zip_os_fseek fseeko',
+    '#define zip_os_ftell _ftelli64':        '#define zip_os_ftell ftello',
+}
+for old, new in replacements.items():
+    old_re = re.escape(old).replace(r'\ ', r'\s+')
+    content, n = re.subn(old_re, new, content)
+    if n:
+        print(f"Patched compat.h: {old}")
+    else:
+        print(f"Not found in compat.h: {old}")
+with open(filepath, 'w') as f:
+    f.write(content)
+PYEOF
+
 mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
 cmake "$SRC/libzip" $FLAGS \
   -DENABLE_COMMONCRYPTO=ON \
