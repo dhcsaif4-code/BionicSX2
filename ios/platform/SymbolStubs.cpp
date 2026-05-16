@@ -48,33 +48,30 @@ namespace Log {
 // are no callers within this translation unit, leaving the
 // linker with unresolved symbols.
 
-// Global structs must be declared BEFORE isa_native uses them
+// Global structs — GSScanlineLocalData must be global (not in isa_native)
 struct GSVector4i {};
 struct GSVertexSW {};
+struct GSScanlineLocalData {};
 
 namespace isa_native {
-
-  struct GSScanlineLocalData {};
   struct GSRasterizerData {};
-
   struct GSDrawScanline {
     GSDrawScanline();
     ~GSDrawScanline();
-    void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&);
+    void BeginDraw(const GSRasterizerData&, ::GSScanlineLocalData&);
     void SetupDraw(GSRasterizerData&);
-    void DrawRect(const ::GSVector4i&, const ::GSVertexSW&, GSScanlineLocalData&);
+    void DrawRect(const ::GSVector4i&, const ::GSVertexSW&, ::GSScanlineLocalData&);
     void PrintStats();
     void ResetCodeCache();
   };
-
-} // namespace isa_native
+}
 
 // Out-of-line definitions — forces compiler to emit symbols
 isa_native::GSDrawScanline::GSDrawScanline()  {}
 isa_native::GSDrawScanline::~GSDrawScanline() {}
-void isa_native::GSDrawScanline::BeginDraw(const isa_native::GSRasterizerData&, isa_native::GSScanlineLocalData&) {}
+void isa_native::GSDrawScanline::BeginDraw(const isa_native::GSRasterizerData&, ::GSScanlineLocalData&) {}
 void isa_native::GSDrawScanline::SetupDraw(isa_native::GSRasterizerData&) {}
-void isa_native::GSDrawScanline::DrawRect(const GSVector4i&, const GSVertexSW&, isa_native::GSScanlineLocalData&) {}
+void isa_native::GSDrawScanline::DrawRect(const ::GSVector4i&, const ::GSVertexSW&, ::GSScanlineLocalData&) {}
 void isa_native::GSDrawScanline::PrintStats() {}
 void isa_native::GSDrawScanline::ResetCodeCache() {}
 
