@@ -338,7 +338,10 @@ inline namespace v12 {
 
   struct string_view_t { const char* data_; size_t size_; };
   struct format_args_t {};
-  struct locale_ref { detail::locale_ref_impl* impl_ = nullptr; };
+  struct locale_ref {
+    detail::locale_ref_impl* impl_ = nullptr;
+    template<typename T> T get() const { return T(); }
+  };
 
   namespace detail {
     void vformat_to(buffer<char>&, string_view_t, format_args_t, locale_ref) {}
@@ -347,10 +350,6 @@ inline namespace v12 {
 
   std::string vformat(string_view_t, format_args_t) { return {}; }
   void report_error(const char*) {}
-
-  template<> std::locale locale_ref::get<std::locale>() const {
-    return std::locale();
-  }
 }
 }
 
