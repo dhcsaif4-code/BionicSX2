@@ -451,10 +451,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/fmt/src/format.cc
     )
 
-    set_source_files_properties(
-        ios/platform/GSDrawScanlineStub.s
-        PROPERTIES LANGUAGE ASM
-    )
+    # NOTE: No LANGUAGE ASM property needed — CMake/Clang auto-detect .s files
 
     # Force-load the entire static lib — app .o files don't reference core symbols
     # so the linker would otherwise strip libBionicSX2.a to 85KB.
