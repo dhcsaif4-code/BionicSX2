@@ -299,6 +299,11 @@ namespace ImGuiFreeType {
   const ImFontBuilderIO* GetFontLoader() { return nullptr; }
 }
 
+struct SettingsInterface;
+struct StateWrapper;
+struct InputBindingKey {};
+struct Pcsx2Config {};
+
 // =====================================================================
 // SDLInputSource stubs — SDL does not exist on iOS
 // =====================================================================
@@ -309,7 +314,6 @@ namespace SDLInputSource {
 // =====================================================================
 // USB namespace stubs — not functional in bringup
 // =====================================================================
-#include "pcsx2/Input/InputManager.h"
 namespace USB {
   std::string GetConfigDevice(const SettingsInterface&, u32) { return {}; }
   std::string GetConfigSubKey(std::string_view, std::string_view) { return {}; }
