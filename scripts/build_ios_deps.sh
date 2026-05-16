@@ -246,7 +246,9 @@ cmake "$SRC/libzip" $FLAGS \
   -DBUILD_REGRESS=OFF \
   -DBUILD_EXAMPLES=OFF \
   -DBUILD_DOC=OFF \
-  -DZLIB_ROOT="$INSTALL"
+  -DZLIB_ROOT="$INSTALL" \
+  -DHAVE_MEMCPY_S=0 \
+  -DCMAKE_C_FLAGS="-Dmemcpy_s(d,ds,s,n)=memcpy(d,s,n) -Dmemmove_s(d,ds,s,n)=memmove(d,s,n)"
 make -j$(sysctl -n hw.logicalcpu)
 find . -name "libzip.a" -exec cp {} "$INSTALL/lib/" \;
 cp "$SRC/libzip/lib/zip.h" "$INSTALL/include/" 2>/dev/null || true
