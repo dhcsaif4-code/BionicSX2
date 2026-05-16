@@ -221,19 +221,17 @@ namespace Threading {
 // ════════════════════════════════════════════════════════════════════════════
 // GROUP K — GameDatabaseSchema::GameEntry
 // ════════════════════════════════════════════════════════════════════════════
-struct Pcsx2Config;
-namespace Pcsx2Config { struct GSOptions {}; }
 struct Patch;
 
 namespace GameDatabaseSchema {
   struct GameEntry {
-    void applyGameFixes(Pcsx2Config&, bool) const;
-    void applyGSHardwareFixes(Pcsx2Config::GSOptions&) const;
+    void applyGameFixes(::Pcsx2Config::McdOptions&, bool) const;
+    void applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const;
     std::string memcardFiltersAsString() const;
     const Patch* findPatch(uint32_t) const;
   };
-  void GameEntry::applyGameFixes(Pcsx2Config&, bool) const {}
-  void GameEntry::applyGSHardwareFixes(Pcsx2Config::GSOptions&) const {}
+  void GameEntry::applyGameFixes(::Pcsx2Config::McdOptions&, bool) const {}
+  void GameEntry::applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const {}
   std::string GameEntry::memcardFiltersAsString() const { return {}; }
   const Patch* GameEntry::findPatch(uint32_t) const { return nullptr; }
 }
