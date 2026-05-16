@@ -63,24 +63,24 @@ jobs:
           mkdir -p ios-deps/install/include
           mkdir -p ios-deps/install/lib
           mkdir -p ios-deps/install/include/webp
-          cat > ios-deps/install/include/webp/decode.h << 'EOF'
-#pragma once
-#include <stddef.h>
-#include <stdint.h>
-typedef struct WebPDecoderConfig WebPDecoderConfig;
-static inline int WebPGetInfo(const uint8_t* d, size_t s,
-  int* w, int* h) { return 0; }
-static inline uint8_t* WebPDecodeRGBA(const uint8_t* d,
-  size_t s, int* w, int* h) { return nullptr; }
-static inline void WebPFree(void* p) {}
-EOF
-          cat > ios-deps/install/include/webp/encode.h << 'EOF'
-#pragma once
-#include <stddef.h>
-#include <stdint.h>
-static inline size_t WebPEncodeRGBA(const uint8_t* r,
-  int w, int h, int s, float q, uint8_t** o) { return 0; }
-EOF
+          printf '%s\n' \
+            '#pragma once' \
+            '#include <stddef.h>' \
+            '#include <stdint.h>' \
+            'typedef struct WebPDecoderConfig WebPDecoderConfig;' \
+            'static inline int WebPGetInfo(const uint8_t* d, size_t s,' \
+            '  int* w, int* h) { return 0; }' \
+            'static inline uint8_t* WebPDecodeRGBA(const uint8_t* d,' \
+            '  size_t s, int* w, int* h) { return nullptr; }' \
+            'static inline void WebPFree(void* p) {}' \
+            > ios-deps/install/include/webp/decode.h
+          printf '%s\n' \
+            '#pragma once' \
+            '#include <stddef.h>' \
+            '#include <stdint.h>' \
+            'static inline size_t WebPEncodeRGBA(const uint8_t* r,' \
+            '  int w, int h, int s, float q, uint8_t** o) { return 0; }' \
+            > ios-deps/install/include/webp/encode.h
           touch ios-deps/install/include/.keep
           touch ios-deps/install/lib/.keep
 
