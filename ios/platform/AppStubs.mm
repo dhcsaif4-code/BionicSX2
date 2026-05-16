@@ -91,23 +91,7 @@ struct HotkeyInfo;
 struct cdvdSubQ;
 struct Error;
 
-// ── isa_native::GSDrawScanline — inline implementation ──
-namespace isa_native {
-    struct GSRasterizerData;
-    struct GSVector4i;
-    struct GSVertexSW;
-    struct GSScanlineLocalData;
-    class GSDrawScanline {
-    public:
-        GSDrawScanline() {}
-        ~GSDrawScanline() {}
-        void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
-        void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
-        void SetupDraw(GSRasterizerData&) {}
-        void ResetCodeCache() {}
-        void PrintStats() {}
-    };
-}
+// NOTE: GSDrawScanline symbols provided by GSDrawScanlineStub.s (ARM64 asm with exact mangling)
 // ══════════════════════════════════════════════════════════════
 // C-ABI stubs — moved from CStubs.c (C files produce wrong ABI)
 // These must use C++ linkage to match callers in libBionicSX2.a
