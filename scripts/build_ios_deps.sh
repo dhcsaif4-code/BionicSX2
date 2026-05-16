@@ -61,6 +61,9 @@ cmake "$SRC/zstd/build/cmake" $FLAGS \
   -DZSTD_BUILD_SHARED=OFF
 make -j$(sysctl -n hw.logicalcpu)
 find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+cp "$SRC/zstd/lib/zstd.h" "$INSTALL/include/" 2>/dev/null || true
+cp "$SRC/zstd/lib/zstd_errors.h" "$INSTALL/include/" 2>/dev/null || true
+cp "$SRC/zstd/lib/zdict.h" "$INSTALL/include/" 2>/dev/null || true
 
 # ── lz4 ───────────────────────────────────────────────
 cd "$SRC"
