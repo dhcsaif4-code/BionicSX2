@@ -39,32 +39,31 @@ namespace Log {
     fmt::v12::basic_format_args<fmt::v12::context>) {}
 }
 
-// ── isa_native::GSDrawScanline stubs ─────────────────────────────────────────
-// Structs defined in global namespace to match libBionicSX2.a ABI exactly
-
-struct GSScanlineLocalData {};
-struct GSRasterizerData {};
-struct GSVector4i {};
-struct GSVertexSW {};
+// ── GSDrawScanline + GameDatabaseSchema ──────────────────
+// Structs must be defined inside isa_native namespace
+// so NS_ back-reference in mangled name is correct
 
 namespace isa_native {
-  // Re-declare GSRasterizerData in isa_native namespace
-  // (nm shows NS_ prefix = same namespace reference)
-  using GSRasterizerData = ::GSRasterizerData;
-  using GSScanlineLocalData = ::GSScanlineLocalData;
+
+  struct GSScanlineLocalData {};
+  struct GSRasterizerData {};
 
   struct GSDrawScanline {
     GSDrawScanline()  {}
     ~GSDrawScanline() {}
     void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
     void SetupDraw(GSRasterizerData&) {}
-    void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
+    void DrawRect(const ::GSVector4i&, const ::GSVertexSW&, GSScanlineLocalData&) {}
     void PrintStats() {}
     void ResetCodeCache() {}
   };
-}
 
-// ── GameDatabaseSchema::GameEntry::applyGameFixes ────────────────────────────
+} // namespace isa_native
+
+struct GSVector4i {};
+struct GSVertexSW {};
+
+// GameDatabaseSchema — global namespace
 struct Pcsx2Config {};
 namespace GameDatabaseSchema {
   struct GameEntry {
