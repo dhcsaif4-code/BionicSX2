@@ -301,8 +301,7 @@ namespace ImGuiFreeType {
 
 // ImGui::InputText(std::string*) stub — imgui_stdlib.cpp not available
 typedef int ImGuiInputTextFlags;
-typedef int (*ImGuiInputTextCallback)(ImGuiInputTextCallbackData*);
-struct ImGuiInputTextCallbackData {};
+typedef int (*ImGuiInputTextCallback)(void*);
 namespace ImGui {
   bool InputText(const char* label, std::string* str,
       ImGuiInputTextFlags flags, ImGuiInputTextCallback callback,
