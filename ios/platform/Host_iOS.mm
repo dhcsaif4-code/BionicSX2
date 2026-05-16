@@ -71,6 +71,15 @@ SettingsInterface* Host::GetSettingsInterface() { return nullptr; }
 void Host::SetDefaultUISettings(SettingsInterface& si) {}
 std::unique_ptr<ProgressCallback> Host::CreateHostProgressCallback() { return nullptr; }
 int Host::LocaleSensitiveCompare(std::string_view lhs, std::string_view rhs) { return 0; }
+bool Host::ShouldPreferHostFileSelector() { return false; }
+void Host::OpenHostFileSelectorAsync(
+    std::string_view, bool,
+    std::function<void(const std::string&)> callback,
+    std::vector<std::string>,
+    std::string_view) {
+  callback(std::string{});
+}
+void Host::OnAchievementsLoginRequested(int) {}
 
 namespace Host { namespace Internal {
 SettingsInterface* GetBaseSettingsLayer() { return nullptr; }

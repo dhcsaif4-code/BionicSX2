@@ -1,0 +1,1439 @@
+================================================================================
+ BIONICSX2 — FULL PROJECT EXECUTION ORDER
+ Basis: BionicSX2_PCSX2_macOS_Audit_.txt — THIS DOCUMENT IS YOUR ONLY LAW
+ NO ASSUMPTIONS. NO EXTERNAL REFERENCES.
+ Every decision must cite a section number from the audit document.
+================================================================================
+
+THIS IS A LIVE EXECUTION ORDER.
+Stop planning. Start building.
+Execute every phase in sequence.
+Report completion after each phase before moving to the next.
+The only valid reason to stop is a HARD BLOCKER you cannot resolve.
+Everything else — you solve and continue.
+All build steps MUST execute through GitHub Actions workflow.
+
+================================================================================
+ PRE-BUILD MANDATE — READ BEFORE TOUCHING ANY FILE
+================================================================================
+
+  1. Read BionicSX2_PCSX2_macOS_Audit_.txt in full.
+  2. Confirm you have read all 13 sections including Section 2.3-ADDENDUM.
+  3. Audit Section 13.7 Summary Table is your master file list —
+     every file you create must appear in that table.
+  4. Color rules:
+       GREEN  → compile as-is
+       YELLOW → port with documented changes
+       RED / N/A → exclude from build entirely
+       NEW    → create from scratch using audit specs
+
+================================================================================
+ REPOSITORY LAYOUT
+================================================================================
+
+  /workspaces/BionicSX2/
+  ├── pcsx2/                  # Core emulator (C++17, platform-agnostic)
+  ├── pcsx2-qt/               # Qt frontend — DO NOT PORT, ignore entirely
+  ├── common/                 # Cross-platform support library
+  ├── 3rdparty/               # Vendored third-party libs (partial)
+  ├── cmake/                  # CMake modules
+  ├── ios-deps/               # WHERE YOU WILL BUILD ALL iOS STATIC LIBS
+  │   ├── src/                # cloned sources for libs not in 3rdparty/
+  │   ├── build/              # cmake build dirs per library
+  │   └── install/            # final headers + .a files (CMAKE_PREFIX_PATH)
+  ├── ios/                    # iOS platform layer (create if missing)
+  │   ├── platform/           # C++/ObjC iOS abstractions
+  │   ├── ui/                 # Swift UIKit entry point
+  │   └── entitlements/       # iOS entitlements plist
+  ├── metal/                  # Metal renderer (ported from GS/Renderers/Metal/)
+  ├── scripts/                # Build scripts
+  │   ├── build_ios_deps.sh   # builds all third-party static libs for iOS
+  │   └── build_bionicsx2.sh  # builds the main target
+  └── cmake/
+      └── ios.toolchain.cmake # iOS cross-compilation toolchain
+
+================================================================================
+ PHASE 0 — PRE-LINK PREPARATION  (EXECUTE BEFORE PHASE 1)
+ PURPOSE: Prevent the 9 known linker failure categories.
+          Every item is derived from real link errors.
+          Do this ONCE at project creation — never skip it.
+================================================================================
+
+──────────────────────────────────────────────────────────────────────────────
+0-A  CREATE ios/platform/PCSX2Stubs.mm IMMEDIATELY
+──────────────────────────────────────────────────────────────────────────────
+Create this file at scaffold time (Phase 1), not after link errors appear.
+Register it in CMakeLists.txt as a source file for BionicSX2 target
+BEFORE the first build.
+
+Add to CMakeLists.txt under ios/platform sources:
+  ios/platform/PCSX2Stubs.mm
+
+Minimum required header block for PCSX2Stubs.mm:
+  #import <Foundation/Foundation.h>
+  #include "PrecompiledHeader.h"
+  #include "common/Assertions.h"
+  // ── All stubs below are grouped by failure category ──
+
+──────────────────────────────────────────────────────────────────────────────
+0-B  EXCLUDE SW RENDERER JIT FROM iOS BUILD  (Category 1 fix)
+──────────────────────────────────────────────────────────────────────────────
+GSDrawScanlineCodeGenerator.arm64.cpp and GSSetupPrimCodeGenerator.arm64.cpp
+pull in the entire vixl assembler. We use Metal HW renderer — these must
+NEVER compile for iOS.
+
+In CMakeLists.txt:
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_sources(PCSX2 PRIVATE
+      GS/Renderers/SW/GSDrawScanlineCodeGenerator.arm64.cpp
+      GS/Renderers/SW/GSSetupPrimCodeGenerator.arm64.cpp
+    )
+  endif()
+
+Add these two stubs to PCSX2Stubs.mm:
+  void VifUnpackSSE_Init() {}
+  void vtlb_DynBackpatchLoadStore(uptr, u32, u32, u32,
+    u8, u8, u8, bool, bool, bool) {}
+
+──────────────────────────────────────────────────────────────────────────────
+0-C  FORCE INTERPRETER PATH AT COMPILE TIME  (Category 1 fix)
+     SOURCE: Audit Sections 2.3-ADDENDUM (2.3-F), Phase 21
+──────────────────────────────────────────────────────────────────────────────
+This is the #1 crash risk. Do it before any linking.
+
+WHY: The nVif micro-JIT (dVifUnpack) generates ARM64 NEON machine code at
+runtime. On iOS, the init path via iOSVMManager does not go through
+VMManager::StartVM(), so nVif[idx].vifBlocks.m_bucket is never initialized.
+The first VIF UNPACK command from any game causes immediate SIGSEGV at
+Vif_HashBucket.h:68. Setting newVifDynaRec = 0 routes all VIF unpack
+operations through the pure C++ interpreter path.
+Performance cost: 5–15% on bandwidth-heavy games — acceptable for bringup.
+
+Open pcsx2/Vif_Dynarec.h and replace:
+  static constexpr bool newVifDynaRec = 1;
+
+With:
+  #if defined(__APPLE__) && defined(TARGET_OS_IOS) && TARGET_OS_IOS
+  static constexpr bool newVifDynaRec = 0;  // iOS: no JIT, interpreter path
+  #else
+  static constexpr bool newVifDynaRec = 1;
+  #endif
+
+In CMakeLists.txt, add to iOS target compile definitions:
+  target_compile_definitions(BionicSX2 PRIVATE
+    PCSX2_TARGET_IOS=1
+  )
+
+Also add belt-and-suspenders CMake-level define:
+  add_compile_definitions(TARGET_OS_IOS=1)
+  add_compile_definitions(VIXL_CODE_BUFFER_MMAP=0)
+
+Verify with:
+  grep -n "PCSX2_TARGET_IOS" CMakeLists.txt Vif_Dynarec.h
+  → Must appear in both files.
+
+──────────────────────────────────────────────────────────────────────────────
+0-D  REGISTER LnxHostSys.cpp FOR iOS BUILD  (Category 4 fix)
+──────────────────────────────────────────────────────────────────────────────
+SharedMemoryMappingArea lives in common/Linux/LnxHostSys.cpp.
+Without it, vtlb_Core_Alloc() fails to link.
+This file already has __APPLE__ guards and compiles cleanly on iOS.
+
+Add to CMakeLists.txt:
+  target_sources(BionicSX2 PRIVATE
+    common/Linux/LnxHostSys.cpp
+    common/Darwin/DarwinMisc.cpp   # Mach exception ports — available on iOS
+  )
+
+──────────────────────────────────────────────────────────────────────────────
+0-D2  ADD MISSING GLOBAL-VARIABLE SOURCE FILES  (Category 2 fix)
+──────────────────────────────────────────────────────────────────────────────
+DIAGNOSTIC: ~30 undefined symbols (EmuConfig, g_Sio0, g_Sio2, g_perfmon,
+sif0/1/2, vu1Thread, cdvd, fastjmp_jmp/set, CBreakPoints::*,
+R3000SymbolGuardian …) are caused by source files MISSING from
+CMakeLists.txt, not by stub gaps.
+
+Add ALL of these to target_sources(BionicSX2 PRIVATE …):
+
+  pcsx2/Config.cpp                  # EmuConfig, AllowParams, ConsoleLogging
+  pcsx2/System.cpp                  # ParamsRead, NoOSD
+  pcsx2/GS/GS.cpp                   # g_RealGSMem (confirm definition is here)
+  pcsx2/SIO/Sio0.cpp                # g_Sio0
+  pcsx2/SIO/Sio2.cpp                # g_Sio2
+  pcsx2/PerformanceMetrics.cpp      # g_perfmon
+  pcsx2/Sif.cpp                     # sif0/sif1/sif2
+  pcsx2/MTVU.cpp                    # vu1Thread
+  pcsx2/CDVD/CDVD.cpp              # cdvd global instance
+  common/fastjmp.cpp                # fastjmp_jmp / fastjmp_set
+    # OR if assembly version: set_property(SOURCE … PROPERTY LANGUAGE ASM)
+  pcsx2/DebugTools/BreakPoints.cpp  # CBreakPoints::*
+  pcsx2/DebugTools/SymbolGuardian.cpp # R3000SymbolGuardian
+
+RULE: Before adding a stub for any symbol in 0-F, first check whether a
+real .cpp file above defines it. Real file wins over stub — stubs are
+last resort only.
+
+──────────────────────────────────────────────────────────────────────────────
+0-E  REGISTER ALL SPU2 INTERNAL FILES  (Category 2 fix)
+──────────────────────────────────────────────────────────────────────────────
+The symbols Cores, TimeUpdate, ReverbDownsample, ReverbUpsample, Spdif,
+SPU2_FastWrite, isa_native::* come from SPU2 internals.
+
+Ensure ALL of these are in the iOS CMakeLists.txt sources:
+  SPU2/spu2.cpp
+  SPU2/spu2sys.cpp
+  SPU2/spu2freeze.cpp
+  SPU2/ADSR.cpp
+  SPU2/Dma.cpp
+  SPU2/Mixer.cpp
+  SPU2/ReadInput.cpp
+  SPU2/RegTable.cpp
+  SPU2/Reverb.cpp
+  SPU2/ReverbResample.cpp   ← contains isa_native:: functions
+
+If any file above cannot be compiled for iOS, add its symbols to
+PCSX2Stubs.mm BEFORE the first build. Read exact types from SPU2/defs.h
+first — never guess.
+
+──────────────────────────────────────────────────────────────────────────────
+0-F  PRE-STUB ALL KNOWN MISSING SUBSYSTEMS  (Categories 3–9)
+──────────────────────────────────────────────────────────────────────────────
+Add ALL stub groups to PCSX2Stubs.mm at project creation.
+Verify each signature against its header before writing.
+
+[GS READ/WRITE — Category 3]
+Confirm gsRead8/gsWrite8/gsReset etc. are in GS/GS.cpp and that GS/GS.cpp
+IS listed as a source. If missing from target sources, add it. Do not stub
+these — they have real implementations.
+
+[IMGUI — Category 5]
+Verify in CMakeLists.txt:
+  grep -n "imgui" CMakeLists.txt | head -10
+If ImGuiManager / ImGuiFullscreen are not needed for BIOS display, stub
+the full namespaces in PCSX2Stubs.mm.
+
+[FULLSCREENUI — Category 6]
+Stub the full FullscreenUI namespace in PCSX2Stubs.mm.
+None of its functions are needed for BIOS-level rendering.
+
+[HOST CALLBACKS — Category 7]
+Create ios/platform/Host_iOS.mm at scaffold time with ALL Host:: callbacks
+stubbed. Do not leave any Host:: function for later — the linker requires
+every one of them.
+
+[DEV9 / USB / ATA / SMAP / PGIF — Category 8]
+All hardware peripherals not used on iOS. Add full stubs to PCSX2Stubs.mm.
+Functions needed:
+  smap_async, smap_read8/16/32, smap_write8/16/32
+  smap_readDMA8Mem, smap_writeDMA8Mem
+  FLASHread32, FLASHwrite32, FLASHinit
+  InitNet, TermNet, ReconfigureLiveNet
+  ohci_*, usb_*, usb_desc_*
+  psxDma2GpuR, psxDma2GpuW, psxGPUr, psxGPUw
+  PGIFrQword, PGIFwQword, PGIFr, PGIFw, pgifInit
+  ReadFifoSingleWord, ReadFIFO_VIF1
+  WriteFIFO_VIF0/VIF1/GIF
+  sifReset, SIF1Dma, dmaSIF1/SIF2
+  EEsif1Interrupt, sif1Interrupt, sif2Interrupt
+  dVifRelease, dVifReset
+
+[CDR — Category 3]
+Add ALL cdrRead/Write/Reset/Interrupt stubs to PCSX2Stubs.mm.
+Read exact signatures from CDVD/CDVDiso.h before writing:
+  cdrRead0, cdrRead1, cdrRead2, cdrRead3
+  cdrWrite0, cdrWrite1, cdrWrite2, cdrWrite3
+  cdrReset, cdrInterrupt, cdrReadInterrupt
+
+[CDVD EXTRA — Category 3]
+iOSVMManager.mm calls CDVDsys_SetFile/CDVDsys_ChangeSource directly.
+If CDVD/CDVD.cpp is added as a source file (see 0-D2) these will resolve
+via the real implementation. If not, stub:
+  CDVDsys_ChangeSource, CDVDsys_SetFile, setPs1CDVDSpeed
+  cdvdReset, cdvdVsync, cdvdActionInterrupt, cdvdSectorReady
+  cdvdWrite, cdvdRead, cdvdReadInterrupt, cdvdGetDiscInfo
+
+[IPU — Category 3]
+Add to PCSX2Stubs.mm — verify signatures in pcsx2/IPU/IPU.h:
+  ipuRead32, ipuRead64, ipuWrite32, ipuWrite64
+  ipuReset, ipu0Interrupt, ipu1Interrupt, ipuCMDProcess
+  dmaIPU0, dmaIPU1, ReadFIFO_IPUout, WriteFIFO_IPUin
+
+[MDEC — Category 3]
+  mdecRead0, mdecRead1, mdecWrite0, mdecWrite1, mdecInit
+
+[CACHE — Category 3]
+These live in pcsx2/Cache.cpp — either add that file as a source or stub:
+  readCache8, readCache16, readCache32, readCache64, readCache128
+  writeCache8, writeCache16, writeCache32, writeCache64, writeCache128
+  writebackCache
+
+[BIOS — Category 3]
+  CopyBIOSToMemory  (stub or ensure pcsx2/BIOS.cpp is in sources)
+
+[isa_native — Category 4: SW Renderer dispatch stubs]
+On macOS a multi-ISA dispatch target defines these. On iOS it does not exist.
+Add these stubs to PCSX2Stubs.mm — DO NOT try to implement them:
+  namespace isa_native {
+    std::unique_ptr<GSRendererSW> makeGSRendererSW(int threads)
+      { return nullptr; }
+    void GSVertexTracePopulateFunctions(GSVertexTrace&) {}
+  }
+  void GSVertexSW::InitStatic() {}
+Also ensure GSState.cpp is in sources (resolves typeinfo for GSState).
+
+[MISC REQUIRED STUBS — Category 9]
+Add these to PCSX2Stubs.mm immediately:
+  CocoaTools::GetNonTranslocatedBundlePath()
+  DarwinMisc::GetCPUClasses()
+  GameDatabase::findGame()
+  SaveState_SaveScreenshot / DownloadState / UnzipFromDisk
+  SaveState_ZipToDisk / ReportLoadErrorOSD / ReportSaveErrorOSD
+  InputRecording (full class with all methods)
+  CBreakPoints (full namespace with all methods + atomics)
+  SymbolGuardian + SymbolImporter (full classes)
+  GSDumpReplayer namespace
+  BiosInformation CurrentBiosInformation = {}
+  ReadOSDConfigParames()
+  ShiftJIS_ConvertString()
+  GetMetalAdapterList()
+  AudioStream::CreateCubebAudioStream()
+  AudioStream::CreateSDLAudioStream()
+  AudioStream::GetCubebDriverNames()
+  AudioStream::GetCubebOutputDevices()
+  InputManager::ConvertHostKeyboardStringToCode()
+  InputManager::ConvertHostKeyboardCodeToString()
+  InputManager::ConvertHostKeyboardCodeToIcon()
+  DebugInterface::parseExpression()
+  standardizeBreakpointAddress()
+
+──────────────────────────────────────────────────────────────────────────────
+0-G  VERIFY BEFORE FIRST BUILD ATTEMPT
+──────────────────────────────────────────────────────────────────────────────
+Run ALL of the following before attempting cmake --build.
+If ANY check fails → fix it before proceeding. Do NOT run cmake --build
+until all checks pass.
+
+ 1. grep -n "PCSX2Stubs" CMakeLists.txt
+    → Must appear as a registered source file
+
+ 2. grep -n "LnxHostSys\|DarwinMisc" CMakeLists.txt
+    → Must appear for iOS target
+
+ 3. grep -n "GSDrawScanlineCodeGenerator\|GSSetupPrimCodeGenerator" CMakeLists.txt
+    → Must be wrapped in if(NOT iOS) block
+
+ 4. grep -n "PCSX2_TARGET_IOS" CMakeLists.txt Vif_Dynarec.h
+    → Must appear in both files
+
+ 5. grep -n "Host::" ios/platform/Host_iOS.mm | wc -l
+    → Count must be > 30 (all callbacks present)
+
+ 6. grep -n "SPU2/ReverbResample\|SPU2/Mixer\|SPU2/Reverb" CMakeLists.txt
+    → All three must appear
+
+ 7. wc -l ios/platform/PCSX2Stubs.mm
+    → Must be non-zero before first build
+
+ 8. grep -n "imgui" CMakeLists.txt
+    → imgui must be linked to BionicSX2 target
+
+ 9. ls ios-deps/install/lib/libSoundTouch.a
+    → Must exist. If missing: run scripts/build_ios_deps.sh soundtouch tier only.
+    → Then verify: grep -n "SOUNDTOUCH_LIB" CMakeLists.txt
+      The find_library result must be non-empty.
+
+10. grep -n "framework Foundation" CMakeLists.txt
+    → MUST appear. If missing, all .mm ObjC symbols fail to link.
+
+11. grep -rn "Config\.cpp\|System\.cpp\|Sif\.cpp\|Sio0\.cpp\|Sio2\.cpp\|PerformanceMetrics\.cpp\|BreakPoints\.cpp\|fastjmp" CMakeLists.txt
+    → Each of these source files must be registered.
+    → Any missing = ~30 global-variable undefined symbols at link.
+
+12. grep -n "__clear_cache" ios/platform/HostSys_iOS.cpp
+    → Must return ZERO results.
+    grep -n "sys_icache_invalidate" ios/platform/HostSys_iOS.cpp
+    → Must return exactly 1 result.
+
+══════════════════════════════════════════════════════════════════════════════
+HARD RULE: No build attempt until Phase 0 is 100% complete.
+The cost of one failed link cycle exceeds the cost of this entire
+preparation phase. Fix it before it breaks.
+══════════════════════════════════════════════════════════════════════════════
+
+================================================================================
+ PHASE 1 — SCAFFOLD THE FULL DIRECTORY STRUCTURE
+ Source: Audit Section 13 (all tiers)
+================================================================================
+
+Create this exact structure — no additions, no omissions:
+
+  BionicSX2/
+  ├── .github/
+  │   └── workflows/
+  │       └── build-ipa.yml
+  ├── src/
+  ├── ios/
+  │   ├── platform/
+  │   │   ├── iOSVMManager.mm
+  │   │   ├── HostSys_iOS.cpp
+  │   │   ├── Host_iOS.mm
+  │   │   ├── CocoaTools_iOS.mm
+  │   │   ├── AudioStream_iOS.mm
+  │   │   ├── Filesystem_iOS.mm
+  │   │   ├── Threading_iOS.cpp
+  │   │   ├── PageFaultHandler.cpp
+  │   │   └── PCSX2Stubs.mm
+  │   ├── ui/
+  │   │   ├── BionicSX2App.swift
+  │   │   ├── ContentView.swift
+  │   │   ├── MetalViewController.swift
+  │   │   └── GameControllerManager.swift
+  │   ├── entitlements/
+  │   │   └── BionicSX2.entitlements
+  │   └── Info.plist
+  ├── metal/
+  │   ├── MetalRenderer.mm
+  │   ├── MetalRenderer.h
+  │   ├── MetalDeviceInfo.mm
+  │   ├── MetalTexture.mm
+  │   ├── MetalSharedHeader.h
+  │   ├── MRCHelpers.h
+  │   ├── Shaders.metal
+  │   └── FrameSync.mm
+  ├── cmake/
+  │   ├── ios.toolchain.cmake
+  │   ├── FindGameController.cmake
+  │   └── FindUIKit.cmake
+  ├── scripts/
+  │   ├── build_ios_deps.sh
+  │   └── build_bionicsx2.sh
+  ├── docs/
+  └── CMakeLists.txt
+
+After scaffolding run:
+  find BionicSX2 -type f | sort
+Confirm every path exists before proceeding to Phase 2.
+
+================================================================================
+ PHASE 2 — WRITE cmake/ios.toolchain.cmake
+ Source: Audit Sections 10.2, 13.5
+================================================================================
+
+Create cmake/ios.toolchain.cmake with this exact content:
+
+  set(CMAKE_SYSTEM_NAME iOS)
+  set(CMAKE_SYSTEM_PROCESSOR arm64)
+  set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "" FORCE)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "16.0" CACHE STRING "" FORCE)
+  set(CMAKE_OSX_SYSROOT "iphoneos" CACHE STRING "" FORCE)
+  set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+  set(PKG_CONFIG_EXECUTABLE "" CACHE FILEPATH "" FORCE)
+  set(CMAKE_FIND_ROOT_PATH "${CMAKE_SOURCE_DIR}/ios-deps/install")
+  set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/ios-deps/install" CACHE PATH "" FORCE)
+  set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+  set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+  set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+Additional notes (Audit Section 13.5):
+  - Disable simulator: set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH YES)
+  - Metal compiler flags for .metal → .metallib compilation
+  - Code signing: set to - for development builds
+
+Also create cmake/FindGameController.cmake:
+
+  find_library(GameController_LIBRARY GameController)
+  find_path(GameController_INCLUDE_DIR GameController/GameController.h)
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(GameController DEFAULT_MSG
+      GameController_LIBRARY GameController_INCLUDE_DIR)
+  set(GameController_LIBRARIES ${GameController_LIBRARY})
+  set(GameController_INCLUDE_DIRS ${GameController_INCLUDE_DIR})
+
+================================================================================
+ PHASE 3 — BUILD ALL THIRD-PARTY STATIC LIBRARIES FOR iOS ARM64
+ Source: Audit Section 10.1
+================================================================================
+
+CRITICAL RULE: Every library must be compiled as a static .a targeting
+arm64-apple-ios16.0. No dylibs. No system versions.
+All output goes to ios-deps/install/{include,lib}.
+
+──────────────────────────────────────────────────────────────────────────────
+Create scripts/build_ios_deps.sh:
+──────────────────────────────────────────────────────────────────────────────
+
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+  INSTALL_DIR="$REPO_ROOT/ios-deps/install"
+  BUILD_DIR="$REPO_ROOT/ios-deps/build"
+  SRC_DIR="$REPO_ROOT/ios-deps/src"
+  TOOLCHAIN="$REPO_ROOT/cmake/ios.toolchain.cmake"
+
+  mkdir -p "$INSTALL_DIR" "$BUILD_DIR" "$SRC_DIR"
+
+  build_lib() {
+      local NAME="$1"; local SRC="$2"; shift 2
+      echo ">>> Building $NAME"
+      mkdir -p "$BUILD_DIR/$NAME"
+      cmake -S "$SRC" -B "$BUILD_DIR/$NAME" \
+          -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
+          -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=OFF \
+          "$@"
+      cmake --build "$BUILD_DIR/$NAME" --config Release -j"$(sysctl -n hw.logicalcpu)"
+      cmake --install "$BUILD_DIR/$NAME"
+      echo ">>> $NAME OK"
+  }
+
+  # Fill in build_lib calls following the library order below.
+  # Replace <install_dir> with "$INSTALL_DIR" in all -D flags.
+
+Build in this EXACT ORDER (respect dependency chain):
+
+TIER 1 — No dependencies
+  lz4
+    Source: 3rdparty/lz4/build/cmake OR clone https://github.com/lz4/lz4.git
+    Flags: -DLZ4_BUILD_CLI=OFF -DLZ4_BUILD_LEGACY_LZ4C=OFF
+
+  zstd
+    Source: 3rdparty/zstd/build/cmake OR clone https://github.com/facebook/zstd.git
+    Flags: -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_SHARED=OFF
+           -DZSTD_BUILD_STATIC=ON -DZSTD_BUILD_TESTS=OFF
+
+  xz / lzma
+    Source: 3rdparty/xz OR clone https://github.com/tukaani-project/xz.git
+    Flags: -DBUILD_TESTING=OFF -DXZ_TOOL_XZ=OFF -DXZ_TOOL_XZDEC=OFF
+           -DXZ_TOOL_LZMADEC=OFF -DXZ_TOOL_LZMAINFO=OFF
+           -DCREATE_XZ_SYMLINKS=OFF -DCREATE_LZMA_SYMLINKS=OFF
+
+  crc32c
+    Source: 3rdparty/crc32c OR clone https://github.com/google/crc32c.git
+    Flags: -DCRC32C_BUILD_TESTS=OFF -DCRC32C_BUILD_BENCHMARKS=OFF
+           -DCRC32C_USE_GLOG=OFF
+
+  xxhash — header-only, already in 3rdparty/xxhash. No build needed.
+
+  fmt
+    Source: 3rdparty/fmt
+    Use add_subdirectory in main CMake, NOT as external dep.
+    Standalone flags: -DFMT_TEST=OFF -DFMT_DOC=OFF
+
+TIER 2 — Depends on lz4/zstd/lzma
+  zlib
+    Source: 3rdparty/zlib OR clone https://github.com/madler/zlib.git
+    Flags: -DZLIB_BUILD_EXAMPLES=OFF
+    Output must produce libz.a in ios-deps/install/lib/
+
+TIER 3 — Depends on zlib
+  libpng
+    Source: 3rdparty/libpng OR clone https://github.com/glennrp/libpng.git
+    Flags: -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_TESTS=OFF
+           -DZLIB_ROOT=<install_dir>
+
+  libzip
+    Source: 3rdparty/libzip OR clone https://github.com/nih-at/libzip.git
+    Flags: -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF
+           -DBUILD_DOC=OFF -DENABLE_COMMONCRYPTO=ON -DENABLE_GNUTLS=OFF
+           -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=OFF
+           -DZLIB_ROOT=<install_dir>
+
+  freetype
+    Source: 3rdparty/freetype OR clone via freedesktop.org
+    Flags: -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_HARFBUZZ=ON
+           -DFT_DISABLE_BROTLI=ON -DZLIB_ROOT=<install_dir>
+           -DPNG_ROOT=<install_dir>
+
+TIER 4 — Depends on lz4 + zstd + zlib
+  libchdr
+    Source: 3rdparty/libchdr OR clone https://github.com/rtissera/libchdr.git
+    Flags: -DWITH_SYSTEM_ZLIB=ON -DZLIB_ROOT=<install_dir>
+           -Dlz4_DIR=<install_dir>/lib/cmake/lz4
+           -Dzstd_DIR=<install_dir>/lib/cmake/zstd
+
+TIER 5 — Audio (independent)
+  soundtouch
+    Source: 3rdparty/soundtouch OR clone via codeberg.org
+    Flags: -DCMAKE_CXX_FLAGS="-DSOUNDTOUCH_DISABLE_X86_OPTIMIZATIONS"
+
+  cubeb
+    Source: 3rdparty/cubeb OR clone https://github.com/mozilla/cubeb.git
+    Flags: -DBUILD_TESTS=OFF -DBUILD_TOOLS=OFF -DUSE_SANITIZERS=OFF
+    NOTE: On iOS, cubeb automatically uses its AudioUnit backend via
+    cubeb_audiounit.cpp — do not force another backend.
+
+TIER 6 — UI / Debug (compile into main target, NOT separate .a)
+  imgui (dear imgui)
+    Source: 3rdparty/imgui
+    Do NOT build as separate CMake project. Add these source files directly
+    to the BionicSX2 CMake target:
+      imgui.cpp
+      imgui_draw.cpp
+      imgui_tables.cpp
+      imgui_widgets.cpp
+      imgui_impl_metal.mm    ← use this backend
+    Remove any reference to imgui_impl_sdl*, imgui_impl_opengl*,
+    imgui_impl_vulkan*. If imgui_impl_uikit does not exist, create a minimal
+    stub that calls ImGui::NewFrame() from your render loop.
+
+  rcheevos
+    Source: 3rdparty/rcheevos
+    Use add_subdirectory in main CMake. Pure C — compiles cleanly on iOS.
+
+  vixl
+    Source: 3rdparty/vixl
+    CRITICAL: Define -DVIXL_CODE_BUFFER_MMAP=0 to disable mmap-based code
+    buffers (iOS restriction). vixl is needed at compile time for nVif struct
+    definitions even when the dynarec is disabled.
+    Do NOT attempt to run any JIT code via vixl on iOS at this stage.
+
+After the script completes, verify:
+  ls ios-deps/install/lib/*.a
+  → All 10 .a files must exist before Phase 4.
+
+================================================================================
+ PHASE 4 — WRITE ios/platform/iOSVMManager.mm
+ Source: Audit Sections 2.3-ADDENDUM (2.3-E, 2.3-F), 6.2, 12.2
+================================================================================
+
+This is the most critical file in the entire project.
+The audit has identified the exact crash chain — implement the fix precisely.
+
+MANDATORY CONTENT:
+
+  A) Static init guard (prevents re-entry crash loops):
+       static bool s_initialized = false;
+       if (s_initialized) return;
+       s_initialized = true;
+
+  B) EmuConfig block — set ALL flags BEFORE any reset call:
+       EmuConfig.GS.Renderer            = GSRendererType::Metal;
+       EmuConfig.EE.newVifDynarec        = false;  // CRITICAL — nVif crash fix
+       EmuConfig.Cpu.Recompiler.EnableEE  = false; // Interpreter only — no JIT
+       EmuConfig.Cpu.Recompiler.EnableVU0 = false; // Audit Sec 2.2
+       EmuConfig.Cpu.Recompiler.EnableVU1 = false; // Audit Sec 2.2
+       EmuConfig.Cpu.Recompiler.EnableIOP = false; // Audit Sec 2.3
+       EmuConfig.Cpu.sseMXCSR.bitmask    = 0;      // no SSE on ARM
+
+  C) SysMemory::Allocate() MUST be called first:
+       if (!SysMemory::Allocate()) {
+           NSLog(@"[BionicSX2] SysMemory::Allocate() failed");
+           return false;
+       }
+       // Audit Section 2.3-E: On macOS, SysMemory::Reset() runs at
+       // VMManager::StartVM():1525 BEFORE cpuReset() at :1526.
+       // Without this, recWritePtr remains nullptr.
+
+  D) cpuReset() call after SysMemory setup:
+       cpuReset(); // → hwReset() → vif0Reset/vif1Reset → resetNewVif(0/1)
+
+  E) GSopen for Metal backend:
+       if (!GSopen(nullptr, "Metal", 0)) {
+           NSLog(@"[BionicSX2] GSopen failed");
+           return false;
+       }
+
+  F) ISO/disc loading:
+       if (isoPath) {
+           CDVDsys_SetFile(CDVD_SourceType::Iso, isoPath);
+           CDVDsys_ChangeSource(CDVD_SourceType::Iso);
+       }
+
+  G) iOS-safe memory operations (Audit Section 6.2):
+       // All HostSys calls go through HostSys_iOS.cpp (Phase 5)
+
+  H) NSLog error logging on every failure point.
+
+  I) Every function must have a comment citing its audit section.
+
+  J) StopVM() must call GSclose() then SysMemory::Release().
+
+Reference implementation:
+
+  // ios/platform/iOSVMManager.mm
+  // PORTED FROM: VMManager.cpp — BionicSX2 iOS Port
+  // AUDIT REFERENCE: Section 2.3-ADDENDUM, 6.2, 12.2
+  // STATUS: NEW
+  #import <Foundation/Foundation.h>
+  #include "VMManager.h"
+  #include "GS/GS.h"
+  #include "pcsx2/Memory.h"
+  #include "pcsx2/R5900.h"
+  #include "pcsx2/Hw.h"
+  #include "pcsx2/Vif_Dynarec.h"
+
+  namespace iOSVMManager {
+
+  bool StartVM(const char* isoPath) {
+      static bool s_initialized = false;
+      if (s_initialized) return true;
+      s_initialized = true;
+
+      // Step 1: disable JIT — belt-and-suspenders (Audit Sec 2.3-F)
+      EmuConfig.EE.newVifDynarec         = false;
+      EmuConfig.Cpu.Recompiler.EnableEE  = false;
+      EmuConfig.Cpu.Recompiler.EnableVU0 = false;
+      EmuConfig.Cpu.Recompiler.EnableVU1 = false;
+      EmuConfig.Cpu.Recompiler.EnableIOP = false;
+      EmuConfig.GS.Renderer              = GSRendererType::Metal;
+      EmuConfig.Cpu.sseMXCSR.bitmask     = 0;
+
+      // Step 2: allocate emulated memory — MUST be first (Audit Sec 2.3-E)
+      if (!SysMemory::Allocate()) {
+          NSLog(@"[BionicSX2] SysMemory::Allocate() failed");
+          return false;
+      }
+
+      // Step 3: reset CPU state → hwReset → vif0Reset/vif1Reset (Audit Sec 2.3-F)
+      cpuReset();
+
+      // Step 4: initialize GS Metal backend (Audit Sec 4.1)
+      if (!GSopen(nullptr, "Metal", 0)) {
+          NSLog(@"[BionicSX2] GSopen failed");
+          return false;
+      }
+
+      // Step 5: load disc/ISO (Audit Sec 2.6)
+      if (isoPath) {
+          CDVDsys_SetFile(CDVD_SourceType::Iso, isoPath);
+          CDVDsys_ChangeSource(CDVD_SourceType::Iso);
+      }
+
+      return true;
+  }
+
+  void StopVM() {
+      GSclose();
+      SysMemory::Release();
+  }
+
+  } // namespace iOSVMManager
+
+================================================================================
+ PHASE 5 — WRITE ios/platform/HostSys_iOS.cpp
+ Source: Audit Sections 6.2, 6.3
+================================================================================
+
+Port from: common/Linux/LnxHostSys.cpp
+(Audit confirms this file is shared with macOS via #ifdef __APPLE__)
+
+Replace every mmap/mprotect call with iOS-safe Darwin VM equivalents:
+
+  HostSys::Mmap()       → vm_allocate(mach_task_self(), &addr, size, VM_FLAGS_ANYWHERE)
+  HostSys::Munmap()     → vm_deallocate(mach_task_self(), addr, size)
+  HostSys::MemProtect() → vm_protect(mach_task_self(), addr, size, FALSE, prot)
+
+DIAGNOSTIC FIX — Category 6: __clear_cache undefined on iOS.
+The linker cannot find ___clear_cache when called from
+HostSys::FlushInstructionCache. On Darwin/iOS the correct API is
+sys_icache_invalidate(). Replace the implementation:
+
+  // ios/platform/HostSys_iOS.cpp
+  // PORTED FROM: common/Linux/LnxHostSys.cpp — BionicSX2 iOS Port
+  // AUDIT REFERENCE: Section 6.2, 6.3
+  // STATUS: YELLOW
+  #include <libkern/OSCacheControl.h>  // sys_icache_invalidate
+
+  void HostSys::FlushInstructionCache(void* address, u32 size) {
+      // DIAGNOSTIC FIX: __clear_cache is not available on iOS.
+      // sys_icache_invalidate() is the Darwin-native equivalent.
+      sys_icache_invalidate(address, static_cast<size_t>(size));
+  }
+
+Do NOT use __builtin___clear_cache — it maps to the same missing symbol.
+Use sys_icache_invalidate exclusively.
+
+MAP_JIT handling (Audit Sections 6.3, 2.3-E):
+  // MAP_JIT requires com.apple.security.cs.allow-jit entitlement.
+  // In Phase 1 of BionicSX2, JIT is disabled (all Recompiler flags = false).
+  // Gracefully skip MAP_JIT — log and return non-fatal error.
+  // Do NOT crash on MAP_JIT absence.
+  NSLog(@"[BionicSX2] MAP_JIT not available — JIT disabled, interpreter path active");
+
+Full error logging on every allocation failure.
+
+================================================================================
+ PHASE 6 — PORT ios/platform/CocoaTools_iOS.mm
+ Source: Audit Sections 4.3, 1.3
+================================================================================
+
+Port from: common/CocoaTools.mm  (YELLOW status per Audit Section 1.3)
+
+Changes required (Audit Section 4.3 — surface management):
+  - Remove: #import <AppKit/AppKit.h>
+  - Add:    #import <UIKit/UIKit.h>
+  - Replace: NSView  → UIView
+  - Replace: NSWindow → UIWindow
+  - CAMetalLayer usage stays identical — it is fully portable
+  - RunCocoaEventLoop → stub as no-op (iOS has its own run loop)
+  - IOPMAssertionCreateWithName → [UIApplication sharedApplication].idleTimerDisabled = YES
+  - CGWarpMouseCursorPosition → remove entirely
+  - CGEventTapCreate → remove entirely
+  - AXIsProcessTrusted → return false or remove
+  - MRCHelpers.h is identical on iOS — no changes needed
+
+Every change must have a comment:
+  // PORTED: NSView → UIView (Audit Section 4.3)
+  // PORTED: AppKit removed, UIKit added (Audit Section 4.3)
+
+================================================================================
+ PHASE 7 — WRITE ios/platform/AudioStream_iOS.mm
+ Source: Audit Section 9.2
+================================================================================
+
+Port from: new file (Audit Section 13.7 — STATUS: NEW / OPTIONAL)
+
+Before cubeb starts, configure AVAudioSession:
+
+  // ios/platform/AudioStream_iOS.mm
+  // AUDIT REFERENCE: Section 9.2
+  // STATUS: NEW
+  #import <AVFoundation/AVFoundation.h>
+
+  void iOSConfigureAudioSession() {
+      NSError *error = nil;
+      AVAudioSession *session = [AVAudioSession sharedInstance];
+      [session setCategory:AVAudioSessionCategoryPlayback
+               withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                     error:&error];
+      if (error) NSLog(@"[BionicSX2] AVAudioSession category error: %@", error);
+      [session setPreferredIOBufferDuration:0.005 error:&error]; // 5ms latency
+      [session setActive:YES error:&error];
+      if (error) NSLog(@"[BionicSX2] AVAudioSession activate error: %@", error);
+  }
+
+Call iOSConfigureAudioSession() before SPU2::Init().
+
+Additional requirements:
+  - Audio backend: AVAudioEngine with stereo PCM 44100Hz
+    (Audit Section 9.2 confirms AVAudioEngine as primary iOS path)
+  - Implement SndOutModule interface matching SPU2::CreateOutputStream()
+    (Audit Section 2.5 — SPU2 output abstracted through AudioStream)
+  - Ring buffer: 2048 sample buffer size (safe mobile latency per audit)
+  - Handle AVAudioSession interruptions (phone calls, background)
+  - Implement: Init(), Start(), Stop(), Write(), Close()
+  - Full NSLog error logging on every AVAudioEngine failure
+
+================================================================================
+ PHASE 8 — WRITE ios/platform/Filesystem_iOS.mm
+ Source: Audit Sections 6.4, 10.3
+================================================================================
+
+  // ios/platform/Filesystem_iOS.mm
+  // AUDIT REFERENCE: Section 6.4, 10.3
+  // STATUS: NEW
+  #import <Foundation/Foundation.h>
+  #include "common/FileSystem.h"
+
+  std::string iOSGetDocumentsDirectory() {
+      NSArray *paths = NSSearchPathForDirectoriesInDomains(
+          NSDocumentDirectory, NSUserDomainMask, YES);
+      NSString *documents = [paths firstObject];
+      return std::string([documents UTF8String]);
+  }
+
+  std::string iOSGetCachesDirectory() {
+      NSArray *paths = NSSearchPathForDirectoriesInDomains(
+          NSCachesDirectory, NSUserDomainMask, YES);
+      NSString *caches = [paths firstObject];
+      return std::string([caches UTF8String]);
+  }
+  // ISOs → Documents/Games/
+  // BIOS → Documents/BIOS/
+  // Memcards → Documents/Memcards/
+  // Shader cache, memory cards → Caches/ or Application Support/
+
+Additional requirements:
+  - All paths resolved via NSSearchPathForDirectoriesInDomains
+  - Implement: GetAppDataPath(), GetBIOSPath(), GetMemcardPath()
+  - BIOS path → Documents/BIOS/
+  - ISO/CHD path → Documents/Games/
+    (Audit Section 2.6 — ISO file reading is the ONLY path on iOS;
+     physical optical drive code excluded entirely)
+  - Memcard path → Documents/Memcards/
+  - Never use hardcoded absolute paths (Audit Section 6.4 constraint)
+
+================================================================================
+ PHASE 9 — PORT ios/platform/Threading_iOS.cpp
+ Source: Audit Section 5.3
+================================================================================
+
+Port from: common/Darwin/DarwinThreads.cpp  (GREEN status)
+
+  - Mach semaphores: mach_semaphore_create / wait / signal
+  - POSIX pthreads: pthread_setname_np for thread naming
+  - These are identical on iOS and macOS — minimal changes expected
+  - Remove any IOKit or CoreGraphics threading dependencies
+  - Document every change with audit section reference
+
+================================================================================
+ PHASE 10 — PORT ios/platform/PageFaultHandler.cpp
+ Source: Audit Section 6.2
+================================================================================
+
+Port from: common/Darwin/DarwinMisc.cpp  (YELLOW status)
+
+  - RETAIN: mach exception handler for SIGSEGV → vtlb page fault handling
+  - RETAIN: sysctl CPU class detection (works on iOS ARM64)
+  - REMOVE: CoreGraphics dependency (not available on iOS)
+  - REMOVE: IOKit power management calls
+  - iOS power management handled by UIApplication lifecycle — do not replicate
+
+================================================================================
+ PHASE 11 — PORT metal/MetalRenderer.mm
+ Source: Audit Sections 4.1, 4.2, 4.3
+================================================================================
+
+Port from: pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm  (YELLOW status)
+
+Mandatory changes (Audit Section 4.3):
+  - Remove: #import <AppKit/AppKit.h>
+  - Add:    #import <UIKit/UIKit.h>
+  - Replace: NSView  → UIView in surface management
+  - Replace: NSWindow → UIWindow
+  - CAMetalLayer: unchanged — fully portable (Audit Section 4.3)
+  - MTLDevice, MTLCommandQueue, MTLRenderPipelineDescriptor: unchanged
+  - Pixel format: MTLPixelFormatBGRA8Unorm (confirmed portable)
+  - Remove: MTLCreateSystemDefaultDevice multi-GPU fallback
+    (iOS always has one GPU)
+  - Remove: AMD slow_color_compression heuristic
+    (Audit Section 13.4 — MetalDeviceInfo.mm note)
+  - CAMetalLayer acquisition change:
+      macOS: [nsview.layer isKindOfClass:[CAMetalLayer class]]
+      iOS:   UIView's layer is CAMetalLayer when you set
+             + (Class)layerClass { return [CAMetalLayer class]; }
+             in MetalViewController
+  - Every change commented with: // PORTED: [reason] (Audit Sec X.X)
+
+Port metal/MetalRenderer.h from: pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
+  Same changes as .mm — class interface otherwise unchanged per audit.
+
+================================================================================
+ PHASE 12 — PORT REMAINING METAL FILES
+ Source: Audit Sections 3.2, 3.3, 3.5, 4.2
+================================================================================
+
+All files below are GREEN status — port with minimal or zero changes:
+
+  metal/MetalDeviceInfo.mm  ← pcsx2/GS/Renderers/Metal/GSMTLDeviceInfo.mm
+    Only change: remove AMD slow_color_compression heuristic (Audit Sec 13.4)
+
+  metal/MetalTexture.mm     ← pcsx2/GS/Renderers/Metal/GSTextureMTL.mm
+    Zero changes — MTLResourceStorageModeShared works on iOS Apple Silicon
+
+  metal/MetalSharedHeader.h ← pcsx2/GS/Renderers/Metal/GSMTLSharedHeader.h
+    Zero changes — pure C types, no platform dependency
+
+  metal/MRCHelpers.h        ← common/MRCHelpers.h
+    Zero changes — Obj-C manual reference counting, identical on iOS/macOS
+
+  metal/Shaders.metal       ← Merge all 9 shader files:
+    cas.metal, convert.metal, fxaa.metal, interlace.metal,
+    merge.metal, misc.metal, present.metal, tfx.metal
+    + any remaining .metal files in the Metal renderer directory
+    (Audit Section 13.4 — merging into single file avoids 9 separate targets)
+    All compile identically on iOS Metal — zero shader changes required
+
+  metal/FrameSync.mm        ← NEW FILE split from GSDeviceMTL.mm
+    Extract: MTLFence, MTLCommandBuffer completion handlers,
+             ReadbackSpinManager (frame sync logic)
+    Separate from device creation for iOS clarity (Audit Section 13.4)
+
+================================================================================
+ PHASE 13 — WRITE SWIFT FRONTEND
+ Source: Audit Sections 4.3, 8.3, 8.4
+================================================================================
+
+ios/ui/BionicSX2App.swift
+  - UIKit-based AppDelegate entry point (@main)
+  - Creates UIWindow and sets MetalViewController as rootViewController
+  - Sets application.isIdleTimerDisabled = true (replaces IOPMAssertion)
+
+  import UIKit
+
+  @main
+  class AppDelegate: UIResponder, UIApplicationDelegate {
+      var window: UIWindow?
+
+      func application(_ application: UIApplication,
+                       didFinishLaunchingWithOptions launchOptions:
+                       [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+          window = UIWindow(frame: UIScreen.main.bounds)
+          window?.rootViewController = MetalViewController()
+          window?.makeKeyAndVisible()
+          application.isIdleTimerDisabled = true
+          return true
+      }
+  }
+
+ios/ui/MetalViewController.swift
+  - UIViewController hosting CAMetalLayer
+  - Calls iOSVMManager init on viewDidLoad
+  - Handles view resize, display link
+  - Passes CAMetalLayer reference to MetalRenderer via C++ bridge
+
+  import UIKit
+  import Metal
+  import QuartzCore
+
+  class MetalViewController: UIViewController {
+      var metalLayer: CAMetalLayer!
+
+      override class var layerClass: AnyClass { CAMetalLayer.self }
+
+      override func viewDidLoad() {
+          super.viewDidLoad()
+          metalLayer = view.layer as? CAMetalLayer
+          metalLayer.device = MTLCreateSystemDefaultDevice()
+          metalLayer.pixelFormat = .bgra8Unorm
+          metalLayer.framebufferOnly = true
+          metalLayer.frame = view.bounds
+          BionicSX2Bridge.setMetalLayer(metalLayer)
+      }
+
+      override func viewDidLayoutSubviews() {
+          super.viewDidLayoutSubviews()
+          metalLayer.frame = view.bounds
+          metalLayer.drawableSize = CGSize(
+              width: view.bounds.width * view.contentScaleFactor,
+              height: view.bounds.height * view.contentScaleFactor
+          )
+      }
+  }
+
+ios/ui/ContentView.swift
+  - Main UI: game list browser
+  - Navigate to MetalViewController on game selection
+  - File picker for ISO/CHD selection from Documents/Games/
+    (Audit Section 2.6 — iOS uses file-based game loading only)
+
+ios/ui/GameControllerManager.swift
+  - GCController discovery via GameController.framework
+    (Audit Section 8.3 — replacement for macOS HID framework)
+  - GCController connect/disconnect callbacks
+  - Map GCController buttons → PS2 pad layout
+    (Audit Section 2.7 — Pad::StartPoll/Poll/EndPoll interface)
+
+  import GameController
+
+  class GameControllerManager {
+      static let shared = GameControllerManager()
+
+      func startMonitoring() {
+          NotificationCenter.default.addObserver(
+              self, selector: #selector(controllerConnected),
+              name: .GCControllerDidConnect, object: nil)
+          NotificationCenter.default.addObserver(
+              self, selector: #selector(controllerDisconnected),
+              name: .GCControllerDidDisconnect, object: nil)
+          GCController.startWirelessControllerDiscovery {}
+      }
+
+      @objc func controllerConnected(_ notification: Notification) {
+          guard let controller = notification.object as? GCController,
+                let gamepad = controller.extendedGamepad else { return }
+          gamepad.buttonA.valueChangedHandler = { _, _, pressed in
+              BionicSX2Bridge.setPadButton(pad: 0, button: PAD_CROSS, pressed: pressed)
+          }
+          // ... map all buttons similarly
+      }
+
+      @objc func controllerDisconnected(_ notification: Notification) {
+          BionicSX2Bridge.clearPadState(pad: 0)
+      }
+  }
+
+================================================================================
+ PHASE 14 — WRITE CMakeLists.txt (iOS guard block)
+ Source: Audit Sections 10.1, 10.2, 1.4, 1.5
+================================================================================
+
+  cmake_minimum_required(VERSION 3.20)
+  project(BionicSX2)
+
+Add the iOS guard block to root CMakeLists.txt:
+
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+      set(IOS_DEPS "${CMAKE_SOURCE_DIR}/ios-deps/install")
+
+      # Disable everything that doesn't exist on iOS
+      set(ENABLE_QT     OFF CACHE BOOL "" FORCE)   # Audit Sec 1.1 — RED
+      set(ENABLE_OPENGL OFF CACHE BOOL "" FORCE)   # Audit Sec 1.2 — N/A
+      set(ENABLE_VULKAN OFF CACHE BOOL "" FORCE)   # Audit Sec 1.2 — N/A
+      set(USE_SDL       OFF CACHE BOOL "" FORCE)
+      set(BUILD_TESTS   OFF CACHE BOOL "" FORCE)
+
+      add_compile_definitions(TARGET_OS_IOS=1)
+      add_compile_definitions(VIXL_CODE_BUFFER_MMAP=0)
+
+      list(PREPEND CMAKE_PREFIX_PATH "${IOS_DEPS}")
+
+      find_package(ZLIB      REQUIRED)
+      find_package(PNG       REQUIRED)
+      find_package(Freetype  REQUIRED)
+
+      find_library(LZ4_LIB        lz4        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+      find_library(ZSTD_LIB       zstd       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+      find_library(LZMA_LIB       lzma       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+      find_library(ZIP_LIB        zip        PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+      find_library(CHDR_LIB       chdr       PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+      find_library(CUBEB_LIB      cubeb      PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+      find_library(SOUNDTOUCH_LIB SoundTouch PATHS "${IOS_DEPS}/lib" NO_DEFAULT_PATH REQUIRED)
+
+      find_library(AUDIOTOOLBOX_FW   AudioToolbox   REQUIRED)
+      find_library(AVFOUNDATION_FW   AVFoundation   REQUIRED)
+      find_library(COREAUDIO_FW      CoreAudio      REQUIRED)
+      find_library(COREFOUNDATION_FW CoreFoundation REQUIRED)
+      find_library(UIKIT_FW          UIKit          REQUIRED)
+      find_library(METAL_FW          Metal          REQUIRED)
+      find_library(QUARTZCORE_FW     QuartzCore     REQUIRED)
+      find_library(GAMECONTROLLER_FW GameController REQUIRED)
+      find_library(SECURITY_FW       Security       REQUIRED)
+
+      set(IOS_PLATFORM_SOURCES
+          ios/platform/iOSVMManager.mm
+          ios/platform/HostSys_iOS.cpp
+          ios/platform/CocoaTools_iOS.mm
+          ios/platform/AudioStream_iOS.mm
+          ios/platform/Filesystem_iOS.mm
+          ios/platform/PCSX2Stubs.mm
+          ios/platform/Host_iOS.mm
+          common/Linux/LnxHostSys.cpp
+          common/Darwin/DarwinMisc.cpp
+      )
+
+      set(IOS_METAL_SOURCES
+          metal/MetalRenderer.mm
+          metal/MetalDeviceInfo.mm
+          metal/MetalTexture.mm
+          metal/FrameSync.mm
+      )
+
+      target_sources(BionicSX2 PRIVATE
+          ${IOS_PLATFORM_SOURCES}
+          ${IOS_METAL_SOURCES}
+      )
+
+      target_link_libraries(BionicSX2 PRIVATE
+          ZLIB::ZLIB
+          PNG::PNG
+          Freetype::Freetype
+          ${LZ4_LIB}
+          ${ZSTD_LIB}
+          ${LZMA_LIB}
+          ${ZIP_LIB}
+          ${CHDR_LIB}
+          ${CUBEB_LIB}
+          ${SOUNDTOUCH_LIB}
+          ${AUDIOTOOLBOX_FW}
+          ${AVFOUNDATION_FW}
+          ${COREAUDIO_FW}
+          ${COREFOUNDATION_FW}
+          ${UIKIT_FW}
+          ${METAL_FW}
+          ${QUARTZCORE_FW}
+          ${GAMECONTROLLER_FW}
+          ${SECURITY_FW}
+          # DIAGNOSTIC FIX — Category 1: Foundation must be explicitly linked.
+          # All .mm files reference NSLog, NSBundle, NSFileManager, NSString.
+          "-framework Foundation"
+          "-lc++"
+          "-liconv"
+          "-lbsm"
+      )
+
+      target_include_directories(BionicSX2 PRIVATE
+          "${IOS_DEPS}/include"
+          ios/platform
+          metal
+      )
+
+      # Exclude SW JIT files from iOS build (Audit Sec 1.2, Phase 0-B)
+      if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+          target_sources(PCSX2 PRIVATE
+              GS/Renderers/SW/GSDrawScanlineCodeGenerator.arm64.cpp
+              GS/Renderers/SW/GSSetupPrimCodeGenerator.arm64.cpp
+          )
+      endif()
+
+  endif()
+
+EXCLUDE from build entirely (Audit Section 1.2 RED/N/A entries):
+  pcsx2-qt/          → Qt frontend — RED
+  GS/Renderers/OpenGL/ → N/A
+  GS/Renderers/Vulkan/ → N/A
+  GS/Renderers/DX11/   → N/A
+  GS/Renderers/DX12/   → N/A
+  CDVD/Darwin/         → Physical drive — RED/irrelevant on iOS (Sec 2.6)
+  x86/ recompiler      → N/A — ARM64 only
+
+================================================================================
+ PHASE 15 — WRITE ios/entitlements/BionicSX2.entitlements AND ios/Info.plist
+ Source: Audit Sections 4.4, 6.3, 10.3
+================================================================================
+
+ios/entitlements/BionicSX2.entitlements
+  Include ONLY these entitlements with inline comments:
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+      "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+  <plist version="1.0">
+  <dict>
+      <!-- Future JIT integration — Audit Sec 4.4, 6.3 -->
+      <key>com.apple.security.cs.allow-jit</key>
+      <true/>
+      <!-- Audit Sec 4.4 — future use alongside JIT entitlement -->
+      <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+      <true/>
+      <!-- Audit Sec 6.3 — PS2 scratchpad requires extended memory -->
+      <key>com.apple.developer.kernel.increased-memory-limit</key>
+      <true/>
+      <!-- Audit Sec 6.3 — EE virtual memory map requires extended VA -->
+      <key>com.apple.developer.kernel.extended-virtual-addressing</key>
+      <true/>
+  </dict>
+  </plist>
+
+  No undocumented entitlements. Valid XML plist format.
+
+ios/Info.plist
+  Port from: pcsx2/Resources/Info.plist.in  (Audit Section 10.3)
+
+  Required keys:
+    CFBundleIdentifier            : com.bionicsx2.app
+    CFBundleName                  : BionicSX2
+    CFBundleShortVersionString    : 0.1.0
+    CFBundleVersion               : 1
+    MinimumOSVersion              : 15.0  (Audit Sec 13.5)
+    UIRequiredDeviceCapabilities  : [arm64, metal]
+    UIBackgroundModes             : [audio]
+    LSSupportsOpeningDocumentsInPlace : true
+    UIFileSharingEnabled          : true  (Audit Sec 10.3 — enables BIOS/ISO access)
+    CFBundleDocumentTypes         : include all file types from Audit Sec 10.3:
+                                    iso, cso, chd, elf, p2s, gs
+
+================================================================================
+ PHASE 16 — WRITE .github/workflows/build-ipa.yml
+ Source: Audit Sections 10.3, 13.6
+================================================================================
+
+  name: Build BionicSX2 IPA
+
+  on:
+    push:
+      branches: [main, ios-port]
+    pull_request:
+      branches: [main]
+
+  jobs:
+    build:
+      runs-on: macos-14  # Apple Silicon runner (Audit Sec 12 — matches target)
+
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            submodules: recursive
+
+        - name: Install Xcode CLI tools
+          run: xcode-select --install
+
+        - name: Cache ios-deps
+          uses: actions/cache@v4
+          with:
+            path: ios-deps/install
+            key: ios-deps-${{ hashFiles('scripts/build_ios_deps.sh') }}
+
+        - name: Build third-party deps for iOS
+          run: |
+            chmod +x scripts/build_ios_deps.sh
+            scripts/build_ios_deps.sh
+
+        - name: Configure BionicSX2
+          run: |
+            cmake -S . -B build-ios \
+              -DCMAKE_TOOLCHAIN_FILE=cmake/ios.toolchain.cmake \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DENABLE_QT=OFF -DENABLE_OPENGL=OFF \
+              -DENABLE_VULKAN=OFF -DUSE_SDL=OFF \
+              -DBUILD_TESTS=OFF
+
+        - name: Build BionicSX2
+          run: |
+            set -euxo pipefail
+            cmake --build build-ios \
+              --config Release \
+              -j"$(sysctl -n hw.logicalcpu)"
+
+        - name: Verify Build Output
+          run: |
+            set -euxo pipefail
+            APP="build-ios/BionicSX2.app/BionicSX2"
+            test -f "$APP"
+            SIZE=$(stat -f%z "$APP")
+            echo "Binary size: $SIZE bytes"
+            if [ "$SIZE" -lt 5000000 ]; then
+              echo "ERROR: Binary too small — likely missing emulator core"
+              exit 1
+            fi
+            nm "$APP" | grep -E 'cpuReset|SysMemory|GSopen' >/dev/null
+
+        - name: Package IPA
+          run: |
+            xcodebuild -exportArchive \
+              -archivePath build-ios/BionicSX2.xcarchive \
+              -exportPath build-ios/export \
+              -exportOptionsPlist ios/ExportOptions.plist
+              CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE=""
+
+        - name: Upload IPA artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: BionicSX2-IPA
+            path: build-ios/export/*.ipa
+
+  Notes:
+  - Runner: macos-14 (Apple Silicon M-series — matches audit target hardware)
+  - Xcode version: 15.0+
+  - Trigger: push to main, pull_request
+
+================================================================================
+ PHASE 17 — COPY GREEN SOURCE FILES INTO src/
+ Source: Audit Section 13.7 Summary Table — all GREEN entries
+================================================================================
+
+Copy (do NOT modify) these source files from the PCSX2 tree into src/:
+
+From pcsx2/pcsx2/ — EE Core (Audit Section 2.1 — GREEN):
+  R5900.cpp, R5900OpcodeImpl.cpp, R5900OpcodeTables.cpp
+  Interpreter.cpp, Memory.cpp, MMi.cpp
+  COP0.cpp, COP2.cpp, Counters.cpp, Dmac.cpp, FPU.cpp
+  Gif.cpp, Gif_Unit.cpp, Hw.cpp, HwRead.cpp, HwWrite.cpp
+  SPR.cpp, Vif.cpp, Vif_Codes.cpp, Vif_Transfer.cpp, Vif_Unpack.cpp
+  Vif0_Dma.cpp, Vif1_Dma.cpp, Vif1_MFIFO.cpp, vtlb.cpp
+
+From pcsx2/pcsx2/ — VU Units (Audit Section 2.2 — GREEN, interpreter paths):
+  VU0.cpp, VU0micro.cpp, VU0microInterp.cpp
+  VU1micro.cpp, VU1microInterp.cpp
+  VUmicro.cpp, VUmicroMem.cpp, VUflags.cpp, VUops.cpp
+
+From pcsx2/pcsx2/ — IOP (Audit Section 2.3 — GREEN):
+  R3000A.cpp, R3000AInterpreter.cpp, R3000AOpcodeTables.cpp
+  IopBios.cpp, IopCounters.cpp, IopDma.cpp, IopGte.cpp
+  IopHw.cpp, IopMem.cpp, IopIrq.cpp
+  ps2/Iop/IopHwRead.cpp, IopHwWrite.cpp, PsxBios.cpp
+
+From pcsx2/pcsx2/ — GS Core (Audit Section 2.4 — GREEN):
+  GS/GS.cpp, MTGS.cpp
+  GS/Renderers/Common/ (all .cpp files)
+  GS/Renderers/HW/ (all .cpp files)
+  GS/Renderers/SW/ (all .cpp files)
+  GS/Renderers/Null/ (all .cpp files)
+
+From pcsx2/pcsx2/ — SPU2 (Audit Section 2.5 — GREEN):
+  SPU2/spu2.cpp, spu2sys.cpp, spu2freeze.cpp
+  SPU2/ADSR.cpp, Dma.cpp, Mixer.cpp, ReadInput.cpp
+  SPU2/RegTable.cpp, Reverb.cpp, ReverbResample.cpp
+
+DO NOT COPY (explicitly excluded per audit):
+  arm64/Vif_Dynarec.cpp
+    → Audit Section 13.7: "NOT PORTED — Sec 2.3-F"
+  x86/ (entire directory)
+    → N/A per Audit Section 1.2
+  CDVD/Darwin/
+    → RED per Audit Section 2.6
+
+================================================================================
+ PHASE 18 — FINAL VERIFICATION
+================================================================================
+
+Run every command below and report all results:
+
+  find BionicSX2 -type f | sort
+  grep -r "newVifDynarec" BionicSX2/ios/
+  grep -r "SysMemory" BionicSX2/ios/
+  grep -r "vm_allocate" BionicSX2/ios/platform/HostSys_iOS.cpp
+  grep -r "AVAudioEngine" BionicSX2/ios/platform/AudioStream_iOS.mm
+  grep -r "MTLDevice" BionicSX2/metal/MetalRenderer.mm
+  grep -r "NSView\|AppKit" BionicSX2/metal/ BionicSX2/ios/
+    → This must return ZERO results
+  grep -r "UIView\|UIKit" BionicSX2/metal/ BionicSX2/ios/
+    → This must return results in every .mm file
+  cat BionicSX2/ios/entitlements/BionicSX2.entitlements
+  cat BionicSX2/.github/workflows/build-ipa.yml
+  wc -l BionicSX2/ios/platform/iOSVMManager.mm
+
+Then output the final status report:
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ BionicSX2 — FULL PROJECT BUILD STATUS                           │
+  ├──────────────────────────────────────────────────────────────────┤
+  │ Total files created           : [N]                              │
+  │ Phases completed              : [N] / 18                         │
+  │ nVif crash fix applied        : YES / NO                         │
+  │ SysMemory::Allocate present   : YES / NO                         │
+  │ AppKit references remaining   : [N] — must be 0                  │
+  │ Metal renderer ported         : YES / NO                         │
+  │ All shaders merged            : YES / NO                         │
+  │ GitHub Actions pipeline ready : YES / NO                         │
+  │ Entitlements file complete    : YES / NO                         │
+  │ arm64/Vif_Dynarec.cpp absent  : YES / NO — must be YES           │
+  │ Hard blockers encountered     : [N] — list with audit reference  │
+  │ Overall status                : COMPLETE / INCOMPLETE            │
+  └──────────────────────────────────────────────────────────────────┘
+
+================================================================================
+ HARD CONSTRAINTS — ACTIVE FOR ALL 18 PHASES
+================================================================================
+
+  - The audit document is the ONLY authority — cite section numbers
+  - arm64/Vif_Dynarec.cpp must NEVER be copied or linked
+  - EmuConfig.EE.newVifDynarec = false MUST appear in iOSVMManager.mm
+    BEFORE SysMemory::Allocate() and cpuReset()
+  - AppKit must not appear anywhere in the project — UIKit only
+  - x86/ recompiler code must not enter src/
+  - No JIT porting — interpreter paths only for this build phase
+  - Every ported file must have a comment at the top:
+      // PORTED FROM: [source path] — BionicSX2 iOS Port
+      // AUDIT REFERENCE: Section [X.X]
+      // STATUS: [GREEN/YELLOW] — [reason for changes if YELLOW]
+  - If any phase hits a hard blocker: log it with exact audit
+    section reference and continue to the next phase
+
+================================================================================
+ SUCCESS CRITERIA
+================================================================================
+
+  - build-ios/libBionicSX2.a or build-ios/BionicSX2.app exists
+  - Zero undefined symbol errors
+  - Zero missing framework errors
+  - The app launches on device/simulator, shows a Metal view,
+    and does not crash on startup
+  - Loading any ISO file does not crash at first VIF UNPACK command
+    (nVif fix confirmed working)
+
+================================================================================
+ KEY CONSTRAINTS TABLE
+================================================================================
+
+  ┌────────────────────────────────────────────────────────────────────────────┐
+  │ Constraint                          │ Reason                               │
+  ├────────────────────────────────────────────────────────────────────────────┤
+  │ No Qt anywhere                      │ Qt not supported on iOS              │
+  │ No OpenGL or Vulkan                 │ iOS uses Metal only                  │
+  │ No SDL input                        │ Use GameController.framework         │
+  │ No IOKit                            │ Not available on iOS                 │
+  │ No AppKit / NSView / NSWindow       │ UIKit only on iOS                    │
+  │ No MAP_JIT for now                  │ Requires Apple entitlement; defer    │
+  │ newVifDynaRec = 0 on iOS            │ SIGSEGV guaranteed otherwise         │
+  │ All deps as static .a               │ No dylib loading on unsigned iOS     │
+  │ CMAKE_TRY_COMPILE_TARGET_TYPE =     │ Prevents CMake from trying to run    │
+  │   STATIC_LIBRARY                    │ test binaries on device              │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+ END OF EXECUTION ORDER

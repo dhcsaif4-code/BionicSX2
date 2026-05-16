@@ -6,6 +6,7 @@
 #include <fmt/core.h>
 #include <string>
 #include <vector>
+#include <libkern/OSCacheControl.h>
 
 // =====================================================================
 // All C-linkage stubs in one extern "C" block
@@ -148,9 +149,13 @@ void CopyBIOSToMemory() {}
 
 // VIF
 void VifUnpackSSE_Init() {}
-void vtlb_DynBackpatchLoadStore(uptr, u32, u32, u32, u8, u8, u8, bool, bool, bool) {}
+void vtlb_DynBackpatchLoadStore(unsigned long, unsigned int, unsigned int,
+  unsigned int, unsigned int, unsigned int, unsigned char,
+  unsigned char, unsigned char, bool, bool, bool) {}
 void dVifRelease(int) {}
 void dVifReset(int) {}
+void dVifUnpack_0(const unsigned char*, bool) {}
+void dVifUnpack_1(const unsigned char*, bool) {}
 
 // Discord
 void Discord_Initialize(const char*, void*, int, const char*) {}
@@ -160,7 +165,10 @@ void Discord_UpdatePresence(const void*) {}
 void Discord_ClearPresence() {}
 
 // Misc
-void pxOnAssertFail(const char*, int, const char*, const char*) {}
+void pxOnAssertFail(const char* msg, int line, const char* file, const char* func) {
+  NSLog(@"[BionicSX2] Assert: %s:%d %s — %s", file, line, func, msg);
+  abort();
+}
 void ShortSpin() {}
 void GetValidDrive(void*) {}
 void* GetMetalAdapterList() { return nullptr; }
@@ -183,6 +191,11 @@ void DecompressBlockBC1(unsigned int, unsigned int, unsigned int, const unsigned
 void DecompressBlockBC2(unsigned int, unsigned int, unsigned int, const unsigned char*, unsigned char*) {}
 void DecompressBlockBC3(unsigned int, unsigned int, unsigned int, const unsigned char*, unsigned char*) {}
 void bc7decomp_unpack_bc7(const uint8_t*, uint32_t*) {}
+
+// __clear_cache — compiler runtime for ARM64; needed when __builtin___clear_cache is used
+extern "C" void __clear_cache(char* begin, char* end) {
+  sys_icache_invalidate(begin, (size_t)(end - begin));
+}
 
 // libzip
 void* zip_open(const char*, int, int*) { return nullptr; }
@@ -272,8 +285,10 @@ int Xzs_ReadBackward(void*, void*, int64_t*, void*, void*) { return 0; }
 
 } // extern "C"
 
-extern "C" void dVifUnpack_0(const unsigned char*, bool) {}
-extern "C" void dVifUnpack_1(const unsigned char*, bool) {}
+// dVifUnpack template explicit instantiations (C++ linkage, not extern "C")
+template<int idx> void dVifUnpack(const u8* data, bool isFill);
+template<> void dVifUnpack<0>(const u8*, bool) {}
+template<> void dVifUnpack<1>(const u8*, bool) {}
 
 // =====================================================================
 // Log stubs — Log.cpp does not exist in the repo
@@ -304,8 +319,9 @@ typedef int ImGuiInputTextFlags;
 typedef int (*ImGuiInputTextCallback)(void*);
 namespace ImGui {
   bool InputText(const char* label, std::string* str,
-      ImGuiInputTextFlags flags, ImGuiInputTextCallback callback,
-      void* user_data) {
+      ImGuiInputTextFlags flags = 0,
+      ImGuiInputTextCallback callback = nullptr,
+      void* user_data = nullptr) {
     return false;
   }
 }
