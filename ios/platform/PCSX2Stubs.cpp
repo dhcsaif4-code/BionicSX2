@@ -237,13 +237,7 @@ void plutovg_canvas_scale(plutovg_canvas_t*, double, double) {}
 void plutovg_canvas_translate(plutovg_canvas_t*, double, double) {}
 void plutovg_convert_argb_to_rgba(unsigned char*, const unsigned char*, int, int, int) {}
 
-// plutosvg
-struct plutosvg_document_t;
-plutosvg_document_t* plutosvg_document_load_from_data(const char*, size_t, float, const float*, const float*, plutovg_surface_t*) { return nullptr; }
-float plutosvg_document_get_width(plutosvg_document_t*) { return 0.0f; }
-float plutosvg_document_get_height(plutosvg_document_t*) { return 0.0f; }
-int plutosvg_document_render(plutosvg_document_t*, void*, plutovg_canvas_t*, void*, void*, void*) { return 0; }
-void plutosvg_document_destroy(plutosvg_document_t*) {}
+// plutosvg — stubs now inline in generated/plutosvg.h
 
 // cubeb
 int cubeb_init(void** ctx, const char* name, const char* backend) { *ctx = nullptr; return 0; }
