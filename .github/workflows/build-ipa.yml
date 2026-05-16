@@ -132,6 +132,25 @@ jobs:
         run: |
           ls build-ios/CMakeFiles/BionicSX2_App.dir 2>&1 || echo "CLEAN OK - dir gone"
 
+      - name: Inspect SymbolStubs mangled names
+        run: |
+          xcrun clang++ \
+            -target arm64-apple-ios15.0 \
+            -std=c++17 \
+            -c ios/platform/SymbolStubs.cpp \
+            -o /tmp/SymbolStubs_check.o 2>&1
+
+          echo "=== EXPORTED T symbols ==="
+          xcrun nm /tmp/SymbolStubs_check.o \
+            | grep " T " \
+            | grep -E "GSDrawScanline|applyGameFixes|GameDatabase"
+
+          echo "=== REQUIRED U symbols ==="
+          xcrun nm build-ios/libBionicSX2.a 2>/dev/null \
+            | grep " U " \
+            | grep -E "GSDrawScanline|applyGameFixes|GameDatabase" \
+            | sort -u
+
       - name: Build App Target
         run: |
           cd build-ios
