@@ -24,7 +24,7 @@ typedef unsigned char JOCTET;
 #define TRUE  1
 #define FALSE 0
 
-typedef enum { JCS_RGB2=JCS_EXT_RGB } J_COLOR_SPACE;
+typedef int J_COLOR_SPACE;
 
 struct jpeg_error_mgr {
   void (*error_exit)(void*);
@@ -139,6 +139,14 @@ struct jpeg_decompress_struct {
   void* cquantize;
 };
 
+struct jpeg_destination_mgr {
+  JOCTET* next_output_byte;
+  size_t free_in_buffer;
+  void (*init_destination)(j_compress_ptr);
+  boolean (*empty_output_buffer)(j_compress_ptr);
+  void (*term_destination)(j_compress_ptr);
+};
+
 struct jpeg_compress_struct {
   struct jpeg_error_mgr* err;
   void* mem;
@@ -146,7 +154,7 @@ struct jpeg_compress_struct {
   void* client_data;
   boolean is_decompressor;
   int global_state;
-  void* dest;
+  struct jpeg_destination_mgr* dest;
   JDIMENSION image_width;
   JDIMENSION image_height;
   int input_components;
@@ -227,6 +235,7 @@ JDIMENSION jpeg_write_scanlines(j_compress_ptr, JSAMPARRAY, JDIMENSION);
 void jpeg_finish_compress(j_compress_ptr);
 void jpeg_mem_src_custom(j_decompress_ptr cinfo,
   const JOCTET* buf, size_t bufsize);
+boolean jpeg_resync_to_restart(j_decompress_ptr, int);
 #ifdef __cplusplus
 }
 #endif
