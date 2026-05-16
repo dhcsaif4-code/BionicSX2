@@ -2,6 +2,10 @@
 #include "pcsx2/Host.h"
 #include "pcsx2/VMManager.h"
 
+struct InputBindingKey {};
+#define BEGIN_HOTKEY_LIST(x)
+#define END_HOTKEY_LIST()
+
 namespace Host {
   void OnVMStarting() {}
   void OnVMStarted() {}
