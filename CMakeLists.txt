@@ -398,6 +398,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(IOS_APP_SOURCES
         ios/ui/main.mm
         ios/ui/AppDelegate.mm
+        ios/platform/AppStubs.mm
     )
 
     # Metal renderer (Phase 11-12)
@@ -439,6 +440,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/lib/liblzma.a"
         "${IOS_DEPS}/lib/libzstd.a"
         "${IOS_DEPS}/lib/liblz4.a"
+        "${IOS_DEPS}/lib/libzip.a"
         "${IOS_DEPS}/lib/libfreetype.a"
         "${IOS_DEPS}/lib/libpng.a"
         "${IOS_DEPS}/lib/libz.a"
