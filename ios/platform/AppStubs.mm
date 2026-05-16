@@ -8,6 +8,14 @@
 #include <functional>
 #include <vector>
 #include <memory>
+#include <string_view>
+
+// Forward decls for types whose headers are unavailable (empty submodule)
+namespace fmt {
+    using string_view = std::string_view;
+    struct format_args {};
+}
+struct StateWrapper;
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,8 +123,10 @@ namespace Common {
 
 // ── Threading::WorkSema ───────────────────────────────
 namespace Threading {
-    void WorkSema::WaitForWork() {}
-    bool WorkSema::WaitForEmpty() { return true; }
+    struct WorkSema {
+        void WaitForWork() {}
+        bool WaitForEmpty() { return true; }
+    };
 }
 
 // ── Log:: implementation ──────────────────────────────
@@ -149,7 +159,7 @@ namespace USB {
     std::string_view DeviceTypeIndexToName(int) { return ""; }
     int DeviceTypeNameToIndex(std::string_view) { return -1; }
     void SetDefaultConfiguration(void*) {}
-    void DoState(void&) {}
+    void DoState(StateWrapper&) {}
 }
 
 // ── ImGuiFreeType stubs ───────────────────────────────
@@ -178,5 +188,4 @@ extern "C" {
 
 // ── Forward declarations for types used in ImGui code ─
 struct SettingsInterface;
-struct StateWrapper;
 struct InputBindingKey {};
