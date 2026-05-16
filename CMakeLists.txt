@@ -10,6 +10,12 @@ project(BionicSX2)
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(IOS_DEPS "${CMAKE_SOURCE_DIR}/ios-deps/install")
 
+    if(EXISTS "${CMAKE_SOURCE_DIR}/pcsx2/common/Log.cpp")
+      set(COMMON_DIR "${CMAKE_SOURCE_DIR}/pcsx2/common")
+    elseif(EXISTS "${CMAKE_SOURCE_DIR}/common/Log.cpp")
+      set(COMMON_DIR "${CMAKE_SOURCE_DIR}/common")
+    endif()
+
     # Disable everything that doesn't exist on iOS
     set(ENABLE_QT     OFF CACHE BOOL "" FORCE)   # Audit Sec 1.1 — RED
     set(ENABLE_OPENGL OFF CACHE BOOL "" FORCE)   # Audit Sec 1.2 — N/A
@@ -71,13 +77,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # NOTE: File names match actual PCSX2 source tree, not exec order spec
     set(PCSX2_CORE_SOURCES
         # ---- common/ (pcsx2/common) ----
-        pcsx2/common/FastJmp.cpp
-        pcsx2/common/FileSystem.cpp
-        pcsx2/common/Image.cpp
-        pcsx2/common/Log.cpp
-        pcsx2/common/StringUtil.cpp
-        pcsx2/common/Threading.cpp
-        pcsx2/common/Timer.cpp
+        ${COMMON_DIR}/FastJmp.cpp
+        ${COMMON_DIR}/FileSystem.cpp
+        ${COMMON_DIR}/Image.cpp
+        ${COMMON_DIR}/Log.cpp
+        ${COMMON_DIR}/StringUtil.cpp
+        ${COMMON_DIR}/Threading.cpp
+        ${COMMON_DIR}/Timer.cpp
 
         # ---- imgui (3rdparty) ----
         pcsx2/3rdparty/imgui/src/imgui.cpp
@@ -329,7 +335,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # Phase 0-D: LnxHostSys for iOS (DarwinMisc excluded — uses macOS-only
     # CoreGraphics/IOKit; our PageFaultHandler.cpp handles Mach exceptions)
     set(PCSX2_PLATFORM_SOURCES
-        pcsx2/common/Linux/LnxHostSys.cpp     # SharedMemoryMappingArea (has __APPLE__ guards)
+        ${COMMON_DIR}/Linux/LnxHostSys.cpp     # SharedMemoryMappingArea (has __APPLE__ guards)
     )
 
     # Phase 0-A, 0-F: iOS platform layer
@@ -454,7 +460,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         metal
         pcsx2              # for #include "common/xxx.h" and "pcsx2/xxx.h" style
         pcsx2/pcsx2        # for direct #include "GS/xxx.h" style
-        pcsx2/common       # for #include "Pcsx2Defs.h" without prefix
+        ${COMMON_DIR}       # for #include "Pcsx2Defs.h" without prefix
         ${THIRDPARTY_INCLUDE_DIRS}
     )
 
