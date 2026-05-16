@@ -3,6 +3,7 @@
 // NOTE: Minimal stubs — avoid including PCSX2 headers to prevent
 // declaration conflicts. Uses forward declarations where possible.
 #include "common/Pcsx2Types.h"
+#include "common/Threading.h"
 #include <memory>
 
 // AUDIT: VifUnpackSSE_Init forced no-op for iOS (Phase 0-B)
@@ -167,10 +168,6 @@ extern "C" {
 }
 
 // Misc
-extern "C" void pxOnAssertFail(const char*, int, const char*, const char*) {}
-extern "C" void GetValidDrive() {}
-
-// Misc extern stubs
 extern "C" void GSVertexSW_InitStatic() {}
 extern "C" void ReadOSDConfigParames() {}
 extern "C" void GSDumpReplayer_IsReplaying() {}
