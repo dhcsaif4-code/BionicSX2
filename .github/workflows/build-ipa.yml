@@ -134,8 +134,12 @@ jobs:
 
       - name: Inspect SymbolStubs mangled names
         run: |
-          xcrun clang++ \
+          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          echo "SDK: $IOS_SDK"
+
+          xcrun --sdk iphoneos clang++ \
             -target arm64-apple-ios15.0 \
+            -isysroot "$IOS_SDK" \
             -std=c++17 \
             -c ios/platform/SymbolStubs.cpp \
             -o /tmp/SymbolStubs_check.o 2>&1
