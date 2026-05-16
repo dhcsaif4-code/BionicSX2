@@ -401,7 +401,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
         ios/platform/FmtLogStubs.cpp
-        ios/platform/VtlbStub.cpp
+        ios/platform/VtlbStub.c
     )
 
     # Metal renderer (Phase 11-12)

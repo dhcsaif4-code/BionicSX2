@@ -1,100 +1,113 @@
 // BionicSX2 — FmtLogStubs.cpp
-// Strategy: define stub functions then alias them to the exact
-// mangled names the linker expects using __asm__ labels.
-// This bypasses all fmt ABI/header-only confusion.
+// Uses __asm__ labels with EXACT mangled names derived from linker error messages.
+// libc++ ABI: std::__1:: namespace (Apple clang on macOS/iOS).
 
 #include <cstdint>
 #include <cstddef>
-#include <string>
-#include <locale>
 #include <cstdarg>
 
-// ─── fmt::v12 stubs via asm aliases ─────────────────────────────────────────
-// Mangled names from: nm libBionicSX2.a | grep " U .*fmt"
+// ════════════════════════════════════════════════════════════════════════════
+// STRATEGY: define stub bodies with unique internal names, then export them
+// under the exact C++ mangled names the linker expects.
+// No headers needed — we never call these functions, just satisfy the linker.
+// ════════════════════════════════════════════════════════════════════════════
 
-// fmt::v12::vformat(fmt::v12::basic_string_view<char>, fmt::v12::basic_format_args<fmt::v12::context>)
+// ── Log::GetMaxLevel() → _ZN3Log11GetMaxLevelEv ─────────────────────────────
 __attribute__((visibility("default")))
-std::string bionicsx2_fmt_vformat(const void*, const void*)
-  __asm__("_ZN3fmt3v126vformatENS0_17basic_string_viewIcEENS0_20basic_format_argsINS0_7contextEEE");
-std::string bionicsx2_fmt_vformat(const void*, const void*) { return {}; }
+unsigned int _bionicsx2_Log_GetMaxLevel()
+    __asm__("_ZN3Log11GetMaxLevelEv");
+unsigned int _bionicsx2_Log_GetMaxLevel() { return 0; }
 
-// fmt::v12::detail::vformat_to(fmt::v12::detail::buffer<char>&, ...)
+// ── Log::IsConsoleOutputEnabled() → _ZN3Log22IsConsoleOutputEnabledEv ───────
 __attribute__((visibility("default")))
-void bionicsx2_fmt_vformat_to(void*, const void*, const void*, const void*)
-  __asm__("_ZN3fmt3v126detail10vformat_toIcEEvRNS1_6bufferIT_EENS0_17basic_string_viewIS3_EENS0_20basic_format_argsINS0_7contextEEENS0_10locale_refE");
-void bionicsx2_fmt_vformat_to(void*, const void*, const void*, const void*) {}
+bool _bionicsx2_Log_IsConsoleOutputEnabled()
+    __asm__("_ZN3Log22IsConsoleOutputEnabledEv");
+bool _bionicsx2_Log_IsConsoleOutputEnabled() { return false; }
 
-// fmt::v12::report_error(char const*)
+// ── Log::IsFileOutputEnabled() → _ZN3Log19IsFileOutputEnabledEv ─────────────
 __attribute__((visibility("default")))
-void bionicsx2_fmt_report_error(const char*)
-  __asm__("_ZN3fmt3v1212report_errorEPKc");
-void bionicsx2_fmt_report_error(const char*) {}
+bool _bionicsx2_Log_IsFileOutputEnabled()
+    __asm__("_ZN3Log19IsFileOutputEnabledEv");
+bool _bionicsx2_Log_IsFileOutputEnabled() { return false; }
 
-// fmt::v12::detail::is_printable(unsigned int)
+// ── Log::SetTimestampsEnabled(bool) → _ZN3Log21SetTimestampsEnabledEb ───────
 __attribute__((visibility("default")))
-bool bionicsx2_fmt_is_printable(unsigned int)
-  __asm__("_ZN3fmt3v126detail12is_printableEj");
-bool bionicsx2_fmt_is_printable(unsigned int) { return true; }
+void _bionicsx2_Log_SetTimestampsEnabled(bool)
+    __asm__("_ZN3Log21SetTimestampsEnabledEb");
+void _bionicsx2_Log_SetTimestampsEnabled(bool) {}
 
-// std::locale fmt::v12::locale_ref::get<std::locale>() const
+// ── Log::SetConsoleOutputLevel(LOGLEVEL) → _ZN3Log22SetConsoleOutputLevelE8LOGLEVEL
 __attribute__((visibility("default")))
-void* bionicsx2_fmt_locale_ref_get()
-  __asm__("_ZNK3fmt3v1210locale_ref3getISt6localeEET_v");
-void* bionicsx2_fmt_locale_ref_get() { return nullptr; }
+void _bionicsx2_Log_SetConsoleOutputLevel(unsigned int)
+    __asm__("_ZN3Log22SetConsoleOutputLevelE8LOGLEVEL");
+void _bionicsx2_Log_SetConsoleOutputLevel(unsigned int) {}
 
-// ─── Log stubs via asm aliases ───────────────────────────────────────────────
-// We use raw asm names because LOGLEVEL/ConsoleColors enum ABI must match
-
-// Log::WriteFmtArgs(LOGLEVEL, ConsoleColors, fmt::v12::basic_string_view<char>, fmt::v12::basic_format_args<fmt::v12::context>)
+// ── Log::SetFileOutputLevel(LOGLEVEL, std::__1::basic_string<char,...>)
+// → _ZN3Log19SetFileOutputLevelE8LOGLEVELNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE
 __attribute__((visibility("default")))
-void bionicsx2_log_WriteFmtArgs(unsigned int, unsigned int, const void*, const void*)
-  __asm__("_ZN3Log12WriteFmtArgsE8LOGLEVEL13ConsoleColorsN3fmt3v1217basic_string_viewIcEENS3_20basic_format_argsINS3_7contextEEE");
-void bionicsx2_log_WriteFmtArgs(unsigned int, unsigned int, const void*, const void*) {}
+void _bionicsx2_Log_SetFileOutputLevel(unsigned int, const void*)
+    __asm__("_ZN3Log19SetFileOutputLevelE8LOGLEVELNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE");
+void _bionicsx2_Log_SetFileOutputLevel(unsigned int, const void*) {}
 
-// Log::Write(LOGLEVEL, ConsoleColors, std::string_view)
+// ── Log::Write(LOGLEVEL, ConsoleColors, std::__1::basic_string_view<char,...>)
+// → _ZN3Log5WriteE8LOGLEVEL13ConsoleColorsNSt3__117basic_string_viewIcNS1_11char_traitsIcEEEE
 __attribute__((visibility("default")))
-void bionicsx2_log_Write(unsigned int, unsigned int, const void*)
-  __asm__("_ZN3Log5WriteE8LOGLEVEL13ConsoleColorsSt17basic_string_viewIcSt11char_traitsIcEE");
-void bionicsx2_log_Write(unsigned int, unsigned int, const void*) {}
+void _bionicsx2_Log_Write(unsigned int, unsigned int, const void*)
+    __asm__("_ZN3Log5WriteE8LOGLEVEL13ConsoleColorsNSt3__117basic_string_viewIcNS1_11char_traitsIcEEEE");
+void _bionicsx2_Log_Write(unsigned int, unsigned int, const void*) {}
 
-// Log::Writev(LOGLEVEL, ConsoleColors, char const*, char*)
+// ── Log::Writev(LOGLEVEL, ConsoleColors, char const*, char*)
+// → _ZN3Log6WritevE8LOGLEVEL13ConsoleColorsPKcPc
 __attribute__((visibility("default")))
-void bionicsx2_log_Writev(unsigned int, unsigned int, const char*, char*)
-  __asm__("_ZN3Log6WritevE8LOGLEVEL13ConsoleColorsPKcPc");
-void bionicsx2_log_Writev(unsigned int, unsigned int, const char*, char*) {}
+void _bionicsx2_Log_Writev(unsigned int, unsigned int, const char*, char*)
+    __asm__("_ZN3Log6WritevE8LOGLEVEL13ConsoleColorsPKcPc");
+void _bionicsx2_Log_Writev(unsigned int, unsigned int, const char*, char*) {}
 
-// Log::GetMaxLevel()
+// ── Log::WriteFmtArgs(LOGLEVEL, ConsoleColors, fmt::v12::basic_string_view<char>,
+//                     fmt::v12::basic_format_args<fmt::v12::context>)
+// → _ZN3Log12WriteFmtArgsE8LOGLEVEL13ConsoleColorsN3fmt3v1217basic_string_viewIcEENS3_20basic_format_argsINS3_7contextEEE
 __attribute__((visibility("default")))
-unsigned int bionicsx2_log_GetMaxLevel()
-  __asm__("_ZN3Log11GetMaxLevelEv");
-unsigned int bionicsx2_log_GetMaxLevel() { return 0; }
+void _bionicsx2_Log_WriteFmtArgs(unsigned int, unsigned int, const void*, const void*)
+    __asm__("_ZN3Log12WriteFmtArgsE8LOGLEVEL13ConsoleColorsN3fmt3v1217basic_string_viewIcEENS3_20basic_format_argsINS3_7contextEEE");
+void _bionicsx2_Log_WriteFmtArgs(unsigned int, unsigned int, const void*, const void*) {}
 
-// Log::IsConsoleOutputEnabled()
-__attribute__((visibility("default")))
-bool bionicsx2_log_IsConsoleEnabled()
-  __asm__("_ZN3Log22IsConsoleOutputEnabledEv");
-bool bionicsx2_log_IsConsoleEnabled() { return false; }
+// ════════════════════════════════════════════════════════════════════════════
+// fmt::v12 non-inline stubs
+// ════════════════════════════════════════════════════════════════════════════
 
-// Log::IsFileOutputEnabled()
+// ── fmt::v12::vformat(fmt::v12::basic_string_view<char>, fmt::v12::basic_format_args<fmt::v12::context>)
+// → _ZN3fmt3v126vformatENS0_17basic_string_viewIcEENS0_20basic_format_argsINS0_7contextEEE
 __attribute__((visibility("default")))
-bool bionicsx2_log_IsFileEnabled()
-  __asm__("_ZN3Log19IsFileOutputEnabledEv");
-bool bionicsx2_log_IsFileEnabled() { return false; }
+void* _bionicsx2_fmt_vformat(const void*, const void*)
+    __asm__("_ZN3fmt3v126vformatENS0_17basic_string_viewIcEENS0_20basic_format_argsINS0_7contextEEE");
+void* _bionicsx2_fmt_vformat(const void*, const void*) { return nullptr; }
 
-// Log::SetConsoleOutputLevel(LOGLEVEL)
+// ── fmt::v12::report_error(char const*)
+// → _ZN3fmt3v1212report_errorEPKc
 __attribute__((visibility("default")))
-void bionicsx2_log_SetConsoleLevel(unsigned int)
-  __asm__("_ZN3Log22SetConsoleOutputLevelE8LOGLEVEL");
-void bionicsx2_log_SetConsoleLevel(unsigned int) {}
+void _bionicsx2_fmt_report_error(const char*)
+    __asm__("_ZN3fmt3v1212report_errorEPKc");
+void _bionicsx2_fmt_report_error(const char*) {}
 
-// Log::SetFileOutputLevel(LOGLEVEL, std::string)
+// ── fmt::v12::detail::is_printable(unsigned int)
+// → _ZN3fmt3v126detail12is_printableEj
 __attribute__((visibility("default")))
-void bionicsx2_log_SetFileLevel(unsigned int, const void*)
-  __asm__("_ZN3Log19SetFileOutputLevelE8LOGLEVELNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE");
-void bionicsx2_log_SetFileLevel(unsigned int, const void*) {}
+bool _bionicsx2_fmt_is_printable(unsigned int)
+    __asm__("_ZN3fmt3v126detail12is_printableEj");
+bool _bionicsx2_fmt_is_printable(unsigned int) { return true; }
 
-// Log::SetTimestampsEnabled(bool)
+// ── fmt::v12::detail::vformat_to(fmt::v12::detail::buffer<char>&,
+//    fmt::v12::basic_string_view<char>, fmt::v12::basic_format_args<fmt::v12::context>,
+//    fmt::v12::locale_ref)
+// → _ZN3fmt3v126detail10vformat_toERNS1_6bufferIcEENS0_17basic_string_viewIcEENS0_20basic_format_argsINS0_7contextEEENS0_10locale_refE
 __attribute__((visibility("default")))
-void bionicsx2_log_SetTimestamps(bool)
-  __asm__("_ZN3Log21SetTimestampsEnabledEb");
-void bionicsx2_log_SetTimestamps(bool) {}
+void _bionicsx2_fmt_vformat_to(void*, const void*, const void*, const void*)
+    __asm__("_ZN3fmt3v126detail10vformat_toERNS1_6bufferIcEENS0_17basic_string_viewIcEENS0_20basic_format_argsINS0_7contextEEENS0_10locale_refE");
+void _bionicsx2_fmt_vformat_to(void*, const void*, const void*, const void*) {}
+
+// ── std::__1::locale fmt::v12::locale_ref::get<std::__1::locale>() const
+// → _ZNK3fmt3v1210locale_ref3getINSt3__16localeEEET_v
+__attribute__((visibility("default")))
+void* _bionicsx2_fmt_locale_ref_get()
+    __asm__("_ZNK3fmt3v1210locale_ref3getINSt3__16localeEEET_v");
+void* _bionicsx2_fmt_locale_ref_get() { return nullptr; }
