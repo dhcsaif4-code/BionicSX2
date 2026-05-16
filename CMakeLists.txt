@@ -87,12 +87,25 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${COMMON_DIR}/StringUtil.cpp
         ${COMMON_DIR}/SmallString.cpp
         ${COMMON_DIR}/Timer.cpp
+        ${COMMON_DIR}/DynamicLibrary.cpp
+        ${COMMON_DIR}/HTTPDownloader.cpp
+        ${COMMON_DIR}/ProgressCallback.cpp
+        ${COMMON_DIR}/SettingsWrapper.cpp
 
         # ---- imgui (3rdparty) ----
         pcsx2/3rdparty/imgui/src/imgui.cpp
         pcsx2/3rdparty/imgui/src/imgui_draw.cpp
         pcsx2/3rdparty/imgui/src/imgui_tables.cpp
         pcsx2/3rdparty/imgui/src/imgui_widgets.cpp
+
+        # ---- freesurround (3rdparty) ----
+        pcsx2/3rdparty/freesurround/src/ChannelMaps.cpp
+        pcsx2/3rdparty/freesurround/src/FreeSurroundDecoder.cpp
+        pcsx2/3rdparty/freesurround/src/kiss_fft.cpp
+        pcsx2/3rdparty/freesurround/src/kiss_fftr.cpp
+
+        # ---- simpleini (3rdparty) ----
+        pcsx2/3rdparty/simpleini/src/ConvertUTF.c
 
         # ---- EE Core, IOP, VU, System (${PCSX2_DIR}/) ----
         ${PCSX2_DIR}/Achievements.cpp
@@ -118,7 +131,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${PCSX2_DIR}/Hw.cpp
         ${PCSX2_DIR}/HwRead.cpp
         ${PCSX2_DIR}/HwWrite.cpp
-        # ${PCSX2_DIR}/INISettingsInterface.cpp  # needs simpleini — excluded
+        ${PCSX2_DIR}/INISettingsInterface.cpp
         ${PCSX2_DIR}/Interpreter.cpp
         ${PCSX2_DIR}/IopBios.cpp
         ${PCSX2_DIR}/IopCounters.cpp
@@ -455,6 +468,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/cubeb/include
         pcsx2/3rdparty/imgui/src
         pcsx2/3rdparty/include        # xxhash.h, pcap.h, Icons* (no subdir)
+        pcsx2/3rdparty/simpleini/include
+        pcsx2/3rdparty/freesurround/include
     )
 
     # freetype headers — built into ios-deps (Phase 3, Tier 3)

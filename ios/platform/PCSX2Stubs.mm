@@ -270,23 +270,8 @@ uint64_t Xzs_GetNumBlocks(void*) { return 0; }
 int Xzs_ReadBackward(void*, void*, int64_t*, void*, void*) { return 0; }
 
 } // extern "C"
-
-// =====================================================================
-// dVifUnpack — template functions, need C++ with C-compatible symbols
-// =====================================================================
 extern "C" void dVifUnpack_0(const unsigned char*, bool) {}
 extern "C" void dVifUnpack_1(const unsigned char*, bool) {}
-
-// =====================================================================
-// DynamicLibrary stubs (no dlopen on unsigned iOS)
-// =====================================================================
-namespace Common {
-  struct DynamicLibrary {
-    static void* Open(const char*, std::string*) { return nullptr; }
-    static void Close(void*) {}
-    static void* GetSymbolAddress(void*, const char*) { return nullptr; }
-  };
-}
 
 // =====================================================================
 // Log stubs — Log.cpp does not exist in the repo
