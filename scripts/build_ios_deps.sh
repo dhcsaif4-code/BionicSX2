@@ -285,24 +285,27 @@ sed -i '' \
   libzip/lib/compat.h
 echo "compat.h patched: Windows stat64/fseeki64 -> POSIX stat/fseeko"
 
-# Patch ZIP_OFF_MAX: not generated correctly on iOS; add fallback
+# Patch ZIP_OFF_MAX: replace with INT64_MAX directly in source
 python3 << 'PYEOF'
 filepath = "libzip/lib/zip_source_file_stdio_named.c"
 with open(filepath, 'r') as f:
-    lines = f.readlines()
-insert_at = 0
-for i, line in enumerate(lines):
-    stripped = line.strip()
-    if stripped and not stripped.startswith('/*') and not stripped.startswith('*') and not stripped.startswith('//'):
-        insert_at = i
-        break
-guard = '#ifndef ZIP_OFF_MAX\n#include <stdint.h>\n#define ZIP_OFF_MAX INT64_MAX\n#endif\n\n'
-lines.insert(insert_at, guard)
-with open(filepath, 'w') as f:
-    f.writelines(lines)
-print(f"ZIP_OFF_MAX guard inserted at line {insert_at+1}")
+    content = f.read()
+replaced = False
+if 'ZIP_OFF_MAX' in content:
+    content = content.replace('ZIP_OFF_MAX', '((zip_off_t)INT64_MAX)')
+    replaced = True
+    print("Replaced ZIP_OFF_MAX -> ((zip_off_t)INT64_MAX)")
+if '#include <stdint.h>' not in content:
+    content = '#include <stdint.h>\n' + content
+    print("Added stdint.h include")
+if replaced:
+    with open(filepath, 'w') as f:
+        f.write(content)
+    print("zip_source_file_stdio_named.c patched")
+else:
+    print("No ZIP_OFF_MAX found — nothing to patch")
 PYEOF
-echo "ZIP_OFF_MAX fallback added"
+echo "ZIP_OFF_MAX -> INT64_MAX patched"
 
 mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
 cmake "$SRC/libzip" $FLAGS \
