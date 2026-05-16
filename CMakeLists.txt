@@ -400,7 +400,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui/AppDelegate.mm
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
-        ios/platform/GSDrawScanlineStub.s
     )
 
     # Metal renderer (Phase 11-12)
@@ -448,7 +447,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_executable(BionicSX2_App
         ${IOS_SWIFT_SOURCES}
         ${IOS_APP_SOURCES}
-        ios/platform/FmtLogStubs.cpp
+        ios/platform/SymbolStubs.cpp
         pcsx2/3rdparty/fmt/src/format.cc
     )
 
