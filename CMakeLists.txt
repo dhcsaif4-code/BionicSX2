@@ -85,6 +85,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${COMMON_DIR}/FileSystem.cpp
         # ${COMMON_DIR}/Image.cpp — excluded on iOS, uses webp/jpeg, stubbed via Image_iOS.cpp
         ${COMMON_DIR}/StringUtil.cpp
+        ${COMMON_DIR}/SmallString.cpp
         ${COMMON_DIR}/Timer.cpp
 
         # ---- imgui (3rdparty) ----
@@ -248,7 +249,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${PCSX2_DIR}/GS/Renderers/HW/GSTextureReplacements.cpp
 
         # ---- GS/Renderers/SW ----
-        ${PCSX2_DIR}/GS/Renderers/SW/GSDrawScanline.cpp
+        # ${PCSX2_DIR}/GS/Renderers/SW/GSDrawScanline.cpp — excluded on iOS (pulls in vixl JIT)
         # GSDrawScanlineCodeGenerator.arm64.cpp — excluded on iOS (pulls in vixl JIT)
         ${PCSX2_DIR}/GS/Renderers/SW/GSRasterizer.cpp
         ${PCSX2_DIR}/GS/Renderers/SW/GSRendererSW.cpp
@@ -412,6 +413,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${IOS_DEPS}/lib/libSoundTouch.a"
         "${IOS_DEPS}/lib/libchdr-static.a"
         "${IOS_DEPS}/lib/libchdr-lzma.a"
+        "${IOS_DEPS}/lib/libcpuinfo.a"
         "-framework Metal"
         "-framework UIKit"
         "-framework Foundation"

@@ -221,6 +221,19 @@ find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 ln -sf "$INSTALL/lib/libchdr-static.a" \
        "$INSTALL/lib/libchdr.a" 2>/dev/null || true
 
+# ── cpuinfo ──────────────────────────────────────────
+cd "$SRC"
+[ -d cpuinfo ] || git clone --depth 1 \
+  https://github.com/pytorch/cpuinfo.git
+mkdir -p "$BLD/cpuinfo" && cd "$BLD/cpuinfo"
+cmake "$SRC/cpuinfo" $FLAGS \
+  -DCPUINFO_BUILD_TOOLS=OFF \
+  -DCPUINFO_BUILD_BENCHMARKS=OFF \
+  -DCPUINFO_BUILD_UNIT_TESTS=OFF
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+cp -r "$SRC/cpuinfo/include/." "$INSTALL/include/"
+
 # ── Final verification ────────────────────────────────
 echo "=== Built libraries ==="
 find "$INSTALL/lib" -name "*.a" | sort
