@@ -19,7 +19,7 @@ namespace Host {
   void OnCaptureStopped() {}
   void OnAchievementsRefreshed() {}
   void OnAchievementsLoginSuccess(const char*, u32, u32, u32) {}
-  void OnAchievementsLoginRequested(Achievements::LoginRequestReason) {}
+  void OnAchievementsLoginRequested(int) {}
   void OnAchievementsHardcoreModeChanged(bool) {}
   void OnInputDeviceConnected(std::string_view, std::string_view) {}
   void OnInputDeviceDisconnected(InputBindingKey, std::string_view) {}
