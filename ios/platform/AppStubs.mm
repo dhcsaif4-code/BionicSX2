@@ -75,15 +75,12 @@ namespace ImGuiFreeType {
 }
 
 // ── ImGui::InputText(std::string*) stub ───────────────
+struct ImGuiInputTextCallbackData;
 typedef int ImGuiInputTextFlags;
-typedef int (*ImGuiInputTextCallback)(void*);
+typedef int (*ImGuiInputTextCallback)(ImGuiInputTextCallbackData*);
 namespace ImGui {
-    bool InputText(const char* label, std::string* str,
-        ImGuiInputTextFlags flags = 0,
-        ImGuiInputTextCallback callback = nullptr,
-        void* user_data = nullptr) {
-        return false;
-    }
+    bool InputText(const char*, std::string*, int,
+        ImGuiInputTextCallback, void*) { return false; }
 }
 
 // ── Forward declarations ─────────────────────────────
@@ -384,11 +381,6 @@ namespace InputManager {
     void* ConvertHostKeyboardStringToCode(std::string_view) { return nullptr; }
     std::string ConvertHostKeyboardCodeToString(unsigned int) { return {}; }
     void* ConvertHostKeyboardCodeToIcon(unsigned int) { return nullptr; }
-}
-
-// ── ImGui::InputText ──────────────────────────────────────────
-namespace ImGui {
-    bool InputText(const char*, std::string*, int, int (*)(void*), void*) { return false; }
 }
 
 // ── FileAccessHelper ──────────────────────────────────────────
