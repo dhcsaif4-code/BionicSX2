@@ -19,27 +19,34 @@ FLAGS="\
 
 # ── zlib ──────────────────────────────────────────────
 cd "$SRC"
-[ -d zlib ] || git clone --depth 1 https://github.com/madler/zlib.git
+[ -d zlib ] || git clone --depth 1 \
+  https://github.com/madler/zlib.git
 mkdir -p "$BLD/zlib" && cd "$BLD/zlib"
-cmake "$SRC/zlib" $FLAGS
+cmake "$SRC/zlib" $FLAGS -DZLIB_BUILD_EXAMPLES=OFF
 make -j$(sysctl -n hw.logicalcpu)
-find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+find . -name "libz.a" -exec cp {} "$INSTALL/lib/" \;
+cp "$SRC/zlib"/*.h "$INSTALL/include/" 2>/dev/null || true
+find "$BLD/zlib" -name "zconf.h" \
+  -exec cp {} "$INSTALL/include/" \; 2>/dev/null || true
 
 # ── libpng ────────────────────────────────────────────
 cd "$SRC"
 [ -d libpng ] || git clone --depth 1 \
   https://github.com/glennrp/libpng.git
-mkdir -p "$BLD/libpng" && cd "$BLD/libpng"
+mkdir -p "$BLD/libpng2" && cd "$BLD/libpng2"
 cmake "$SRC/libpng" $FLAGS \
   -DPNG_SHARED=OFF \
   -DPNG_STATIC=ON \
   -DPNG_TESTS=OFF \
-  -DZLIB_ROOT="$INSTALL"
+  -DPNG_FRAMEWORK=OFF \
+  -DZLIB_INCLUDE_DIR="$INSTALL/include" \
+  -DZLIB_LIBRARY="$INSTALL/lib/libz.a"
 make -j$(sysctl -n hw.logicalcpu)
-find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
-cp "$SRC/libpng"/*.h "$INSTALL/include/" 2>/dev/null || true
-find "$BLD/libpng" -name "pnglibconf.h" \
-  -exec cp {} "$INSTALL/include/" \;
+find . -name "libpng*.a" -exec cp {} "$INSTALL/lib/libpng.a" \;
+cp "$SRC/libpng/png.h" "$INSTALL/include/" 2>/dev/null || true
+cp "$SRC/libpng/pngconf.h" "$INSTALL/include/" 2>/dev/null || true
+find "$BLD/libpng2" -name "pnglibconf.h" \
+  -exec cp {} "$INSTALL/include/" \; 2>/dev/null || true
 
 # ── zstd ──────────────────────────────────────────────
 cd "$SRC"
@@ -53,23 +60,31 @@ find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
 # ── lz4 ───────────────────────────────────────────────
 cd "$SRC"
-[ -d lz4 ] || git clone --depth 1 https://github.com/lz4/lz4.git
+[ -d lz4 ] || git clone --depth 1 \
+  https://github.com/lz4/lz4.git
 mkdir -p "$BLD/lz4" && cd "$BLD/lz4"
 cmake "$SRC/lz4/build/cmake" $FLAGS \
   -DLZ4_BUILD_CLI=OFF \
   -DLZ4_BUILD_LEGACY_LZ4C=OFF
 make -j$(sysctl -n hw.logicalcpu)
-find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+find . -name "liblz4.a" -exec cp {} "$INSTALL/lib/" \;
+cp "$SRC/lz4/lib/lz4.h" "$INSTALL/include/" 2>/dev/null || true
+cp "$SRC/lz4/lib/lz4hc.h" "$INSTALL/include/" 2>/dev/null || true
+cp "$SRC/lz4/lib/lz4frame.h" "$INSTALL/include/" 2>/dev/null || true
 
 # ── xz/lzma ───────────────────────────────────────────
 cd "$SRC"
 [ -d xz ] || git clone --depth 1 \
   https://github.com/tukaani-project/xz.git
-mkdir -p "$BLD/xz" && cd "$BLD/xz"
-cmake "$SRC/xz" $FLAGS \
-  -DBUILD_TESTING=OFF
+mkdir -p "$BLD/xz2" && cd "$BLD/xz2"
+cmake "$SRC/xz" $FLAGS -DBUILD_TESTING=OFF
 make -j$(sysctl -n hw.logicalcpu)
-find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+find . -name "liblzma.a" -exec cp {} "$INSTALL/lib/" \;
+find "$SRC/xz/src/liblzma/api" -name "*.h" \
+  -exec cp {} "$INSTALL/include/" \; 2>/dev/null || true
+mkdir -p "$INSTALL/include/lzma"
+find "$SRC/xz/src/liblzma/api/lzma" -name "*.h" \
+  -exec cp {} "$INSTALL/include/lzma/" \; 2>/dev/null || true
 
 # ── freetype ──────────────────────────────────────────
 cd "$SRC"
@@ -80,9 +95,17 @@ cmake "$SRC/freetype" $FLAGS \
   -DFT_DISABLE_HARFBUZZ=ON \
   -DFT_DISABLE_BZIP2=ON \
   -DFT_DISABLE_PNG=OFF \
-  -DZLIB_ROOT="$INSTALL"
+  -DZLIB_INCLUDE_DIR="$INSTALL/include" \
+  -DZLIB_LIBRARY="$INSTALL/lib/libz.a" \
+  -DPNG_PNG_INCLUDE_DIR="$INSTALL/include" \
+  -DPNG_LIBRARY="$INSTALL/lib/libpng.a"
 make -j$(sysctl -n hw.logicalcpu)
-find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+find . -name "libfreetype.a" -exec cp {} "$INSTALL/lib/" \;
+mkdir -p "$INSTALL/include/freetype2"
+cp -r "$SRC/freetype/include/freetype" \
+  "$INSTALL/include/freetype2/" 2>/dev/null || true
+cp "$SRC/freetype/include/ft2build.h" \
+  "$INSTALL/include/" 2>/dev/null || true
 
 # ── soundtouch ────────────────────────────────────────
 cd "$SRC"
@@ -180,5 +203,12 @@ cmake "$SRC/libchdr" $FLAGS \
 make -j$(sysctl -n hw.logicalcpu)
 find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 
-echo "=== Done ==="
+# ── Final verification ────────────────────────────────
+echo "=== Built libraries ==="
 find "$INSTALL/lib" -name "*.a" | sort
+echo "=== Key headers ==="
+ls "$INSTALL/include/png.h" 2>/dev/null && echo "png.h OK" || echo "png.h MISSING"
+ls "$INSTALL/include/ft2build.h" 2>/dev/null && echo "ft2build.h OK" || echo "ft2build.h MISSING"
+ls "$INSTALL/include/lzma.h" 2>/dev/null && echo "lzma.h OK" || echo "lzma.h MISSING"
+
+echo "=== Done ==="
