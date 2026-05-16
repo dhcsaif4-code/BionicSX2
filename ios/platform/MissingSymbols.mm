@@ -13,6 +13,10 @@
 #include <locale>
 #include <atomic>
 
+// NOTE: fmt headers exist in pcsx2/3rdparty/fmt/include/fmt/
+// but we avoid #include to prevent pulling in massive template code.
+// Instead we manually define minimal complete types that match the ABI.
+
 // ── Primitive types (matches PCSX2 typedefs) ─────────────────
 typedef unsigned char  u8;
 typedef unsigned short u16;
@@ -93,28 +97,66 @@ namespace isa_native {
 }
 
 // ══════════════════════════════════════════════════════════════
-// GROUP 5: Log:: — exact signatures from nm output
+// GROUP 5: Log:: — complete types, no forward declarations
 // ══════════════════════════════════════════════════════════════
+
+// Define minimal complete types matching fmt::v12 ABI
 namespace fmt { namespace v12 {
-    template<typename Char> class basic_string_view;
+    template<typename Char>
+    class basic_string_view {
+        const Char* data_;
+        size_t size_;
+    public:
+        basic_string_view() : data_(nullptr), size_(0) {}
+        const Char* data() const { return data_; }
+        size_t size() const { return size_; }
+    };
     using string_view = basic_string_view<char>;
-    template<typename Context> class basic_format_args;
-    struct context;
+
+    struct context {};
+
+    template<typename Context>
+    class basic_format_args {
+        // Matches real fmt ABI: desc_ (8 bytes) + pointer (8 bytes) = 16 bytes
+        unsigned long long desc_;
+        const void* data_;
+    public:
+        basic_format_args() : desc_(0), data_(nullptr) {}
+    };
     using format_args = basic_format_args<context>;
+
+    class locale_ref {
+        const void* locale_;
+    public:
+        locale_ref() : locale_(nullptr) {}
+        template<typename T> T get() const;
+    };
+
+    namespace detail {
+        template<typename T> class buffer {
+            // Matches real fmt ABI: ptr_, size_, capacity_, grow_ (function ptr)
+            // No virtual functions in the real class
+            T* ptr_;
+            size_t size_;
+            size_t capacity_;
+            void (*grow_)(buffer&, size_t);
+        public:
+            buffer() : ptr_(nullptr), size_(0), capacity_(0), grow_(nullptr) {}
+        };
+    }
 }}
 
 typedef int LOGLEVEL;
 typedef int ConsoleColors;
 
 namespace Log {
-    LOGLEVEL GetMaxLevel()             { return 4; }
-    bool IsConsoleOutputEnabled()      { return true; }
-    bool IsFileOutputEnabled()         { return false; }
+    LOGLEVEL GetMaxLevel()               { return 4; }
+    bool IsConsoleOutputEnabled()        { return true; }
+    bool IsFileOutputEnabled()           { return false; }
     void SetConsoleOutputLevel(LOGLEVEL) {}
     void SetFileOutputLevel(LOGLEVEL, std::string) {}
-    void SetTimestampsEnabled(bool)    {}
-    void Write(LOGLEVEL, ConsoleColors,
-               std::string_view msg) {
+    void SetTimestampsEnabled(bool)      {}
+    void Write(LOGLEVEL, ConsoleColors, std::string_view msg) {
         NSLog(@"[PCSX2] %.*s", (int)msg.size(), msg.data());
     }
     void Writev(LOGLEVEL, ConsoleColors,
@@ -127,7 +169,7 @@ namespace Log {
 }
 
 // ══════════════════════════════════════════════════════════════
-// GROUP 6: fmt::v12 — exact symbols from nm
+// GROUP 6: fmt::v12 — stubs
 // ══════════════════════════════════════════════════════════════
 namespace fmt { namespace v12 {
     void report_error(const char* msg) {
@@ -140,23 +182,12 @@ namespace fmt { namespace v12 {
     }
 
     namespace detail {
-        template<typename T> class buffer {
-        public:
-            virtual void grow(size_t) {}
-            T* begin() { return nullptr; }
-            T* end()   { return nullptr; }
-            void append(const T*, const T*) {}
-        };
-
         void vformat_to(buffer<char>&, string_view,
                         format_args, ...) {}
 
         bool is_printable(unsigned int) { return true; }
     }
 
-    struct locale_ref {
-        template<typename T> T get() const;
-    };
     template<>
     std::locale locale_ref::get<std::locale>() const {
         return std::locale::classic();
