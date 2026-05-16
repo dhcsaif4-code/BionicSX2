@@ -247,6 +247,8 @@ replacements = [
     (r'memcpy_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'memcpy(\1, \2, \3)'),
     (r'memmove_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'memmove(\1, \2, \3)'),
     (r'strncat_s\s*\(([^,]+),\s*[^,]+,\s*([^,]+),\s*([^)]+)\)', r'strncat(\1, \2, \3)'),
+    (r'strerrorlen_s\s*\([^)]+\)\s*\+\s*1', '256'),
+    (r'strerror_s\s*\(([^,]+),\s*([^,]+),\s*([^)]+)\)', r'strerror_r(\3, \1, \2)'),
 ]
 patched = []
 for filepath in glob.glob(os.path.join(lib_dir, "*.c")):
