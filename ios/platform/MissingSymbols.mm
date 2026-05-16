@@ -2,13 +2,13 @@
 // AUDIT REFERENCE: Phase 0-A, Sections 2.3-ADDENDUM, 13.7
 // STATUS: YELLOW — all stubs for iOS dead-code paths
 
-#import <Foundation/Foundation.h>
-#include "PrecompiledHeader.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string>
 #include <vector>
 #include <memory>
+
+#import <Foundation/Foundation.h>
 #include <functional>
 
 // ─── Forward declarations ───────────────────────────────────────────────────
