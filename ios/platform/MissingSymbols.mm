@@ -26,39 +26,6 @@ RGBA8Image::~RGBA8Image() {}
 bool RGBA8Image::LoadFromBuffer(const char*, const void*, size_t) { return false; }
 
 // ════════════════════════════════════════════════════════════════════════════
-// GROUP B — isa_native::GSDrawScanline  (SW rasterizer stubs — Metal only on iOS)
-// ════════════════════════════════════════════════════════════════════════════
-namespace isa_native {
-
-// Opaque types — sized large enough to cover any real layout
-struct alignas(16) GSRasterizerData  { char _[1024]; };
-struct alignas(16) GSScanlineLocalData { char _[2048]; };
-struct alignas(16) GSVector4i { int x,y,z,w; };
-struct alignas(16) GSVertexSW { float x,y,z,w; };
-
-struct GSDrawScanline {
-    char state_[1024] = {};
-
-    GSDrawScanline();
-    ~GSDrawScanline();
-    void PrintStats();
-    void ResetCodeCache();
-    void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&);
-    void SetupDraw(GSRasterizerData&);
-    void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&);
-};
-
-GSDrawScanline::GSDrawScanline()  {}
-GSDrawScanline::~GSDrawScanline() {}
-void GSDrawScanline::PrintStats()     {}
-void GSDrawScanline::ResetCodeCache() {}
-void GSDrawScanline::BeginDraw(const GSRasterizerData&, GSScanlineLocalData&) {}
-void GSDrawScanline::SetupDraw(GSRasterizerData&) {}
-void GSDrawScanline::DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&) {}
-
-} // namespace isa_native
-
-// ════════════════════════════════════════════════════════════════════════════
 // GROUP C — AudioStream backends (Cubeb + SDL — unavailable on iOS)
 // ════════════════════════════════════════════════════════════════════════════
 struct AudioStreamParameters;

@@ -32,14 +32,6 @@ struct StateWrapper;
 // C++ linkage symbols (no extern "C")
 // ══════════════════════════════════════════════════════
 
-// dVifRelease / dVifReset
-void dVifRelease(int idx) {}
-void dVifReset(int idx) {}
-
-// DEV9CheckChanges — C++ linkage (takes Pcsx2Config&)
-struct Pcsx2Config;
-void DEV9CheckChanges(const Pcsx2Config&) {}
-
 // GetValidDrive — takes std::string&
 void GetValidDrive(std::string& s) {}
 

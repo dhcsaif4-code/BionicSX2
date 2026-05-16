@@ -83,7 +83,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # ---- common/ (pcsx2/common) ----
         ${COMMON_DIR}/FastJmp.cpp
         ${COMMON_DIR}/FileSystem.cpp
-        # ${COMMON_DIR}/Image.cpp — excluded on iOS, uses webp/jpeg, stubbed via Image_iOS.cpp
+        ${COMMON_DIR}/Image.cpp  # indexed but not compiled; uses webp/jpeg, covered by Image_iOS.cpp
         ${COMMON_DIR}/StringUtil.cpp
         ${COMMON_DIR}/SmallString.cpp
         ${COMMON_DIR}/Timer.cpp
@@ -428,6 +428,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${IOS_PLATFORM_SOURCES}
         ${IOS_METAL_SOURCES}
     )
+
+    # Image.cpp — HEADER_FILE_ONLY so indexer sees it but compiler skips it
+    if(EXISTS "${COMMON_DIR}/Image.cpp")
+        set_source_files_properties("${COMMON_DIR}/Image.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+    endif()
 
     # Log and fmt — add real sources only if submodule is populated
     if(EXISTS "${COMMON_DIR}/Log.cpp")

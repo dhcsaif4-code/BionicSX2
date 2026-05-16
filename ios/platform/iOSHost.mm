@@ -2,7 +2,6 @@
 #include "pcsx2/Host.h"
 #include "pcsx2/VMManager.h"
 
-struct InputBindingKey {};
 #define BEGIN_HOTKEY_LIST(x)
 #define END_HOTKEY_LIST()
 
@@ -22,7 +21,6 @@ namespace Host {
   void OnCaptureStopped() {}
   void OnAchievementsRefreshed() {}
   void OnAchievementsLoginSuccess(const char*, u32, u32, u32) {}
-  void OnAchievementsLoginRequested(int) {}
   void OnAchievementsHardcoreModeChanged(bool) {}
   void OnInputDeviceConnected(std::string_view, std::string_view) {}
   void OnInputDeviceDisconnected(InputBindingKey, std::string_view) {}
@@ -45,14 +43,6 @@ namespace Host {
   std::string GetHTTPUserAgent() { return "BionicSX2/1.0"; }
   void OpenURL(const std::string_view) {}
   bool CopyTextToClipboard(const std::string_view) { return false; }
-  bool ShouldPreferHostFileSelector() { return false; }
-  void OpenHostFileSelectorAsync(
-      std::string_view, bool,
-      std::function<void(const std::string&)> callback,
-      std::vector<std::string>,
-      std::string_view) {
-    callback(std::string{});
-  }
 }
 
 BEGIN_HOTKEY_LIST(g_host_hotkeys)
