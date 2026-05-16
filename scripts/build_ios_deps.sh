@@ -285,6 +285,11 @@ sed -i '' \
   libzip/lib/compat.h
 echo "compat.h patched: Windows stat64/fseeki64 -> POSIX stat/fseeko"
 
+# Patch ZIP_OFF_MAX: not generated correctly on iOS; add fallback
+sed -i '' 's/#include "zipconf.h"/#include "zipconf.h"\n#ifndef ZIP_OFF_MAX\n#define ZIP_OFF_MAX INT64_MAX\n#endif/' \
+  libzip/lib/zip_source_file_stdio_named.c
+echo "ZIP_OFF_MAX fallback added"
+
 mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
 cmake "$SRC/libzip" $FLAGS \
   -DENABLE_COMMONCRYPTO=ON \
