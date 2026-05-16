@@ -28,12 +28,12 @@ bool RGBA8Image::LoadFromBuffer(const char*, const void*, size_t) { return false
 // ════════════════════════════════════════════════════════════════════════════
 // GROUP B — isa_native::GSDrawScanline  (SW rasterizer stubs — Metal only on iOS)
 // ════════════════════════════════════════════════════════════════════════════
-struct GSVector4i;
-struct GSVertexSW;
-struct GSScanlineLocalData;
-struct GSRasterizerData;
-
 namespace isa_native {
+  struct GSRasterizerData {};
+  struct GSScanlineLocalData {};
+  struct GSVector4i { int x,y,z,w; };
+  struct GSVertexSW { float x,y,z,w; };
+
   struct GSDrawScanline {
     GSDrawScanline();
     ~GSDrawScanline();
@@ -225,12 +225,12 @@ struct Patch;
 
 namespace GameDatabaseSchema {
   struct GameEntry {
-    void applyGameFixes(::Pcsx2Config::McdOptions&, bool) const;
+    void applyGameFixes(void*, bool) const;
     void applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const;
     std::string memcardFiltersAsString() const;
     const Patch* findPatch(uint32_t) const;
   };
-  void GameEntry::applyGameFixes(::Pcsx2Config::McdOptions&, bool) const {}
+  void GameEntry::applyGameFixes(void*, bool) const {}
   void GameEntry::applyGSHardwareFixes(::Pcsx2Config::GSOptions&) const {}
   std::string GameEntry::memcardFiltersAsString() const { return {}; }
   const Patch* GameEntry::findPatch(uint32_t) const { return nullptr; }

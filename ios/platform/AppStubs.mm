@@ -144,10 +144,12 @@ void USBwrite32(u32 addr, u32 val) {}
 
 // VIF — Category 1 (Phase 0-B)
 void VifUnpackSSE_Init() {}
-void vtlb_DynBackpatchLoadStore(uptr code_address, u32 offset,
-    u32 gpr_bitmask, u32 fpr_bitmask, u8 address_register,
-    u8 data_register, u8 size_operand, bool is_load,
-    bool is_signed, bool is_fpr) {}
+
+// vtlb_DynBackpatchLoadStore — extern "C" required by callers in libBionicSX2.a
+extern "C" void vtlb_DynBackpatchLoadStore(
+    unsigned long, unsigned int, unsigned int, unsigned int,
+    unsigned int, unsigned int, unsigned char, unsigned char,
+    unsigned char, bool, bool, bool) {}
 
 // Misc
 void ShortSpin() {}
@@ -180,19 +182,19 @@ void DecompressBlockBC3(u32 x, u32 y, u32 z,
     const u8* s, u8* d) {}
 
 // Discord
-void Discord_Initialize(const char* a, void* b, int c, const char* d) {}
-void Discord_Shutdown() {}
-void Discord_RunCallbacks() {}
-void Discord_UpdatePresence(const void* p) {}
-void Discord_ClearPresence() {}
+extern "C" void Discord_Initialize(const char*, void*, int, const char*) {}
+extern "C" void Discord_Shutdown() {}
+extern "C" void Discord_RunCallbacks() {}
+extern "C" void Discord_UpdatePresence(const void*) {}
+extern "C" void Discord_ClearPresence() {}
 
 // 7z / CRC
-void CrcGenerateTable() {}
-void Crc64GenerateTable() {}
+extern "C" void CrcGenerateTable(void) {}
+extern "C" void Crc64GenerateTable(void) {}
 
 // cplus_demangle
-char* cplus_demangle(const char* m, int o) { return nullptr; }
-int cplus_demangle_opname(const char* o, void* r, int f) { return 0; }
+extern "C" char* cplus_demangle(const char*, int) { return nullptr; }
+extern "C" int   cplus_demangle_opname(const char*, char*, int) { return 0; }
 
 // ══════════════════════════════════════════════════════════════
 // _g_host_hotkeys — empty hotkey list on iOS
@@ -220,39 +222,6 @@ extern "C" void __clear_cache(void* start, void* end) {
 #include <string>
 #include <string_view>
 #include <vector>
-
-// ── GROUP A: Log system ──────────────────────────────────────────────────────
-// LOGLEVEL and ConsoleColors must match the ABI in libBionicSX2.a
-// They are plain enums (not enum class) in PCSX2's common/Logging.h
-enum LOGLEVEL : uint32_t { LOGLEVEL_NONE=0, LOGLEVEL_ERROR, LOGLEVEL_WARNING, LOGLEVEL_PERF, LOGLEVEL_INFO, LOGLEVEL_VERBOSE, LOGLEVEL_DEV, LOGLEVEL_DEBUG, LOGLEVEL_TRACE, LOGLEVEL_BULK };
-enum ConsoleColors : uint32_t { Color_Default=0, Color_Black, Color_Green, Color_Red, Color_Blue, Color_Magenta, Color_Orange, Color_Gray, Color_Cyan, Color_Yellow, Color_White, Color_StrongBlack, Color_StrongRed, Color_StrongGreen, Color_StrongBlue, Color_StrongMagenta, Color_StrongOrange, Color_StrongGray, Color_StrongCyan, Color_StrongYellow, Color_StrongWhite, Color_Count };
-
-namespace fmt { namespace v12 {
-  struct string_view_stub { const char* data_; size_t size_; };
-  struct format_args_stub {};
-  struct locale_ref_stub {};
-  struct buffer_stub {};
-} }
-
-namespace Log {
-  void Write(LOGLEVEL, ConsoleColors, std::string_view) {}
-  void Writev(LOGLEVEL, ConsoleColors, const char*, char*) {}
-  void WriteFmtArgs(LOGLEVEL, ConsoleColors, fmt::v12::string_view_stub, fmt::v12::format_args_stub) {}
-  LOGLEVEL GetMaxLevel() { return LOGLEVEL_NONE; }
-  bool IsConsoleOutputEnabled() { return false; }
-  bool IsFileOutputEnabled()    { return false; }
-  void SetConsoleOutputLevel(LOGLEVEL) {}
-  void SetFileOutputLevel(LOGLEVEL, std::string) {}
-  void SetTimestampsEnabled(bool) {}
-}
-
-// ── GROUP B: Discord RPC — dead on iOS ──────────────────────────────────────
-extern "C" {
-  struct DiscordRichPresence;
-  struct DiscordEventHandlers;
-  void Discord_Initialize(const char*, DiscordEventHandlers*, int, const char*) {}
-  void Discord_UpdatePresence(const DiscordRichPresence*) {}
-}
 
 // ── GROUP C: 7z / LZMA — GS dump dead code on iOS ───────────────────────────
 extern "C" {
@@ -300,14 +269,6 @@ extern "C" {
 template<int idx> void dVifUnpack(const uint8_t*, bool) {}
 template void dVifUnpack<0>(const uint8_t*, bool);
 template void dVifUnpack<1>(const uint8_t*, bool);
-
-// ── GROUP F: vtlb_DynBackpatchLoadStore — extern "C" fix ────────────────────
-// The linker note says: found '_vtlb_DynBackpatchLoadStore' — missing extern "C"
-// Remove any existing C++ version and replace with proper extern "C"
-extern "C" {
-  void vtlb_DynBackpatchLoadStore(uintptr_t, uint32_t, uint32_t, uint32_t,
-    uint32_t, uint32_t, uint8_t, uint8_t, uint8_t, bool, bool, bool) {}
-}
 
 // ── GROUP G: FullscreenUI settings functions ─────────────────────────────────
 struct SettingsInterface;
@@ -362,19 +323,51 @@ namespace bc7decomp {
   bool unpack_bc7(const void*, color_rgba*) { return false; }
 }
 
-// fmt::v12 non-inline functions
-namespace fmt { namespace v12 {
-  void report_error(const char*) {}
-} }
+// ── fmt::v12 real ABI stubs ──────────────────────────────────────────────────
+// These match the mangled names in libBionicSX2.a compiled with fmt v12
+#include <locale>
+#include <string>
 
-// fmt::v12 locale and vformat — must match ABI exactly
-// These are defined as weak stubs; if libfmt.a is linked they will be overridden
-namespace fmt { namespace v12 {
+namespace fmt {
+inline namespace v12 {
   namespace detail {
-    void vformat_to(void*, string_view_stub, format_args_stub, locale_ref_stub) {}
-    bool is_printable(uint32_t) { return true; }
+    struct buffer_base { virtual ~buffer_base() {} };
+    template<typename T> struct buffer : buffer_base {};
+    struct locale_ref_impl {};
   }
-  std::string vformat(string_view_stub, format_args_stub) { return {}; }
-  std::string locale_ref_get_locale() { return {}; }
-} }
 
+  struct string_view_t { const char* data_; size_t size_; };
+  struct format_args_t {};
+  struct locale_ref { detail::locale_ref_impl* impl_ = nullptr; };
+
+  namespace detail {
+    void vformat_to(buffer<char>&, string_view_t, format_args_t, locale_ref) {}
+    bool is_printable(unsigned int) { return true; }
+  }
+
+  std::string vformat(string_view_t, format_args_t) { return {}; }
+  void report_error(const char*) {}
+
+  template<> std::locale locale_ref::get<std::locale>() const {
+    return std::locale();
+  }
+}
+}
+
+// ── Log stubs with correct fmt v12 ABI types ────────────────────────────────
+enum LOGLEVEL_T : unsigned int {
+  LL_NONE=0, LL_ERROR, LL_WARNING, LL_PERF, LL_INFO,
+  LL_VERBOSE, LL_DEV, LL_DEBUG, LL_TRACE, LL_BULK
+};
+enum ConsoleColors_T : unsigned int { CC_Default=0 };
+
+namespace Log {
+  void Write(unsigned int, unsigned int, const char*, size_t) {}
+  void Writev(unsigned int, unsigned int, const char*, char*) {}
+  unsigned int GetMaxLevel() { return 0; }
+  bool IsConsoleOutputEnabled() { return false; }
+  bool IsFileOutputEnabled()    { return false; }
+  void SetConsoleOutputLevel(unsigned int) {}
+  void SetFileOutputLevel(unsigned int, std::string) {}
+  void SetTimestampsEnabled(bool) {}
+}
