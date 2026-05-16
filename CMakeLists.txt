@@ -399,6 +399,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui/main.mm
         ios/ui/AppDelegate.mm
         ios/platform/AppStubs.mm
+        ios/platform/MissingSymbols.mm
     )
 
     # Metal renderer (Phase 11-12)

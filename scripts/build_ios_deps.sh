@@ -309,6 +309,7 @@ echo "ZIP_OFF_MAX -> INT64_MAX patched"
 
 mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
 cmake "$SRC/libzip" $FLAGS \
+  -DENABLE_BZIP2=OFF \
   -DENABLE_COMMONCRYPTO=ON \
   -DENABLE_GNUTLS=OFF \
   -DENABLE_MBEDTLS=OFF \
