@@ -299,6 +299,18 @@ namespace ImGuiFreeType {
   const ImFontBuilderIO* GetFontLoader() { return nullptr; }
 }
 
+// ImGui::InputText(std::string*) stub — imgui_stdlib.cpp not available
+typedef int ImGuiInputTextFlags;
+typedef int (*ImGuiInputTextCallback)(ImGuiInputTextCallbackData*);
+struct ImGuiInputTextCallbackData {};
+namespace ImGui {
+  bool InputText(const char* label, std::string* str,
+      ImGuiInputTextFlags flags, ImGuiInputTextCallback callback,
+      void* user_data) {
+    return false;
+  }
+}
+
 struct SettingsInterface;
 struct StateWrapper;
 struct InputBindingKey {};

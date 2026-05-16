@@ -472,6 +472,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         -Wno-macro-redefined # ARCH_ARM64 redefined in Pcsx2Defs.h
     )
 
+    # Explicitly mark pure C++ sources so -fobjc-arc doesn't affect name mangling
+    set_source_files_properties(
+        ios/platform/PCSX2Stubs.cpp
+        PROPERTIES LANGUAGE CXX
+    )
+
     # Catch-all: collect ALL available 3rdparty include directories
     # so newly added libraries resolve without editing CMakeLists.txt.
     # Each glob is expanded at cmake-configure time, not build time.

@@ -1,7 +1,6 @@
 #import <UIKit/UIKit.h>
 #include "pcsx2/Host.h"
 #include "pcsx2/VMManager.h"
-#include "pcsx2/Input/InputManager.h"
 
 namespace Host {
   void OnVMStarting() {}
@@ -42,6 +41,14 @@ namespace Host {
   std::string GetHTTPUserAgent() { return "BionicSX2/1.0"; }
   void OpenURL(const std::string_view) {}
   bool CopyTextToClipboard(const std::string_view) { return false; }
+  bool ShouldPreferHostFileSelector() { return false; }
+  void OpenHostFileSelectorAsync(
+      std::string_view, bool,
+      std::function<void(const std::string&)> callback,
+      std::vector<std::string>,
+      std::string_view) {
+    callback(std::string{});
+  }
 }
 
 BEGIN_HOTKEY_LIST(g_host_hotkeys)

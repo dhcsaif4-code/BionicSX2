@@ -184,14 +184,12 @@ RC_SRC="$SRC/rcheevos/src"
 RC_OUT="$INSTALL/lib/librcheevos.a"
 RC_INC="$SRC/rcheevos/include"
 
-# Compile all .c files manually
+# Compile all .c files recursively
 OBJ_DIR="$BLD/rcheevos"
 mkdir -p "$OBJ_DIR"
 
 OBJS=()
-for f in "$RC_SRC"/rc_*.c "$RC_SRC"/rapi/*.c \
-          "$RC_SRC"/rhash/*.c "$RC_SRC"/rurl/*.c; do
-  [ -f "$f" ] || continue
+while IFS= read -r f; do
   # Skip libretro integration — not needed for PCSX2
   [[ "$f" == *"rc_libretro"* ]] && continue
   OBJ="$OBJ_DIR/$(basename ${f%.c}).o"
@@ -201,7 +199,7 @@ for f in "$RC_SRC"/rc_*.c "$RC_SRC"/rapi/*.c \
     -I"$RC_INC" \
     -O2 -c "$f" -o "$OBJ"
   OBJS+=("$OBJ")
-done
+done < <(find "$RC_SRC" -name "*.c" -type f)
 
 xcrun ar rcs "$RC_OUT" "${OBJS[@]}"
 mkdir -p "$INSTALL/include/rcheevos"
