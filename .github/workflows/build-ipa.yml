@@ -138,12 +138,19 @@ jobs:
           make BionicSX2_App 2>&1
           echo "App exit code: $?"
 
-      - name: Dump SymbolStubs exports
+      - name: Dump SymbolStubs exports vs required
+        if: always()
         run: |
-          echo "=== T symbols from SymbolStubs.cpp.o ==="
+          echo "=== EXPORTED by SymbolStubs.cpp.o ==="
           nm build-ios/CMakeFiles/BionicSX2_App.dir/ios/platform/SymbolStubs.cpp.o \
             | grep " T " \
-            | grep -E "GSDrawScanline|applyGameFixes|GameDatabase"
+            | grep -E "GSDrawScanline|applyGameFixes|GameDatabase|Pcsx2Config"
+
+          echo "=== REQUIRED by libBionicSX2.a ==="
+          nm build-ios/libBionicSX2.a 2>/dev/null \
+            | grep " U " \
+            | grep -E "GSDrawScanline|applyGameFixes|GameDatabase" \
+            | sort -u
 
       - name: Create IPA
         run: |
