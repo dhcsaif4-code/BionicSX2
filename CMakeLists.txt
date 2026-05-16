@@ -382,6 +382,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # Main BionicSX2 target
     # ==========================================================================
 
+    foreach(SRC_FILE ${PCSX2_CORE_SOURCES} ${PCSX2_SPU2_SOURCES} ${PCSX2_PLATFORM_SOURCES} ${IOS_PLATFORM_SOURCES} ${IOS_METAL_SOURCES})
+      if(NOT EXISTS "${SRC_FILE}")
+        message(WARNING "MISSING SOURCE: ${SRC_FILE}")
+      endif()
+    endforeach()
+
     add_library(BionicSX2 STATIC
         ${PCSX2_CORE_SOURCES}
         ${PCSX2_SPU2_SOURCES}

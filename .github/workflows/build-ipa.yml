@@ -32,6 +32,15 @@ jobs:
       - name: Build iOS Dependencies
         run: bash scripts/build_ios_deps.sh
 
+      - name: Find source files
+        run: |
+          find . -name "Log.cpp" -not -path "./.git/*"
+          find . -name "FastJmp.cpp" -not -path "./.git/*"
+          find . -name "Threading.cpp" -not -path "./.git/*"
+          find . -name "Timer.cpp" -not -path "./.git/*"
+          echo "=== common dir contents ==="
+          find . -type d -name "common" | head -5
+
       - name: Check built libs
         run: |
           find ios-deps/install/lib -name "*.a" | sort
