@@ -403,10 +403,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/GSDrawScanlineStub.s
     )
 
-    set_source_files_properties(ios/platform/GSDrawScanlineStub.s
-        PROPERTIES LANGUAGE ASM
-    )
-
     # Metal renderer (Phase 11-12)
     set(IOS_METAL_SOURCES
         metal/MetalRenderer.mm
