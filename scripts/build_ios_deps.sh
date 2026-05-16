@@ -218,6 +218,8 @@ cmake "$SRC/libchdr" $FLAGS \
   -DZLIB_ROOT="$INSTALL"
 make -j$(sysctl -n hw.logicalcpu)
 find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
+ln -sf "$INSTALL/lib/libchdr-static.a" \
+       "$INSTALL/lib/libchdr.a" 2>/dev/null || true
 
 # ── Final verification ────────────────────────────────
 echo "=== Built libraries ==="
