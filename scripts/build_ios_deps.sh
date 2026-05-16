@@ -232,6 +232,26 @@ make -j$(sysctl -n hw.logicalcpu)
 find . -name "*.a" -exec cp {} "$INSTALL/lib/" \;
 cp -r "$SRC/cpuinfo/include/." "$INSTALL/include/"
 
+# ── libzip ────────────────────────────────────────────
+cd "$SRC"
+[ -d libzip ] || git clone --depth 1 \
+  https://github.com/nih-at/libzip.git
+mkdir -p "$BLD/libzip" && cd "$BLD/libzip"
+cmake "$SRC/libzip" $FLAGS \
+  -DENABLE_COMMONCRYPTO=ON \
+  -DENABLE_GNUTLS=OFF \
+  -DENABLE_MBEDTLS=OFF \
+  -DENABLE_OPENSSL=OFF \
+  -DBUILD_TOOLS=OFF \
+  -DBUILD_REGRESS=OFF \
+  -DBUILD_EXAMPLES=OFF \
+  -DBUILD_DOC=OFF \
+  -DZLIB_ROOT="$INSTALL"
+make -j$(sysctl -n hw.logicalcpu)
+find . -name "libzip.a" -exec cp {} "$INSTALL/lib/" \;
+cp "$SRC/libzip/lib/zip.h" "$INSTALL/include/" 2>/dev/null || true
+echo "libzip built: $(ls -sh $INSTALL/lib/libzip.a)"
+
 # ── Final verification ────────────────────────────────
 echo "=== Built libraries ==="
 find "$INSTALL/lib" -name "*.a" | sort
