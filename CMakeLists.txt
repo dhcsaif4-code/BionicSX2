@@ -92,7 +92,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         pcsx2/3rdparty/imgui/src/imgui_draw.cpp
         pcsx2/3rdparty/imgui/src/imgui_tables.cpp
         pcsx2/3rdparty/imgui/src/imgui_widgets.cpp
-        pcsx2/3rdparty/imgui/misc/freetype/imgui_freetype.cpp
 
         # ---- EE Core, IOP, VU, System (${PCSX2_DIR}/) ----
         ${PCSX2_DIR}/Achievements.cpp
@@ -382,7 +381,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     foreach(SRC_FILE ${PCSX2_CORE_SOURCES} ${PCSX2_SPU2_SOURCES} ${PCSX2_PLATFORM_SOURCES} ${IOS_PLATFORM_SOURCES} ${IOS_METAL_SOURCES})
       if(NOT EXISTS "${SRC_FILE}")
-        message(WARNING "MISSING SOURCE: ${SRC_FILE}")
+        message(STATUS "MISSING SOURCE: ${SRC_FILE}")
       endif()
     endforeach()
 

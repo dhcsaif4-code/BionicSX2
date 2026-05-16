@@ -313,6 +313,14 @@ namespace Threading {
 }
 
 // =====================================================================
+// ImGuiFreeType stubs — imgui_freetype.cpp does not exist in the repo
+// =====================================================================
+struct ImFontBuilderIO;
+namespace ImGuiFreeType {
+  const ImFontBuilderIO* GetFontLoader() { return nullptr; }
+}
+
+// =====================================================================
 // Misc stubs
 // =====================================================================
 extern "C" void pxOnAssertFail(const char*, int, const char*, const char*) {}

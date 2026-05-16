@@ -38,6 +38,8 @@ jobs:
           find . -name "FastJmp.cpp" -not -path "./.git/*"
           find . -name "Threading.cpp" -not -path "./.git/*"
           find . -name "Timer.cpp" -not -path "./.git/*"
+          find . -name "imgui_freetype*" -not -path "./.git/*"
+          find . -path "*/imgui*" -name "*.cpp" -not -path "./.git/*"
           echo "=== common dir contents ==="
           find . -type d -name "common" | head -5
 
