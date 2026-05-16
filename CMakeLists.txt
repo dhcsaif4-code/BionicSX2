@@ -459,8 +459,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         list(APPEND THIRDPARTY_INCLUDE_DIRS "${IOS_DEPS}/include/freetype2")
     endif()
 
+    if(EXISTS "${IOS_DEPS}/include")
+        target_include_directories(BionicSX2 PRIVATE "${IOS_DEPS}/include")
+    endif()
+
     target_include_directories(BionicSX2 PRIVATE
-        "${IOS_DEPS}/include"
         "${CMAKE_SOURCE_DIR}/generated"
         ios/platform
         ios/ui

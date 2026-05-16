@@ -7,6 +7,10 @@ INSTALL="$ROOT/ios-deps/install"
 SRC="$ROOT/ios-deps/src"
 BLD="$ROOT/ios-deps/build"
 mkdir -p "$INSTALL" "$SRC" "$BLD"
+mkdir -p "$INSTALL/lib"
+mkdir -p "$INSTALL/include"
+touch "$INSTALL/include/.keep"
+touch "$INSTALL/lib/.keep"
 
 FLAGS="\
   -DCMAKE_SYSTEM_NAME=iOS \

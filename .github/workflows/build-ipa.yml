@@ -58,6 +58,13 @@ jobs:
           echo "=== png.h location ==="
           find . -name "png.h" -not -path "./.git/*"
 
+      - name: Prepare install directories
+        run: |
+          mkdir -p ios-deps/install/include
+          mkdir -p ios-deps/install/lib
+          touch ios-deps/install/include/.keep
+          touch ios-deps/install/lib/.keep
+
       - name: Configure BionicSX2
         run: |
           cmake -S . -B build-ios \
