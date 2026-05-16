@@ -62,11 +62,6 @@ namespace Log {
         fmt::string_view, fmt::format_args) {}
 }
 
-// ── SDLInputSource stub ───────────────────────────────
-namespace SDLInputSource {
-    void ResetRGBForAllPlayers(void*) {}
-}
-
 // ── USB:: namespace stubs ─────────────────────────────
 #include <string_view>
 namespace USB {
@@ -117,7 +112,16 @@ namespace isa_native {
     struct GSVector4i;
     struct GSVertexSW;
     struct GSScanlineLocalData;
-    class GSDrawScanline;
+    class GSDrawScanline {
+    public:
+        GSDrawScanline();
+        ~GSDrawScanline();
+        void BeginDraw(const GSRasterizerData&, GSScanlineLocalData&);
+        void DrawRect(const GSVector4i&, const GSVertexSW&, GSScanlineLocalData&);
+        void SetupDraw(GSRasterizerData&);
+        void ResetCodeCache();
+        void PrintStats();
+    };
 }
 namespace bc7decomp { struct color_rgba; }
 
