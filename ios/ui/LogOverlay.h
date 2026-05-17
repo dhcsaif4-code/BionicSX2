@@ -17,6 +17,9 @@ void BXSX2InstallCrashHandlers(void);
 /// Do NOT call from normal code — use BXLog/BXLogError instead.
 void BXSX2SafeWriteToLog(const char* msg);
 
+/// Configure AVAudioSession for low-latency playback. Must be called before SPU2::Init.
+void iOSConfigureAudioSession(void);
+
 #ifdef __cplusplus
 }
 #endif

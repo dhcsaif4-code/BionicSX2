@@ -11,8 +11,6 @@ static LogOverlay* g_shared = nil;
 static UITextView* g_textView = nil;
 static NSMutableArray* g_screenLines = nil;
 static NSString* g_logPath = nil;
-
-// ── Crash-safe file descriptor (opened once, used by signal handlers) ──
 static int g_crashLogFd = -1;
 static pthread_mutex_t g_crashLogMutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -100,20 +98,7 @@ static NSString* Timestamp() {
     return [fmt stringFromDate:[NSDate date]];
 }
 
-static void WriteToFile(NSString* line) {
-    if (!g_logPath) return;
-    NSFileHandle* fh = [NSFileHandle fileHandleForWritingAtPath:g_logPath];
-    if (!fh) {
-        [[NSFileManager defaultManager] createFileAtPath:g_logPath contents:nil attributes:nil];
-        fh = [NSFileHandle fileHandleForWritingAtPath:g_logPath];
-        if (!fh) return;
-    }
-    [fh seekToEndOfFile];
-    NSData* data = [line dataUsingEncoding:NSUTF8StringEncoding];
-    [fh writeData:data];
-    [fh synchronizeFile];
-    [fh closeFile];
-}
+
 
 void BXLog(NSString* format, ...) {
     va_list args;
@@ -122,8 +107,6 @@ void BXLog(NSString* format, ...) {
     va_end(args);
     NSString* ts = Timestamp();
     NSString* fileLine = [NSString stringWithFormat:@"[%@] %@\n", ts, msg];
-    WriteToFile(fileLine);
-    // Also write through crash-safe fd
     BXSX2SafeWriteToLog([fileLine UTF8String]);
     NSLog(@"[BionicSX2] %@", msg);
     [[LogOverlay shared] addEntry:msg isError:NO];
@@ -136,7 +119,6 @@ void BXLogError(NSString* format, ...) {
     va_end(args);
     NSString* ts = Timestamp();
     NSString* fileLine = [NSString stringWithFormat:@"[%@] ERROR: %@\n", ts, msg];
-    WriteToFile(fileLine);
     BXSX2SafeWriteToLog([fileLine UTF8String]);
     NSLog(@"[BionicSX2] ERROR: %@", msg);
     [[LogOverlay shared] addEntry:msg isError:YES];
@@ -159,11 +141,9 @@ void BXLogError(NSString* format, ...) {
         if (g_crashLogFd < 0)
             BXSX2InstallCrashHandlers();
 
-        // Mark new session in file via WriteToFile (NSFileHandle)
+        // Mark new session in file via crash-safe fd
         NSString* ts = Timestamp();
         NSString* session = [NSString stringWithFormat:@"[%@] ===== APP STARTED =====\n", ts];
-        WriteToFile(session);
-        // Also write through crash-safe fd
         BXSX2SafeWriteToLog([session UTF8String]);
 
         g_textView = [[UITextView alloc] initWithFrame:CGRectZero];

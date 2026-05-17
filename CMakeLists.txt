@@ -398,8 +398,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     # iOS app entry point (Phase 0-A: _main symbol)
     set(IOS_APP_SOURCES
-        ios/ui/main.mm
-        ios/ui/AppDelegate.mm
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
     )

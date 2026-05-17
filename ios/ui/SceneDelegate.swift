@@ -33,12 +33,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             w.makeKeyAndVisible()
             LogOverlay.shared().addEntry("SceneDelegate: Step 6 — window key and visible", isError: false)
 
-            // Step 7: configure audio + controllers
-            iOSConfigureAudioSession()
-            LogOverlay.shared().addEntry("SceneDelegate: Step 7 — audio session configured", isError: false)
-
+            // Step 7: start game controller monitoring
             GameControllerManager.shared.startMonitoring()
-            LogOverlay.shared().addEntry("SceneDelegate: Step 8 — game controller monitoring started", isError: false)
+            LogOverlay.shared().addEntry("SceneDelegate: Step 7 — game controller monitoring started", isError: false)
 
             LogOverlay.shared().addEntry("SceneDelegate: all steps complete", isError: false)
 
