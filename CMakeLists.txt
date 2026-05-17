@@ -602,6 +602,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     # Set Metal shader compilation
     set(PCSX2_METAL_SHADERS
+        ${CMAKE_SOURCE_DIR}/metal/Shaders.metal       # BionicSX2 custom present shader
         ${PCSX2_DIR}/GS/Renderers/Metal/cas.metal
         ${PCSX2_DIR}/GS/Renderers/Metal/convert.metal
         ${PCSX2_DIR}/GS/Renderers/Metal/present.metal
@@ -650,8 +651,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     add_custom_target(MetalShaders ALL DEPENDS "${METALLIB_OUTPUT}")
 
-    set_target_properties(BionicSX2_App PROPERTIES
-        RESOURCE "${METALLIB_OUTPUT}"
+    # Copy default.metallib into the .app bundle root
+    # (Makefile generator doesn't support RESOURCE property; POST_BUILD works for all generators)
+    add_custom_command(TARGET BionicSX2_App POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${METALLIB_OUTPUT}"
+            "$<TARGET_FILE_DIR:BionicSX2_App>/default.metallib"
+        COMMENT "Copying default.metallib to app bundle"
+        VERBATIM
     )
     add_dependencies(BionicSX2_App MetalShaders)
 
