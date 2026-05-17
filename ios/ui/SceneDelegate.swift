@@ -5,44 +5,39 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
                options connectionOptions: UIScene.ConnectionOptions) {
-        // Wrap entire function body to catch any exception
+        // Swift do/catch does NOT catch ObjC exceptions — those go to the
+        // NSSetUncaughtExceptionHandler installed by BXSX2InstallCrashHandlers().
         do {
-            LogOverlay.shared().addEntry("SceneDelegate: Step 1 — got willConnectToSession", isError: false)
+            LogOverlay.shared().addEntry("SceneDelegate — willConnectToSession fired", isError: false)
+            LogOverlay.shared().addEntry("Scene — checking Info.plist config", isError: false)
+            LogOverlay.shared().addEntry("Scene — getting window scene", isError: false)
 
             guard let windowScene = scene as? UIWindowScene else {
                 LogOverlay.shared().addEntry("SceneDelegate FAILED: scene is not UIWindowScene", isError: true)
                 return
             }
-            LogOverlay.shared().addEntry("SceneDelegate: Step 2 — windowScene OK", isError: false)
+            LogOverlay.shared().addEntry("Scene — creating UIWindow", isError: false)
 
-            // Step 3: create window
             let w = UIWindow(windowScene: windowScene)
-            LogOverlay.shared().addEntry("SceneDelegate: Step 3 — UIWindow created", isError: false)
+            LogOverlay.shared().addEntry("Scene — window frame: \(Int(w.bounds.size.width))x\(Int(w.bounds.size.height))", isError: false)
 
-            // Step 4: install on-screen log overlay
-            LogOverlay.shared().install(in: w)
-            LogOverlay.shared().addEntry("SceneDelegate: Step 4 — LogOverlay installed", isError: false)
-
-            // Step 5: set root view controller
+            LogOverlay.shared().addEntry("Scene — creating rootViewController", isError: false)
             let vc = MetalViewController()
+
+            LogOverlay.shared().addEntry("Scene — setting rootViewController", isError: false)
             w.rootViewController = vc
-            LogOverlay.shared().addEntry("SceneDelegate: Step 5 — root VC set (MetalViewController)", isError: false)
 
-            // Step 6: make visible
             window = w
+            LogOverlay.shared().addEntry("Scene — makeKeyAndVisible", isError: false)
             w.makeKeyAndVisible()
-            LogOverlay.shared().addEntry("SceneDelegate: Step 6 — window key and visible", isError: false)
 
-            // Step 7: start game controller monitoring
-            GameControllerManager.shared.startMonitoring()
-            LogOverlay.shared().addEntry("SceneDelegate: Step 7 — game controller monitoring started", isError: false)
-
-            LogOverlay.shared().addEntry("SceneDelegate: all steps complete", isError: false)
+            LogOverlay.shared().installInWindow(w)
+            LogOverlay.shared().addEntry("Scene — DONE", isError: false)
 
         } catch {
-            // NOTE: Swift do/catch catches Swift errors, not ObjC exceptions.
-            // ObjC exceptions will hit NSSetUncaughtExceptionHandler instead.
-            LogOverlay.shared().addEntry("SceneDelegate SWIFT ERROR: \(error)", isError: true)
+            // Catches Swift Throwable errors (rare in UIKit); ObjC exceptions
+            // are handled by the global uncaught exception handler.
+            LogOverlay.shared().addEntry("SceneDelegate EXCEPTION: \(error)", isError: true)
         }
     }
 
