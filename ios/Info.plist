@@ -17,6 +17,11 @@
     <string>APPL</string>
     <key>MinimumOSVersion</key>
     <string>16.0</string>
+    <key>UISupportedDeviceFamilies</key>
+    <array>
+        <integer>1</integer>
+        <integer>2</integer>
+    </array>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
         <string>arm64</string>
