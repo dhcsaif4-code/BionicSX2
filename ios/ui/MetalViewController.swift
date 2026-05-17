@@ -21,13 +21,23 @@ class MetalViewController: UIViewController {
 
         // Start VM via C++ bridge
         let isoPath = findFirstISO()
-        if !BionicSX2Bridge.startVM(isoPath: isoPath) {
+        if BionicSX2Bridge.startVM(isoPath: isoPath) {
+            // Start render loop only if VM started successfully
+            displayLink = CADisplayLink(target: self, selector: #selector(renderFrame))
+            displayLink.add(to: .main, forMode: .common)
+        } else {
+            // Show alert so user knows BIOS is missing
             NSLog("[BionicSX2] iOSVMManager::StartVM failed")
+            let alert = UIAlertController(
+                title: "BIOS Not Found",
+                message: "PCSX2 requires a PlayStation 2 BIOS.\n\n"
+                    + "Place a PS2 BIOS file (e.g. SCPH-39001.bin) in:\n"
+                    + "Files App → BionicSX2 → BIOS/\n\n"
+                    + "Supported formats: any 4MB–8MB PS2 ROM dump.",
+                preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
         }
-
-        // Start render loop
-        displayLink = CADisplayLink(target: self, selector: #selector(renderFrame))
-        displayLink.add(to: .main, forMode: .common)
     }
 
     override func viewDidLayoutSubviews() {
