@@ -134,12 +134,14 @@ jobs:
           echo "Result:"
           grep -n "newVifDynaRec" "$FILE"
 
-      - name: Patch cpuReset / psxReset with per-line fprintf debug tracing
+      - name: Patch reset-path functions with per-line BLogC debug tracing
         run: |
           set -euxo pipefail
           python3 scripts/patch_debug_tracing.py
           echo "Verification:"
-          grep -c "fprintf(stderr" pcsx2/pcsx2/R5900.cpp pcsx2/pcsx2/R3000A.cpp
+          grep -c "BLogC(" pcsx2/pcsx2/R5900.cpp pcsx2/pcsx2/R3000A.cpp \
+            pcsx2/pcsx2/IopHw.cpp pcsx2/pcsx2/ps2/Iop/PsxBios.cpp \
+            pcsx2/pcsx2/ps2/pgif.cpp pcsx2/pcsx2/R5900OpcodeImpl.cpp
 
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
