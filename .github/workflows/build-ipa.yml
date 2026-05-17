@@ -46,46 +46,46 @@ jobs:
           fi
 
           python3 <<PYEOF
-with open("$FILE", "r") as f:
-    content = f.read()
+          with open("$FILE", "r") as f:
+              content = f.read()
 
-MARKER = "std::unique_ptr<AudioStream> AudioStream::CreateStream("
-if MARKER not in content:
-    print("ERROR: CreateStream not found")
-    exit(1)
+          MARKER = "std::unique_ptr<AudioStream> AudioStream::CreateStream("
+          if MARKER not in content:
+              print("ERROR: CreateStream not found")
+              exit(1)
 
-idx = content.find(MARKER)
-line_start = content.rfind("\n", 0, idx) + 1
+          idx = content.find(MARKER)
+          line_start = content.rfind("\n", 0, idx) + 1
 
-brace_start = content.find("{", idx)
-depth = 0
-i = brace_start
-while i < len(content):
-    if content[i] == "{":
-        depth += 1
-    elif content[i] == "}":
-        depth -= 1
-        if depth == 0:
-            break
-    i += 1
+          brace_start = content.find("{", idx)
+          depth = 0
+          i = brace_start
+          while i < len(content):
+              if content[i] == "{":
+                  depth += 1
+              elif content[i] == "}":
+                  depth -= 1
+                  if depth == 0:
+                      break
+              i += 1
 
-line_end = content.find("\n", i) + 1
+          line_end = content.find("\n", i) + 1
 
-before = content[:line_start]
-func   = content[line_start:line_end]
-after  = content[line_end:]
+          before = content[:line_start]
+          func   = content[line_start:line_end]
+          after  = content[line_end:]
 
-patched = (before
-    + "#ifndef PCSX2_TARGET_IOS\n"
-    + func
-    + "#endif  // PCSX2_TARGET_IOS\n"
-    + after)
+          patched = (before
+              + "#ifndef PCSX2_TARGET_IOS\n"
+              + func
+              + "#endif  // PCSX2_TARGET_IOS\n"
+              + after)
 
-with open("$FILE", "w") as f:
-    f.write(patched)
+          with open("$FILE", "w") as f:
+              f.write(patched)
 
-print("Patch applied successfully")
-PYEOF
+          print("Patch applied successfully")
+          PYEOF
 
           echo "Result:"
           grep -n "PCSX2_TARGET_IOS\|CreateStream" "$FILE" | head -6
