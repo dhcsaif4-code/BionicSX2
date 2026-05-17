@@ -33,62 +33,62 @@ jobs:
       - name: Patch AudioStream::CreateStream for iOS
         run: |
           set -euxo pipefail
+          FILE="pcsx2/pcsx2/Host/AudioStream.cpp"
 
-          AUDIOSTREAM=$(find . -name "AudioStream.cpp" \
-            -not -path "*/build*" \
-            -not -path "*/test*" | head -1)
-
-          if [ -z "$AUDIOSTREAM" ]; then
-            echo "ERROR: AudioStream.cpp not found — submodule not initialized"
+          if [ ! -f "$FILE" ]; then
+            echo "ERROR: $FILE not found"
             exit 1
           fi
 
-          echo "Patching: $AUDIOSTREAM"
-
-          if grep -q "PCSX2_TARGET_IOS" "$AUDIOSTREAM"; then
-            echo "Guard already present — skipping patch"
+          if grep -q "PCSX2_TARGET_IOS" "$FILE"; then
+            echo "Guard already present — skipping"
             exit 0
           fi
 
-          LINE=$(grep -n "AudioStream::CreateStream" "$AUDIOSTREAM" | \
-                 grep -v "declaration\|forward\|//" | head -1 | cut -d: -f1)
+          python3 <<PYEOF
+with open("$FILE", "r") as f:
+    content = f.read()
 
-          if [ -z "$LINE" ]; then
-            echo "ERROR: CreateStream definition not found in $AUDIOSTREAM"
-            grep -n "CreateStream" "$AUDIOSTREAM"
-            exit 1
-          fi
+MARKER = "std::unique_ptr<AudioStream> AudioStream::CreateStream("
+if MARKER not in content:
+    print("ERROR: CreateStream not found")
+    exit(1)
 
-          echo "CreateStream found at line $LINE"
+idx = content.find(MARKER)
+line_start = content.rfind("\n", 0, idx) + 1
 
-          sed -i '' "${LINE}i\\
-          #ifndef PCSX2_TARGET_IOS
-          " "$AUDIOSTREAM"
+brace_start = content.find("{", idx)
+depth = 0
+i = brace_start
+while i < len(content):
+    if content[i] == "{":
+        depth += 1
+    elif content[i] == "}":
+        depth -= 1
+        if depth == 0:
+            break
+    i += 1
 
-          python3 - "$AUDIOSTREAM" "$LINE" <<'PYEOF'
-          import sys
-          filepath = sys.argv[1]
-          start_line = int(sys.argv[2]) - 1
-          with open(filepath, 'r') as f:
-              lines = f.readlines()
-          depth = 0
-          end_line = None
-          for i in range(start_line, len(lines)):
-              depth += lines[i].count('{') - lines[i].count('}')
-              if i > start_line and depth == 0:
-                  end_line = i
-                  break
-          if end_line is None:
-              print("ERROR: could not find closing brace", file=sys.stderr)
-              sys.exit(1)
-          lines.insert(end_line + 1, '#endif  // PCSX2_TARGET_IOS\n')
-          with open(filepath, 'w') as f:
-              f.writelines(lines)
-          print(f"#endif inserted after line {end_line + 1}")
-          PYEOF
+line_end = content.find("\n", i) + 1
 
-          echo "Patch applied successfully"
-          grep -n "PCSX2_TARGET_IOS\|CreateStream" "$AUDIOSTREAM" | head -10
+before = content[:line_start]
+func   = content[line_start:line_end]
+after  = content[line_end:]
+
+patched = (before
+    + "#ifndef PCSX2_TARGET_IOS\n"
+    + func
+    + "#endif  // PCSX2_TARGET_IOS\n"
+    + after)
+
+with open("$FILE", "w") as f:
+    f.write(patched)
+
+print("Patch applied successfully")
+PYEOF
+
+          echo "Result:"
+          grep -n "PCSX2_TARGET_IOS\|CreateStream" "$FILE" | head -6
 
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
