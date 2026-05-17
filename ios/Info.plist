@@ -12,7 +12,7 @@
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleExecutable</key>
-    <string>BionicSX2</string>
+    <string>BionicSX2_App</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>MinimumOSVersion</key>

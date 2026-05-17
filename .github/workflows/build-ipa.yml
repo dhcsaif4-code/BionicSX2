@@ -185,7 +185,10 @@ jobs:
             -DENABLE_OPENGL=OFF \
             -DENABLE_VULKAN=OFF \
             -DUSE_SDL=OFF \
-            -DBUILD_TESTS=OFF
+            -DBUILD_TESTS=OFF \
+            -DCODE_SIGN_IDENTITY="" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO
 
       - name: Build Core Library
         run: |
@@ -237,12 +240,34 @@ jobs:
             | grep -E "GSDrawScanline|applyGameFixes|GameDatabase" \
             | sort -u
 
-      - name: Create IPA
+      - name: Package IPA manually
         run: |
+          set -euxo pipefail
+          APP_BINARY="build-ios/BionicSX2_App.app/BionicSX2_App"
+
+          # Verify binary exists and is fat/arm64
+          test -f "$APP_BINARY"
+          file "$APP_BINARY"
+          lipo -info "$APP_BINARY"
+
+          # Create Payload with correct .app bundle name
           mkdir -p Payload
-          cp -r build-ios/BionicSX2_App.app Payload/
+          cp -r build-ios/BionicSX2_App.app Payload/BionicSX2.app
+
+          # Verify Info.plist is inside
+          test -f Payload/BionicSX2.app/Info.plist
+
+          # Ad-hoc sign for sideloading
+          codesign --force --deep --sign - \
+            --entitlements ios/entitlements/BionicSX2.entitlements \
+            Payload/BionicSX2.app
+
+          # Package as IPA
+          rm -f BionicSX2.ipa
           zip -r BionicSX2.ipa Payload/
           echo "IPA size: $(du -sh BionicSX2.ipa)"
+          echo "IPA contents:"
+          unzip -l BionicSX2.ipa | grep -E "Payload|Info\.plist|\.app/$"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4

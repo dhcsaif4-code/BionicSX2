@@ -3,16 +3,16 @@
     "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Future JIT integration — Audit Sec 4.4, 6.3 -->
+    <!-- JIT — required for recompiler on iOS 15+ -->
     <key>com.apple.security.cs.allow-jit</key>
     <true/>
-    <!-- Audit Sec 4.4 — future use alongside JIT entitlement -->
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <!-- Debugging — required for development signing -->
+    <key>get-task-allow</key>
     <true/>
-    <!-- Audit Sec 6.3 — PS2 scratchpad requires extended memory -->
+    <!-- PS2 scratchpad requires extended memory -->
     <key>com.apple.developer.kernel.increased-memory-limit</key>
     <true/>
-    <!-- Audit Sec 6.3 — EE virtual memory map requires extended VA -->
+    <!-- EE virtual memory map requires extended VA -->
     <key>com.apple.developer.kernel.extended-virtual-addressing</key>
     <true/>
 </dict>
