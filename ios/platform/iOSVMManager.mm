@@ -74,7 +74,15 @@ bool StartVM(const char* isoPath) {
     // Step 5: force interpreter — belt-and-suspenders (Audit Sec 2.3-F)
     BXLog(@"CPU — forcing interpreter mode (no JIT)");
 
-    // Step 6: reset CPU state → hwReset → vif0Reset/vif1Reset (Audit Sec 2.3-F)
+    // Step 6a: ensure CDVD pointer is valid before any reset touches it
+    if (isoPath) {
+        CDVDsys_SetFile(CDVD_SourceType::Iso, isoPath);
+        CDVDsys_ChangeSource(CDVD_SourceType::Iso);
+    } else {
+        CDVDsys_ChangeSource(CDVD_SourceType::NoDisc);
+    }
+
+    // Step 6b: reset CPU state → hwReset → vif0Reset/vif1Reset (Audit Sec 2.3-F)
     BXLog(@"Resetting CPU...");
     @try {
         cpuReset();
@@ -95,18 +103,6 @@ bool StartVM(const char* isoPath) {
         return false;
     }
     BXLog(@"GSopen() OK");
-
-    // Step 7: load disc/ISO (Audit Sec 2.6)
-    if (isoPath) {
-        BXLog(@"Loading ISO: %s", isoPath);
-        CDVDsys_SetFile(CDVD_SourceType::Iso, isoPath);
-        CDVDsys_ChangeSource(CDVD_SourceType::Iso);
-        BXLog(@"ISO loaded OK");
-    } else {
-        BXLog(@"No ISO provided — initializing NoDisc CDVD plugin");
-        CDVDsys_ChangeSource(CDVD_SourceType::NoDisc);
-    }
-
     BXLog(@"=== VM Start complete ===");
     return true;
 }

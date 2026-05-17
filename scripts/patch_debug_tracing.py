@@ -228,8 +228,9 @@ HW_NEW = r"""void psxHwReset() {
 	BLogC("[psxHwReset] line 2: mdecInit() done");
 	cdrReset();
 	BLogC("[psxHwReset] line 3: cdrReset() done");
+	BLogC("[psxHwReset] line 4: about to call cdvdReset()");
 	cdvdReset();
-	BLogC("[psxHwReset] line 4: cdvdReset() done");
+	BLogC("[psxHwReset] line 4b: cdvdReset() done");
 	psxRcntInit();
 	BLogC("[psxHwReset] line 5: psxRcntInit() done");
 }"""
