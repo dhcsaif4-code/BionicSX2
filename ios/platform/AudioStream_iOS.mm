@@ -2,7 +2,7 @@
 #include "pcsx2/Host/AudioStream.h"
 #include <memory>
 
-void iOSConfigureAudioSession() {
+extern "C" void iOSConfigureAudioSession() {
     NSError *error = nil;
     AVAudioSession *session = [AVAudioSession sharedInstance];
     [session setCategory:AVAudioSessionCategoryPlayback
