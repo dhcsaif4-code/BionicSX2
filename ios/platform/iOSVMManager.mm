@@ -44,7 +44,6 @@ bool StartVM(const char* isoPath) {
     EmuConfig.Cpu.Recompiler.EnableVU0 = false;
     EmuConfig.Cpu.Recompiler.EnableVU1 = false;
     EmuConfig.Cpu.Recompiler.EnableIOP = false;
-    EmuConfig.EE.newVifDynarec         = false;  // nVif micro-JIT — must also be 0 at compile-time in Vif_Dynarec.h
     EmuConfig.GS.Renderer              = GSRendererType::Metal;
 
     // Step 2: allocate emulated memory — MUST be first (Audit Sec 2.3-E)
