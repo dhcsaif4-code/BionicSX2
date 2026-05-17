@@ -47,7 +47,7 @@ public:
 
 	bool Create(const WindowInfo& wi, std::string_view error);
 	bool SetWindow(const WindowInfo& wi);
-	void Destroy();
+	void Destroy() override;
 	void* GetDevice() const { return (__bridge void*)m_device; }
 
 	void ResizeWindow(s32 new_width, s32 new_height);

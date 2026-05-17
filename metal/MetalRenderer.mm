@@ -251,6 +251,9 @@ void MetalRenderer::Present()
 // GSDevice pure virtual implementations — Phase 11 bringup (Audit Sec 4.1)
 // =====================================================================
 
+using Format = GSTexture::Format;
+using Type = GSTexture::Type;
+
 MTLPixelFormat MetalRenderer::FormatToMTL(GSTexture::Format fmt)
 {
 	switch (fmt)
