@@ -434,7 +434,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(REMOVE_ITEM BIONICSX2_SOURCES
         "${CMAKE_SOURCE_DIR}/pcsx2/common/Linux/LnxHostSys.cpp"
         "${CMAKE_SOURCE_DIR}/pcsx2/pcsx2/Host.cpp"
-        "${CMAKE_SOURCE_DIR}/pcsx2/pcsx2/Host/AudioStream.cpp"
     )
     set_target_properties(BionicSX2 PROPERTIES SOURCES "${BIONICSX2_SOURCES}")
 
