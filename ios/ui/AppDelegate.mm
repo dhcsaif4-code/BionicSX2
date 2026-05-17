@@ -17,15 +17,15 @@
     BXLog(@"Idle timer disabled");
 
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-    BXLog(@"Window size: %.0f x %.0f",
-          self.window.bounds.size.width,
-          self.window.bounds.size.height);
 
     MetalViewController *rootVC = [[MetalViewController alloc] init];
     self.window.rootViewController = rootVC;
     BXLog(@"rootViewController assigned");
 
     [self.window makeKeyAndVisible];
+    BXLog(@"Window size: %.0f x %.0f",
+          self.window.bounds.size.width,
+          self.window.bounds.size.height);
     BXLog(@"Window is visible");
 
     [[LogOverlay shared] installInWindow:self.window];

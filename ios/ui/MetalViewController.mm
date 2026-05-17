@@ -2,40 +2,50 @@
 #import "BionicSX2Bridge.h"
 #include "LogOverlay.h"
 
-@implementation MetalViewController
+#pragma mark - MetalView (custom UIView with CAMetalLayer)
+
+@interface MetalView : UIView
+@end
+
+@implementation MetalView
 
 + (Class)layerClass {
     return [CAMetalLayer class];
+}
+
+@end
+
+#pragma mark - MetalViewController
+
+@implementation MetalViewController
+
+- (void)loadView {
+    self.view = [[MetalView alloc] initWithFrame:UIScreen.mainScreen.bounds];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     BXLog(@"Step 1 — viewDidLoad entered");
 
-    CAMetalLayer *layer = (CAMetalLayer *)self.view.layer;
-    if (!layer) {
-        BXLogError(@"Step 2 FAILED: view.layer is not CAMetalLayer");
+    CAMetalLayer *metalLayer = (CAMetalLayer *)self.view.layer;
+    BXLog(@"Step 2 — got CAMetalLayer");
+
+    metalLayer.device = MTLCreateSystemDefaultDevice();
+    if (!metalLayer.device) {
+        BXLogError(@"FATAL — MTLCreateSystemDefaultDevice returned nil");
         return;
     }
-    self.metalLayer = layer;
-    BXLog(@"Step 2 OK — CAMetalLayer from view.layer");
+    BXLog(@"Step 3 — Metal device: %@", metalLayer.device.name);
 
-    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-    if (!device) {
-        BXLogError(@"Step 3 FAILED: MTLCreateSystemDefaultDevice returned nil");
-        return;
-    }
-    layer.device = device;
-    BXLog(@"Step 3 OK — Metal device: %s", device.name.UTF8String);
+    metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    metalLayer.framebufferOnly = YES;
+    metalLayer.frame = self.view.bounds;
+    BXLog(@"Step 4 — CAMetalLayer configured");
 
-    layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    layer.framebufferOnly = YES;
-    layer.frame = self.view.bounds;
-    layer.opaque = YES;
-    BXLog(@"Step 4 OK — layer configured");
+    self.metalLayer = metalLayer;
 
-    [BionicSX2Bridge setMetalLayer:layer];
-    BXLog(@"Step 5 OK — setMetalLayer on bridge");
+    [BionicSX2Bridge setMetalLayer:metalLayer];
+    BXLog(@"Step 5 — setMetalLayer on bridge");
 
     NSString *isoPath = [self findFirstISO];
     if (isoPath) {
