@@ -19,6 +19,76 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Initialize pcsx2 submodule
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive --depth 1
+          echo "Submodule status:"
+          git submodule status
+          echo "AudioStream.cpp location:"
+          find . -name "AudioStream.cpp" -not -path "*/build*"
+
+      - name: Patch AudioStream::CreateStream for iOS
+        run: |
+          set -euxo pipefail
+
+          AUDIOSTREAM=$(find . -name "AudioStream.cpp" \
+            -not -path "*/build*" \
+            -not -path "*/test*" | head -1)
+
+          if [ -z "$AUDIOSTREAM" ]; then
+            echo "ERROR: AudioStream.cpp not found — submodule not initialized"
+            exit 1
+          fi
+
+          echo "Patching: $AUDIOSTREAM"
+
+          if grep -q "PCSX2_TARGET_IOS" "$AUDIOSTREAM"; then
+            echo "Guard already present — skipping patch"
+            exit 0
+          fi
+
+          LINE=$(grep -n "AudioStream::CreateStream" "$AUDIOSTREAM" | \
+                 grep -v "declaration\|forward\|//" | head -1 | cut -d: -f1)
+
+          if [ -z "$LINE" ]; then
+            echo "ERROR: CreateStream definition not found in $AUDIOSTREAM"
+            grep -n "CreateStream" "$AUDIOSTREAM"
+            exit 1
+          fi
+
+          echo "CreateStream found at line $LINE"
+
+          sed -i '' "${LINE}i\\
+          #ifndef PCSX2_TARGET_IOS
+          " "$AUDIOSTREAM"
+
+          python3 - "$AUDIOSTREAM" "$LINE" <<'PYEOF'
+          import sys
+          filepath = sys.argv[1]
+          start_line = int(sys.argv[2]) - 1
+          with open(filepath, 'r') as f:
+              lines = f.readlines()
+          depth = 0
+          end_line = None
+          for i in range(start_line, len(lines)):
+              depth += lines[i].count('{') - lines[i].count('}')
+              if i > start_line and depth == 0:
+                  end_line = i
+                  break
+          if end_line is None:
+              print("ERROR: could not find closing brace", file=sys.stderr)
+              sys.exit(1)
+          lines.insert(end_line + 1, '#endif  // PCSX2_TARGET_IOS\n')
+          with open(filepath, 'w') as f:
+              f.writelines(lines)
+          print(f"#endif inserted after line {end_line + 1}")
+          PYEOF
+
+          echo "Patch applied successfully"
+          grep -n "PCSX2_TARGET_IOS\|CreateStream" "$AUDIOSTREAM" | head -10
 
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
