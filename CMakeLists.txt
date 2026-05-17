@@ -388,17 +388,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/ui/LogOverlay.mm
     )
 
-    set(IOS_SWIFT_SOURCES
-        ios/ui/SceneDelegate.swift
-        ios/ui/ContentView.swift
-        ios/ui/MetalViewController.swift
-        ios/ui/GameControllerManager.swift
-    )
-
     # iOS app entry point (Phase 0-A: _main symbol)
     set(IOS_APP_SOURCES
         ios/ui/main.mm
         ios/ui/AppDelegate.mm
+        ios/ui/MetalViewController.h
+        ios/ui/MetalViewController.mm
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
     )
@@ -459,7 +454,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     endif()
 
     add_executable(BionicSX2_App
-        ${IOS_SWIFT_SOURCES}
         ${IOS_APP_SOURCES}
         ios/platform/SymbolStubs.cpp
         pcsx2/3rdparty/fmt/src/format.cc

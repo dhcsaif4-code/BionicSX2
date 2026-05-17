@@ -1,4 +1,5 @@
 #import "AppDelegate.h"
+#import "MetalViewController.h"
 #include "LogOverlay.h"
 
 @implementation AppDelegate
@@ -15,15 +16,22 @@
     application.idleTimerDisabled = YES;
     BXLog(@"Idle timer disabled");
 
-    BXLog(@"Returning YES — scene creation follows");
-    return YES;
-}
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    BXLog(@"Window: %.0fx%.0f",
+          self.window.frame.size.width,
+          self.window.frame.size.height);
 
-- (UISceneConfiguration*)application:(UIApplication*)application
-    configurationForConnectingSceneSession:(UISceneSession*)session
-                                   options:(UISceneConnectionOptions*)options {
-    return [[UISceneConfiguration alloc] initWithName:@"Default Configuration"
-                                          sessionRole:session.role];
+    MetalViewController *rootVC = [[MetalViewController alloc] init];
+    self.window.rootViewController = rootVC;
+    BXLog(@"rootViewController set");
+
+    [self.window makeKeyAndVisible];
+    BXLog(@"makeKeyAndVisible done");
+
+    [[LogOverlay shared] installInWindow:self.window];
+    BXLog(@"LogOverlay installed on window");
+
+    return YES;
 }
 
 @end
