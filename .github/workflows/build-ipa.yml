@@ -134,48 +134,188 @@ jobs:
           echo "Result:"
           grep -n "newVifDynaRec" "$FILE"
 
-      - name: Patch cpuReset in R5900.cpp with first-line printf
+      - name: Patch cpuReset / psxReset with per-line fprintf debug tracing
         run: |
           set -euxo pipefail
-          FILE="pcsx2/pcsx2/R5900.cpp"
-
-          if [ ! -f "$FILE" ]; then
-            echo "ERROR: $FILE not found"
-            exit 1
-          fi
-
           python3 <<'PYEOF'
-          with open("pcsx2/pcsx2/R5900.cpp", "r") as f:
-              content = f.read()
+          import re
 
-          MARKER = "void cpuReset()"
-          if MARKER not in content:
-              print("WARNING: void cpuReset() not found — trying alternate patterns")
-              # Search for any cpuReset definition
-              for i, line in enumerate(content.splitlines()):
-                  if "cpuReset" in line and ("void" in line or "{" in line):
-                      print(f"  {i+1}: {line}")
+          # ── R5900.cpp: cpuReset() — 17 per-line traces ─────────────────
+          with open("pcsx2/pcsx2/R5900.cpp", "r") as f:
+              r59 = f.read()
+
+          r59_old = """void cpuReset()
+{
+	std::memset(&cpuRegs, 0, sizeof(cpuRegs));
+	std::memset(&fpuRegs, 0, sizeof(fpuRegs));
+	std::memset(&tlb, 0, sizeof(tlb));
+	cachedTlbs.count = 0;
+
+	cpuRegs.pc				= 0xbfc00000; //set pc reg to stack
+	cpuRegs.CP0.n.Config	= 0x440;
+	cpuRegs.CP0.n.Status.val= 0x70400004; //0x10900000 <-- wrong; // COP0 enabled | BEV = 1 | TS = 1
+	cpuRegs.CP0.n.PRid		= 0x00002e20; // PRevID = Revision ID, same as R5900
+	fpuRegs.fprc[0]			= 0x00002e30; // fpu Revision..
+	fpuRegs.fprc[31]		= 0x01000001; // fpu Status/Control
+
+	cpuRegs.nextEventCycle = cpuRegs.cycle + 4;
+	EEsCycle = 0;
+	EEoCycle = cpuRegs.cycle;
+
+	psxReset();
+	pgifInit();
+
+	extern void Deci2Reset();		// lazy, no good header for it yet.
+	Deci2Reset();
+
+	AllowParams1 = !VMManager::Internal::IsFastBootInProgress();
+	AllowParams2 = !VMManager::Internal::IsFastBootInProgress();
+	ParamsRead = false;
+
+	g_eeloadMain = 0;
+	g_eeloadExec = 0;
+	g_osdsys_str = 0;
+
+	CBreakPoints::ClearSkipFirst();
+}"""
+
+          r59_new = """void cpuReset()
+{
+	fprintf(stderr, "[cpuReset] line 0: starting\\n"); fflush(stderr);
+	std::memset(&cpuRegs, 0, sizeof(cpuRegs));
+	fprintf(stderr, "[cpuReset] line 1: memset cpuRegs done\\n"); fflush(stderr);
+	std::memset(&fpuRegs, 0, sizeof(fpuRegs));
+	fprintf(stderr, "[cpuReset] line 2: memset fpuRegs done\\n"); fflush(stderr);
+	std::memset(&tlb, 0, sizeof(tlb));
+	fprintf(stderr, "[cpuReset] line 3: memset tlb done\\n"); fflush(stderr);
+	cachedTlbs.count = 0;
+	fprintf(stderr, "[cpuReset] line 4: cachedTlbs cleared\\n"); fflush(stderr);
+
+	cpuRegs.pc				= 0xbfc00000; //set pc reg to stack
+	fprintf(stderr, "[cpuReset] line 5: pc set\\n"); fflush(stderr);
+	cpuRegs.CP0.n.Config	= 0x440;
+	fprintf(stderr, "[cpuReset] line 6: Config set\\n"); fflush(stderr);
+	cpuRegs.CP0.n.Status.val= 0x70400004; //0x10900000 <-- wrong; // COP0 enabled | BEV = 1 | TS = 1
+	fprintf(stderr, "[cpuReset] line 7: Status set\\n"); fflush(stderr);
+	cpuRegs.CP0.n.PRid		= 0x00002e20; // PRevID = Revision ID, same as R5900
+	fprintf(stderr, "[cpuReset] line 8: PRid set\\n"); fflush(stderr);
+	fpuRegs.fprc[0]			= 0x00002e30; // fpu Revision..
+	fpuRegs.fprc[31]		= 0x01000001; // fpu Status/Control
+	fprintf(stderr, "[cpuReset] line 9: fprcs set\\n"); fflush(stderr);
+
+	cpuRegs.nextEventCycle = cpuRegs.cycle + 4;
+	fprintf(stderr, "[cpuReset] line 10: nextEventCycle set\\n"); fflush(stderr);
+	EEsCycle = 0;
+	EEoCycle = cpuRegs.cycle;
+	fprintf(stderr, "[cpuReset] line 11: EEs/EEo set\\n"); fflush(stderr);
+
+	psxReset();
+	fprintf(stderr, "[cpuReset] line 12: psxReset() done\\n"); fflush(stderr);
+	pgifInit();
+	fprintf(stderr, "[cpuReset] line 13: pgifInit() done\\n"); fflush(stderr);
+
+	extern void Deci2Reset();		// lazy, no good header for it yet.
+	Deci2Reset();
+	fprintf(stderr, "[cpuReset] line 14: Deci2Reset() done\\n"); fflush(stderr);
+
+	AllowParams1 = !VMManager::Internal::IsFastBootInProgress();
+	AllowParams2 = !VMManager::Internal::IsFastBootInProgress();
+	fprintf(stderr, "[cpuReset] line 15: AllowParams set\\n"); fflush(stderr);
+	ParamsRead = false;
+
+	g_eeloadMain = 0;
+	g_eeloadExec = 0;
+	g_osdsys_str = 0;
+	fprintf(stderr, "[cpuReset] line 16: g_* globals zeroed\\n"); fflush(stderr);
+
+	CBreakPoints::ClearSkipFirst();
+	fprintf(stderr, "[cpuReset] line 17: complete\\n"); fflush(stderr);
+}"""
+
+          if r59_old not in r59:
+              print("WARNING: cpuReset() body not found as expected in R5900.cpp")
+              # Show what we found
+              idx = r59.find("void cpuReset()")
+              if idx >= 0:
+                  print("Found cpuReset at offset", idx)
+                  print(r59[idx:idx+600])
               exit(0)
 
-          idx = content.find(MARKER)
-          # Find the opening brace
-          brace_start = content.find("{", idx)
-          if brace_start == -1:
-              print("ERROR: no opening brace found after cpuReset()")
-              exit(1)
-
-          # Insert printf + fflush after the opening brace
-          insert = "{\n    printf(\"[CPU] Reset function entered\\n\"); fflush(stdout);"
-          content = content[:brace_start] + insert + content[brace_start + 1:]
+          r59 = r59.replace(r59_old, r59_new, 1)
 
           with open("pcsx2/pcsx2/R5900.cpp", "w") as f:
-              f.write(content)
+              f.write(r59)
 
-          print("cpuReset() patched with first-line printf")
+          print("R5900.cpp patched with per-line cpuReset tracing")
+
+          # ── R3000A.cpp: psxReset() — 6 per-line traces ─────────────────
+          with open("pcsx2/pcsx2/R3000A.cpp", "r") as f:
+              r3k = f.read()
+
+          r3k_old = """void psxReset()
+{
+	std::memset(&psxRegs, 0, sizeof(psxRegs));
+
+	psxRegs.pc = 0xbfc00000; // Start in bootstrap
+	psxRegs.CP0.n.Status = 0x00400000; // BEV = 1
+	psxRegs.CP0.n.PRid   = 0x0000001f; // PRevID = Revision ID, same as the IOP R3000A
+
+	psxRegs.iopBreak = 0;
+	psxRegs.iopCycleEE = -1;
+	psxRegs.iopCycleEECarry = 0;
+	psxRegs.iopNextEventCycle = psxRegs.cycle + 4;
+
+	psxHwReset();
+	PSXCLK = 36864000;
+	ioman::reset();
+	psxBiosReset();
+}"""
+
+          r3k_new = """void psxReset()
+{
+	fprintf(stderr, "[psxReset] line 0: starting\\n"); fflush(stderr);
+	std::memset(&psxRegs, 0, sizeof(psxRegs));
+	fprintf(stderr, "[psxReset] line 1: memset psxRegs done\\n"); fflush(stderr);
+
+	psxRegs.pc = 0xbfc00000; // Start in bootstrap
+	psxRegs.CP0.n.Status = 0x00400000; // BEV = 1
+	psxRegs.CP0.n.PRid   = 0x0000001f; // PRevID = Revision ID, same as the IOP R3000A
+	fprintf(stderr, "[psxReset] line 2: regs set\\n"); fflush(stderr);
+
+	psxRegs.iopBreak = 0;
+	psxRegs.iopCycleEE = -1;
+	psxRegs.iopCycleEECarry = 0;
+	psxRegs.iopNextEventCycle = psxRegs.cycle + 4;
+	fprintf(stderr, "[psxReset] line 3: cycle regs set\\n"); fflush(stderr);
+
+	psxHwReset();
+	fprintf(stderr, "[psxReset] line 4: psxHwReset() done\\n"); fflush(stderr);
+	PSXCLK = 36864000;
+	ioman::reset();
+	fprintf(stderr, "[psxReset] line 5: ioman::reset() done\\n"); fflush(stderr);
+	psxBiosReset();
+	fprintf(stderr, "[psxReset] line 6: psxBiosReset() done\\n"); fflush(stderr);
+}"""
+
+          if r3k_old not in r3k:
+              print("WARNING: psxReset() body not found as expected in R3000A.cpp")
+              idx = r3k.find("void psxReset()")
+              if idx >= 0:
+                  print("Found psxReset at offset", idx)
+                  print(r3k[idx:idx+400])
+              exit(0)
+
+          r3k = r3k.replace(r3k_old, r3k_new, 1)
+
+          with open("pcsx2/pcsx2/R3000A.cpp", "w") as f:
+              f.write(r3k)
+
+          print("R3000A.cpp patched with per-line psxReset tracing")
+          print("=== All patches applied successfully ===")
           PYEOF
 
           echo "Verification:"
-          grep -n -A3 "cpuReset" "$FILE"
+          grep -c "fprintf(stderr" pcsx2/pcsx2/R5900.cpp pcsx2/pcsx2/R3000A.cpp
 
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
