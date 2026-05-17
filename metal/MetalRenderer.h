@@ -68,4 +68,7 @@ private:
 	id<MTLDevice> m_device = nil;
 	id<MTLCommandQueue> m_commandQueue = nil;
 	CAMetalLayer* m_layer = nil;
+	id<MTLLibrary> m_library = nil;
+	id<MTLRenderPipelineState> m_presentPSO = nil;
+	id<MTLTexture> m_renderTexture = nil;
 };

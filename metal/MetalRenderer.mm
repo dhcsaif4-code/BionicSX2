@@ -47,6 +47,46 @@ bool MetalRenderer::Create(const WindowInfo& wi, std::string_view error)
 	[m_layer setFramebufferOnly:YES];
 	[m_layer setContentsScale:wi.surface_scale ? wi.surface_scale : [UIScreen mainScreen].scale];
 
+	// ── Load default.metallib from app bundle ────────────────────────
+	NSString* libPath = [[NSBundle mainBundle]
+		pathForResource:@"default" ofType:@"metallib"];
+	if (!libPath)
+	{
+		NSLog(@"[BionicSX2] default.metallib not found in bundle");
+		return false;
+	}
+	NSError* libErr = nil;
+	m_library = [m_device newLibraryWithURL:[NSURL fileURLWithPath:libPath]
+	                                  error:&libErr];
+	if (!m_library)
+	{
+		NSLog(@"[BionicSX2] MTLLibrary load failed: %@", libErr);
+		return false;
+	}
+	NSLog(@"[BionicSX2] default.metallib loaded OK");
+
+	// ── Build present pipeline (present_vertex + present_fragment) ───
+	id<MTLFunction> vertFn = [m_library newFunctionWithName:@"present_vertex"];
+	id<MTLFunction> fragFn = [m_library newFunctionWithName:@"present_fragment"];
+	if (!vertFn || !fragFn)
+	{
+		NSLog(@"[BionicSX2] present shader functions not found");
+		return false;
+	}
+	MTLRenderPipelineDescriptor* desc = [[MTLRenderPipelineDescriptor alloc] init];
+	desc.vertexFunction   = vertFn;
+	desc.fragmentFunction = fragFn;
+	desc.colorAttachments[0].pixelFormat = m_layer.pixelFormat;
+	NSError* psoErr = nil;
+	m_presentPSO = [m_device newRenderPipelineStateWithDescriptor:desc
+	                                                        error:&psoErr];
+	if (!m_presentPSO)
+	{
+		NSLog(@"[BionicSX2] present PSO failed: %@", psoErr);
+		return false;
+	}
+	NSLog(@"[BionicSX2] Metal pipeline ready");
+
 	return true;
 }
 
@@ -90,19 +130,25 @@ void MetalRenderer::RenderHW(GSTextureCache* tc)
 		id<CAMetalDrawable> drawable = [m_layer nextDrawable];
 		if (!drawable) return;
 
-		id<MTLCommandBuffer> cmdBuffer = [m_commandQueue commandBuffer];
+		id<MTLCommandBuffer> cmd = [m_commandQueue commandBuffer];
 
-		MTLRenderPassDescriptor* passDesc = [MTLRenderPassDescriptor renderPassDescriptor];
-		passDesc.colorAttachments[0].texture = drawable.texture;
-		passDesc.colorAttachments[0].loadAction = MTLLoadActionClear;
-		passDesc.colorAttachments[0].clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
-		passDesc.colorAttachments[0].storeAction = MTLStoreActionStore;
+		MTLRenderPassDescriptor* rpd = [MTLRenderPassDescriptor renderPassDescriptor];
+		rpd.colorAttachments[0].texture     = drawable.texture;
+		rpd.colorAttachments[0].loadAction  = MTLLoadActionClear;
+		rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
+		rpd.colorAttachments[0].clearColor  = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
 
-		id<MTLRenderCommandEncoder> enc = [cmdBuffer renderCommandEncoderWithDescriptor:passDesc];
+		id<MTLRenderCommandEncoder> enc = [cmd renderCommandEncoderWithDescriptor:rpd];
+		if (m_presentPSO && m_renderTexture)
+		{
+			[enc setRenderPipelineState:m_presentPSO];
+			[enc setFragmentTexture:m_renderTexture atIndex:0];
+			[enc drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
+		}
 		[enc endEncoding];
 
-		[cmdBuffer presentDrawable:drawable];
-		[cmdBuffer commit];
+		[cmd presentDrawable:drawable];
+		[cmd commit];
 	}
 }
 

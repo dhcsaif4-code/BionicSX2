@@ -617,6 +617,49 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${PCSX2_DIR}/GS/Renderers/Metal/fxaa.metal
     )
 
+    # ── Compile upstream Metal shaders → default.metallib ──────────────
+    set(METAL_SHADER_DIR "${PCSX2_DIR}/GS/Renderers/Metal")
+    set(METALLIB_OUTPUT  "${CMAKE_BINARY_DIR}/default.metallib")
+
+    set(METAL_AIR_FILES)
+    foreach(METAL_SRC ${PCSX2_METAL_SHADERS})
+        get_filename_component(METAL_NAME "${METAL_SRC}" NAME_WE)
+        set(AIR_FILE "${CMAKE_BINARY_DIR}/${METAL_NAME}.air")
+        add_custom_command(
+            OUTPUT  "${AIR_FILE}"
+            COMMAND xcrun -sdk iphoneos metal
+                    -target air64-apple-ios16.4
+                    -std=ios-metal2.4
+                    -ffast-math
+                    -I "${METAL_SHADER_DIR}"
+                    -c "${METAL_SRC}"
+                    -o "${AIR_FILE}"
+            DEPENDS "${METAL_SRC}"
+                    "${METAL_SHADER_DIR}/GSMTLShaderCommon.h"
+                    "${METAL_SHADER_DIR}/GSMTLSharedHeader.h"
+            COMMENT "Compiling Metal shader: ${METAL_NAME}.metal"
+            VERBATIM
+        )
+        list(APPEND METAL_AIR_FILES "${AIR_FILE}")
+    endforeach()
+
+    add_custom_command(
+        OUTPUT  "${METALLIB_OUTPUT}"
+        COMMAND xcrun -sdk iphoneos metallib
+                    -o "${METALLIB_OUTPUT}"
+                    ${METAL_AIR_FILES}
+        DEPENDS ${METAL_AIR_FILES}
+        COMMENT "Linking default.metallib"
+        VERBATIM
+    )
+
+    add_custom_target(MetalShaders ALL DEPENDS "${METALLIB_OUTPUT}")
+
+    set_target_properties(BionicSX2_App PROPERTIES
+        RESOURCE "${METALLIB_OUTPUT}"
+    )
+    add_dependencies(BionicSX2_App MetalShaders)
+
     # iOS app bundle settings
     set(CMAKE_MACOSX_BUNDLE YES)
     set(MACOSX_BUNDLE_GUI_IDENTIFIER com.bionicsx2.app)
