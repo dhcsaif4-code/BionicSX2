@@ -2,6 +2,8 @@
 #include "pcsx2/Host.h"
 #include "pcsx2/VMManager.h"
 
+struct InputBindingKey {};
+
 #define BEGIN_HOTKEY_LIST(x)
 #define END_HOTKEY_LIST()
 
@@ -23,7 +25,7 @@ namespace Host {
   void OnAchievementsLoginSuccess(const char*, u32, u32, u32) {}
   void OnAchievementsHardcoreModeChanged(bool) {}
   void OnInputDeviceConnected(std::string_view, std::string_view) {}
-  void OnInputDeviceDisconnected(InputBindingInfo, std::string_view) {}
+  void OnInputDeviceDisconnected(InputBindingKey, std::string_view) {}
   void OnCoverDownloaderOpenRequested() {}
   bool IsFullscreen() { return true; }
   void SetFullscreen(bool) {}
