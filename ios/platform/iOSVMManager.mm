@@ -96,13 +96,21 @@ bool StartVM(const char* isoPath) {
 
     // Step 7: initialize GS Metal backend (Audit Sec 4.1)
     BXLog(@"Opening GS Metal backend...");
-    if (!GSopen(EmuConfig.GS, GSRendererType::Metal, nullptr, GSVSyncMode::Disabled, false)) {
-        BXLogError(@"GSopen() failed");
+    BXLog(@"MetalRenderer: step H — calling GSopen (ImGui + renderer init)");
+    @try {
+        if (!GSopen(EmuConfig.GS, GSRendererType::Metal, nullptr, GSVSyncMode::Disabled, false)) {
+            BXLogError(@"GSopen() failed");
+            SysMemory::Release();
+            s_initialized = false;
+            return false;
+        }
+    } @catch (NSException *e) {
+        BXLogError(@"MetalRenderer EXCEPTION in GSopen: %@ — %@", e.name, e.reason);
         SysMemory::Release();
         s_initialized = false;
         return false;
     }
-    BXLog(@"GSopen() OK");
+    BXLog(@"MetalRenderer: step H done — GSopen() returned true");
     BXLog(@"=== VM Start complete ===");
     return true;
 }

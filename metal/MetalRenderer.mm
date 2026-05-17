@@ -156,6 +156,13 @@ bool MetalRenderer::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
             CGFloat drawW = wi->surface_width  > 0 ? wi->surface_width  : [UIScreen mainScreen].nativeBounds.size.width;
             CGFloat drawH = wi->surface_height > 0 ? wi->surface_height : [UIScreen mainScreen].nativeBounds.size.height;
             [m_layer setDrawableSize:CGSizeMake(drawW, drawH)];
+            // Must update base class m_window_info so GetWindowWidth()/GetWindowHeight() return real values
+            {
+                WindowInfo wi2 = *wi;
+                wi2.surface_width  = drawW;
+                wi2.surface_height = drawH;
+                SetWindow(wi2);
+            }
             BXLog(@"MetalRenderer: step E done (drawableSize=%.0fx%.0f scale=%.1f)",
                   drawW, drawH, wi->surface_scale);
 
