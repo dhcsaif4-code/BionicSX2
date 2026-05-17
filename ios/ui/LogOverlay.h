@@ -8,6 +8,15 @@ extern "C" {
 void BXLog(NSString* format, ...);
 void BXLogError(NSString* format, ...);
 
+/// Initialize crash-safe log file descriptor and install all crash handlers.
+/// Must be called BEFORE any other logging function, ideally as the very
+/// first thing in application:didFinishLaunchingWithOptions.
+void BXSX2InstallCrashHandlers(void);
+
+/// Async-signal-safe write to the crash log fd (used by signal handlers).
+/// Do NOT call from normal code — use BXLog/BXLogError instead.
+void BXSX2SafeWriteToLog(const char* msg);
+
 #ifdef __cplusplus
 }
 #endif
