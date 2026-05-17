@@ -7,7 +7,6 @@
 #include "MetalRenderer.h"
 #include "GS/GSPerfMon.h"
 #include "common/BitUtils.h"
-#include "common/Align.h"
 #include <vector>
 
 // =====================================================================

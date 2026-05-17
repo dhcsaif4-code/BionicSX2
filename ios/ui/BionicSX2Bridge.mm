@@ -37,7 +37,16 @@ static CAMetalLayer* g_metalLayer = nil;
     g_metalLayer = layer;
     WindowInfo wi;
     wi.type = WindowInfo::Type::MacOS;
-    wi.window_handle = (__bridge void*)[[UIApplication sharedApplication].keyWindow rootViewController].view;
+    UIWindow *window = nil;
+    for (UIWindowScene *scene in
+         [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState ==
+            UISceneActivationStateForegroundActive) {
+            window = scene.windows.firstObject;
+            break;
+        }
+    }
+    wi.window_handle = (__bridge void*)window.rootViewController.view;
     wi.surface_handle = (__bridge void*)layer;
     wi.surface_width = layer.bounds.size.width * layer.contentsScale;
     wi.surface_height = layer.bounds.size.height * layer.contentsScale;
