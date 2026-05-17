@@ -90,6 +90,50 @@ jobs:
           echo "Result:"
           grep -n "PCSX2_TARGET_IOS\|CreateStream" "$FILE" | head -6
 
+      - name: Patch Vif_Dynarec.h for iOS (force interpreter path)
+        run: |
+          set -euxo pipefail
+          FILE="pcsx2/pcsx2/Vif_Dynarec.h"
+
+          if [ ! -f "$FILE" ]; then
+            echo "ERROR: $FILE not found"
+            exit 1
+          fi
+
+          # Replace: static constexpr bool newVifDynaRec = 1;
+          # With:    iOS guard forcing 0 (interpreter path)
+          python3 <<'PYEOF'
+          with open("pcsx2/pcsx2/Vif_Dynarec.h", "r") as f:
+              content = f.read()
+
+          OLD = "static constexpr bool newVifDynaRec = 1;"
+          NEW = (
+              "#if defined(PCSX2_TARGET_IOS)\n"
+              "static constexpr bool newVifDynaRec = 0;  // iOS: no JIT, interpreter path\n"
+              "#else\n"
+              "static constexpr bool newVifDynaRec = 1;\n"
+              "#endif"
+          )
+
+          if OLD not in content:
+              print("WARNING: line not found — already patched or unexpected format")
+              print("Contents around 'newVifDynaRec':")
+              for i, line in enumerate(content.splitlines()):
+                  if "newVifDynaRec" in line:
+                      print(f"  {i+1}: {line}")
+              exit(0)
+
+          content = content.replace(OLD, NEW, 1)
+
+          with open("pcsx2/pcsx2/Vif_Dynarec.h", "w") as f:
+              f.write(content)
+
+          print("Vif_Dynarec.h patched successfully")
+          PYEOF
+
+          echo "Result:"
+          grep -n "newVifDynaRec" "$FILE"
+
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
 

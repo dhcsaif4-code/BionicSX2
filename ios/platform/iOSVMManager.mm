@@ -44,6 +44,7 @@ bool StartVM(const char* isoPath) {
     EmuConfig.Cpu.Recompiler.EnableVU0 = false;
     EmuConfig.Cpu.Recompiler.EnableVU1 = false;
     EmuConfig.Cpu.Recompiler.EnableIOP = false;
+    EmuConfig.EE.newVifDynarec         = false;  // nVif micro-JIT — must also be 0 at compile-time in Vif_Dynarec.h
     EmuConfig.GS.Renderer              = GSRendererType::Metal;
 
     // Step 2: allocate emulated memory — MUST be first (Audit Sec 2.3-E)
@@ -73,8 +74,15 @@ bool StartVM(const char* isoPath) {
 
     // Step 5: reset CPU state → hwReset → vif0Reset/vif1Reset (Audit Sec 2.3-F)
     BXLog(@"Resetting CPU...");
-    cpuReset();
-    BXLog(@"cpuReset() OK");
+    @try {
+        cpuReset();
+        BXLog(@"cpuReset() OK");
+    } @catch (NSException *e) {
+        BXLogError(@"cpuReset() threw exception: %@ — reason: %@", e.name, e.reason);
+        SysMemory::Release();
+        s_initialized = false;
+        return false;
+    }
 
     // Step 6: initialize GS Metal backend (Audit Sec 4.1)
     BXLog(@"Opening GS Metal backend...");
