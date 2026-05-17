@@ -25,11 +25,6 @@ std::string_view Host::TranslateToStringView(const std::string_view context, con
 std::string Host::TranslateToString(const std::string_view context, const std::string_view msg) { return std::string(msg); }
 std::string Host::TranslatePluralToString(const char* context, const char* msg, const char* disambiguation, int count) { return std::string(msg); }
 void Host::ClearTranslationCache() {}
-void Host::AddOSDMessage(std::string message, float duration) {}
-void Host::AddKeyedOSDMessage(std::string key, std::string message, float duration) {}
-void Host::AddIconOSDMessage(std::string key, const char* icon, const std::string_view message, float duration) {}
-void Host::RemoveKeyedOSDMessage(std::string key) {}
-void Host::ClearOSDMessages() {}
 void Host::ReportInfoAsync(const std::string_view title, const std::string_view message) { NSLog(@"[BionicSX2] %.*s: %.*s", (int)title.size(), title.data(), (int)message.size(), message.data()); }
 void Host::ReportFormattedInfoAsync(const std::string_view title, const char* format, ...) {}
 void Host::ReportErrorAsync(const std::string_view title, const std::string_view message) { NSLog(@"[BionicSX2 ERROR] %.*s: %.*s", (int)title.size(), title.data(), (int)message.size(), message.data()); }

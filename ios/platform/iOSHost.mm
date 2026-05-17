@@ -42,9 +42,6 @@ namespace Host {
   void SetMouseMode(bool, bool) {}
   void SetMouseLock(bool) {}
   bool LocaleCircleConfirm() { return false; }
-  std::string GetHTTPUserAgent() { return "BionicSX2/1.0"; }
-  void OpenURL(const std::string_view) {}
-  bool CopyTextToClipboard(const std::string_view) { return false; }
 }
 
 BEGIN_HOTKEY_LIST(g_host_hotkeys)

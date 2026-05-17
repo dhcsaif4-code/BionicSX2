@@ -429,6 +429,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${IOS_METAL_SOURCES}
     )
 
+    # Remove generic platform files replaced by iOS-specific versions
+    get_target_property(BIONICSX2_SOURCES BionicSX2 SOURCES)
+    list(REMOVE_ITEM BIONICSX2_SOURCES
+        "${CMAKE_SOURCE_DIR}/pcsx2/common/Linux/LnxHostSys.cpp"
+        "${CMAKE_SOURCE_DIR}/pcsx2/pcsx2/Host.cpp"
+        "${CMAKE_SOURCE_DIR}/pcsx2/pcsx2/Host/AudioStream.cpp"
+    )
+    set_target_properties(BionicSX2 PROPERTIES SOURCES "${BIONICSX2_SOURCES}")
+
     # Image.cpp — HEADER_FILE_ONLY so indexer sees it but compiler skips it
     if(EXISTS "${COMMON_DIR}/Image.cpp")
         set_source_files_properties("${COMMON_DIR}/Image.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
