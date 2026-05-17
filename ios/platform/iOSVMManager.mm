@@ -103,7 +103,8 @@ bool StartVM(const char* isoPath) {
         CDVDsys_ChangeSource(CDVD_SourceType::Iso);
         BXLog(@"ISO loaded OK");
     } else {
-        BXLog(@"No ISO provided — running without disc");
+        BXLog(@"No ISO provided — initializing NoDisc CDVD plugin");
+        CDVDsys_ChangeSource(CDVD_SourceType::NoDisc);
     }
 
     BXLog(@"=== VM Start complete ===");
