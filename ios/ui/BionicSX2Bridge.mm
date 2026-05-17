@@ -66,9 +66,12 @@ void* BXSX2GetViewHandle() {
     }
     wi.window_handle = (__bridge void*)window.rootViewController.view;
     wi.surface_handle = (__bridge void*)layer;
-    wi.surface_width = layer.bounds.size.width * layer.contentsScale;
-    wi.surface_height = layer.bounds.size.height * layer.contentsScale;
-    wi.surface_scale = layer.contentsScale;
+    // Use screen bounds directly — layer bounds may not be final in viewDidLoad
+    CGSize screenPt = UIScreen.mainScreen.bounds.size;
+    CGFloat screenScale = UIScreen.mainScreen.scale;
+    wi.surface_width  = screenPt.width * screenScale;
+    wi.surface_height = screenPt.height * screenScale;
+    wi.surface_scale  = screenScale;
     BXSX2SetWindowInfo(wi);
     if (wi.window_handle)
         BXSX2SetViewHandle(wi.window_handle);
