@@ -389,6 +389,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     set(IOS_SWIFT_SOURCES
         ios/ui/BionicSX2App.swift
+        ios/ui/SceneDelegate.swift
         ios/ui/ContentView.swift
         ios/ui/MetalViewController.swift
         ios/ui/GameControllerManager.swift
