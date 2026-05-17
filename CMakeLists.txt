@@ -389,7 +389,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     )
 
     set(IOS_SWIFT_SOURCES
-        ios/ui/BionicSX2App.swift
         ios/ui/SceneDelegate.swift
         ios/ui/ContentView.swift
         ios/ui/MetalViewController.swift
@@ -398,6 +397,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     # iOS app entry point (Phase 0-A: _main symbol)
     set(IOS_APP_SOURCES
+        ios/ui/main.mm
+        ios/ui/AppDelegate.mm
         ios/platform/AppStubs.mm
         ios/platform/MissingSymbols.mm
     )
