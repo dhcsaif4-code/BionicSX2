@@ -6,6 +6,7 @@
 #include "GS/GS.h"
 #include "common/WindowInfo.h"
 #include "SIO/Pad/Pad.h"
+#include "BionicSX2Shared.h"
 
 const int PAD_CROSS = 0;
 const int PAD_CIRCLE = 1;
@@ -21,6 +22,23 @@ const int PAD_LEFT = 10;
 const int PAD_RIGHT = 11;
 
 static CAMetalLayer* g_metalLayer = nil;
+
+static WindowInfo g_storedWindowInfo;
+
+void BXSX2SetWindowInfo(const WindowInfo& wi) {
+    g_storedWindowInfo = wi;
+}
+const WindowInfo* BXSX2GetWindowInfo() {
+    return &g_storedWindowInfo;
+}
+
+static void* g_viewHandle = nil;
+void BXSX2SetViewHandle(void* view) {
+    g_viewHandle = view;
+}
+void* BXSX2GetViewHandle() {
+    return g_viewHandle;
+}
 
 @implementation BionicSX2Bridge
 
@@ -51,7 +69,9 @@ static CAMetalLayer* g_metalLayer = nil;
     wi.surface_width = layer.bounds.size.width * layer.contentsScale;
     wi.surface_height = layer.bounds.size.height * layer.contentsScale;
     wi.surface_scale = layer.contentsScale;
-    // GSUpdateOptions stubbed — WindowInfo passed through wi reference
+    BXSX2SetWindowInfo(wi);
+    if (wi.window_handle)
+        BXSX2SetViewHandle(wi.window_handle);
 }
 
 + (void)setPadButton:(int)pad button:(int)button pressed:(BOOL)pressed {

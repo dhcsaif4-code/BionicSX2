@@ -45,7 +45,7 @@ public:
 	MetalRenderer();
 	~MetalRenderer() override;
 
-	bool Create(const WindowInfo& wi, std::string_view error);
+	bool Create(GSVSyncMode vsync_mode, bool allow_present_throttle) override;
 	bool SetWindow(const WindowInfo& wi);
 	void Destroy() override;
 	void* GetDevice() const { return (__bridge void*)m_device; }

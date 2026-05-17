@@ -7,6 +7,8 @@
 #include "MetalRenderer.h"
 #include "GS/GSPerfMon.h"
 #include "common/BitUtils.h"
+#include "LogOverlay.h"
+#include "BionicSX2Shared.h"
 #include <vector>
 
 // =====================================================================
@@ -93,81 +95,106 @@ MetalRenderer::~MetalRenderer()
 	Destroy();
 }
 
-bool MetalRenderer::Create(const WindowInfo& wi, std::string_view error)
+bool MetalRenderer::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 {
-	m_device = MTLCreateSystemDefaultDevice();
-	if (!m_device)
-	{
-		NSLog(@"[BionicSX2] Metal: Failed to create system default device");
-		return false;
-	}
+    @autoreleasepool {
+        if (!GSDevice::Create(vsync_mode, allow_present_throttle))
+        {
+            BXLogError(@"MetalRenderer: GSDevice::Create (base) failed");
+            return false;
+        }
+        BXLog(@"MetalRenderer: base GSDevice::Create OK (vsync=%d, throttle=%d)",
+              (int)vsync_mode, (int)allow_present_throttle);
 
-	m_commandQueue = [m_device newCommandQueue];
-	if (!m_commandQueue)
-	{
-		NSLog(@"[BionicSX2] Metal: Failed to create command queue");
-		return false;
-	}
+        // ── Create MTLDevice ────────────────────────────────────────────
+        m_device = MTLCreateSystemDefaultDevice();
+        if (!m_device)
+        {
+            BXLogError(@"MetalRenderer: MTLCreateSystemDefaultDevice returned nil");
+            return false;
+        }
+        BXLog(@"MetalRenderer: MTLDevice created: %s", [[m_device name] UTF8String]);
 
-	// PORTED: CAMetalLayer from UIView (Audit Section 4.3)
-	m_layer = (__bridge CAMetalLayer*)wi.surface_handle;
-	if (!m_layer)
-	{
-		m_layer = [CAMetalLayer layer];
-		UIView* view = (__bridge UIView*)wi.window_handle;
-		[view.layer addSublayer:m_layer];
-	}
+        // ── Command queue ───────────────────────────────────────────────
+        m_commandQueue = [m_device newCommandQueue];
+        if (!m_commandQueue)
+        {
+            BXLogError(@"MetalRenderer: newCommandQueue returned nil");
+            return false;
+        }
+        BXLog(@"MetalRenderer: command queue created");
 
-	[m_layer setDevice:m_device];
-	[m_layer setPixelFormat:MTLPixelFormatBGRA8Unorm];
-	[m_layer setFramebufferOnly:YES];
-	[m_layer setContentsScale:wi.surface_scale ? wi.surface_scale : [UIScreen mainScreen].scale];
+        // ── Get stored WindowInfo (set by BionicSX2Bridge.setMetalLayer:) ─
+        const WindowInfo* wi = BXSX2GetWindowInfo();
+        if (!wi || !wi->surface_handle)
+        {
+            BXLogError(@"MetalRenderer: no WindowInfo — did you call setMetalLayer before startVM?");
+            return false;
+        }
+        BXLog(@"MetalRenderer: got WindowInfo (surface_handle=%p)", wi->surface_handle);
 
-	// ── Load default.metallib from app bundle ────────────────────────
-	NSString* libPath = [[NSBundle mainBundle]
-		pathForResource:@"default" ofType:@"metallib"];
-	if (!libPath)
-	{
-		NSLog(@"[BionicSX2] default.metallib not found in bundle");
-		return false;
-	}
-	NSError* libErr = nil;
-	m_library = [m_device newLibraryWithURL:[NSURL fileURLWithPath:libPath]
-	                                  error:&libErr];
-	if (!m_library)
-	{
-		NSLog(@"[BionicSX2] MTLLibrary load failed: %@", libErr);
-		return false;
-	}
-	NSLog(@"[BionicSX2] default.metallib loaded OK");
+        // ── CAMetalLayer from the view's backing layer ──────────────────
+        m_layer = (__bridge CAMetalLayer*)wi->surface_handle;
+        if (!m_layer)
+        {
+            BXLogError(@"MetalRenderer: surface_handle is not a valid CAMetalLayer");
+            return false;
+        }
 
-	// ── Build present pipeline (present_vertex + present_fragment) ───
-	id<MTLFunction> vertFn = [m_library newFunctionWithName:@"present_vertex"];
-	id<MTLFunction> fragFn = [m_library newFunctionWithName:@"present_fragment"];
-	if (!vertFn || !fragFn)
-	{
-		NSLog(@"[BionicSX2] present shader functions not found");
-		return false;
-	}
-	MTLRenderPipelineDescriptor* desc = [[MTLRenderPipelineDescriptor alloc] init];
-	desc.vertexFunction   = vertFn;
-	desc.fragmentFunction = fragFn;
-	desc.colorAttachments[0].pixelFormat = m_layer.pixelFormat;
-	NSError* psoErr = nil;
-	m_presentPSO = [m_device newRenderPipelineStateWithDescriptor:desc
-	                                                        error:&psoErr];
-	if (!m_presentPSO)
-	{
-		NSLog(@"[BionicSX2] present PSO failed: %@", psoErr);
-		return false;
-	}
-	NSLog(@"[BionicSX2] Metal pipeline ready");
+        [m_layer setDevice:m_device];
+        [m_layer setPixelFormat:MTLPixelFormatBGRA8Unorm];
+        [m_layer setFramebufferOnly:YES];
+        [m_layer setContentsScale:wi->surface_scale ? wi->surface_scale : [UIScreen mainScreen].scale];
+        BXLog(@"MetalRenderer: CAMetalLayer configured (%.0fx%.0f scale=%.1f)",
+              wi->surface_width, wi->surface_height, wi->surface_scale);
 
-	return true;
+        // ── Load default.metallib from app bundle ────────────────────────
+        NSString* libPath = [[NSBundle mainBundle]
+            pathForResource:@"default" ofType:@"metallib"];
+        if (!libPath)
+        {
+            BXLogError(@"MetalRenderer: default.metallib not found in bundle");
+            return false;
+        }
+        NSError* libErr = nil;
+        m_library = [m_device newLibraryWithURL:[NSURL fileURLWithPath:libPath]
+                                          error:&libErr];
+        if (!m_library)
+        {
+            BXLogError(@"MetalRenderer: MTLLibrary load failed: %@", libErr);
+            return false;
+        }
+        BXLog(@"MetalRenderer: default.metallib loaded OK");
+
+        // ── Build present pipeline (present_vertex + present_fragment) ───
+        id<MTLFunction> vertFn = [m_library newFunctionWithName:@"present_vertex"];
+        id<MTLFunction> fragFn = [m_library newFunctionWithName:@"present_fragment"];
+        if (!vertFn || !fragFn)
+        {
+            BXLogError(@"MetalRenderer: present shader functions not found in metallib");
+            return false;
+        }
+        MTLRenderPipelineDescriptor* desc = [[MTLRenderPipelineDescriptor alloc] init];
+        desc.vertexFunction   = vertFn;
+        desc.fragmentFunction = fragFn;
+        desc.colorAttachments[0].pixelFormat = m_layer.pixelFormat;
+        NSError* psoErr = nil;
+        m_presentPSO = [m_device newRenderPipelineStateWithDescriptor:desc
+                                                                error:&psoErr];
+        if (!m_presentPSO)
+        {
+            BXLogError(@"MetalRenderer: present PSO failed: %@", psoErr);
+            return false;
+        }
+        BXLog(@"MetalRenderer: present pipeline ready");
+
+        return true;
+    }
 }
 
 bool MetalRenderer::SetWindow(const WindowInfo& wi)
 {
+    BXLog(@"MetalRenderer::SetWindow(surface_handle=%p)", wi.surface_handle);
 	m_layer = (__bridge CAMetalLayer*)wi.surface_handle;
 	if (m_layer)
 	{
@@ -175,7 +202,13 @@ bool MetalRenderer::SetWindow(const WindowInfo& wi)
 		[m_layer setDrawableSize:CGSizeMake(
 			static_cast<CGFloat>(wi.surface_width),
 			static_cast<CGFloat>(wi.surface_height))];
+        BXLog(@"MetalRenderer::SetWindow: layer configured (%.0fx%.0f scale=%.1f)",
+              wi.surface_width, wi.surface_height, wi.surface_scale);
 	}
+    else
+    {
+        BXLogError(@"MetalRenderer::SetWindow: surface_handle is null");
+    }
 	return true;
 }
 

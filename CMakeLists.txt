@@ -385,6 +385,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ios/platform/Image_iOS.cpp
         ios/platform/iOSHost.mm
         ios/ui/BionicSX2Bridge.mm
+        ios/ui/LogOverlay.mm
     )
 
     set(IOS_SWIFT_SOURCES
@@ -559,6 +560,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # BionicSX2_App needs PCSX2 + common + fmt headers for stub files
     target_include_directories(BionicSX2_App PRIVATE
         ios/platform
+        ios/ui
         ${CMAKE_SOURCE_DIR}/pcsx2
         ${PCSX2_DIR}
         ${COMMON_DIR}

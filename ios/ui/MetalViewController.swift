@@ -13,27 +13,42 @@ class MetalViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         metalLayer = view.layer as? CAMetalLayer
-        metalLayer.device = MTLCreateSystemDefaultDevice()
+
+        guard let device = MTLCreateSystemDefaultDevice() else {
+            LogOverlay.shared().addEntry("Metal device: FAILED — MTLCreateSystemDefaultDevice returned nil", isError: true)
+            return
+        }
+        metalLayer.device = device
         metalLayer.pixelFormat = .bgra8Unorm
         metalLayer.framebufferOnly = true
         metalLayer.frame = view.bounds
         metalLayer.isOpaque = true
 
+        LogOverlay.shared().addEntry("Metal device: \(device.name)", isError: false)
+
+        // CRITICAL: Set Metal layer BEFORE starting VM so the renderer
+        // finds its CAMetalLayer during Create(GSVSyncMode, bool).
+        BionicSX2Bridge.setMetalLayer(metalLayer)
+        LogOverlay.shared().addEntry("Metal layer set on bridge", isError: false)
+
         // Start VM via C++ bridge
         let isoPath = findFirstISO()
+        LogOverlay.shared().addEntry("Renderer init started", isError: false)
         if BionicSX2Bridge.startVM(isoPath: isoPath) {
+            LogOverlay.shared().addEntry("Surface created", isError: false)
+            LogOverlay.shared().addEntry("VM started — starting render loop", isError: false)
             // Start render loop only if VM started successfully
             displayLink = CADisplayLink(target: self, selector: #selector(renderFrame))
             displayLink.add(to: .main, forMode: .common)
         } else {
-            // Show alert so user knows BIOS is missing
-            NSLog("[BionicSX2] iOSVMManager::StartVM failed")
+            LogOverlay.shared().addEntry("Surface FAILED: startVM returned false", isError: true)
+            // Show alert so user knows what went wrong
             let alert = UIAlertController(
-                title: "BIOS Not Found",
-                message: "PCSX2 requires a PlayStation 2 BIOS.\n\n"
+                title: "VM Start Failed",
+                message: "The emulator could not start.\n\n"
                     + "Place a PS2 BIOS file (e.g. SCPH-39001.bin) in:\n"
                     + "Files App → BionicSX2 → BIOS/\n\n"
-                    + "Supported formats: any 4MB–8MB PS2 ROM dump.",
+                    + "Check runtime.log in Documents/ for details.",
                 preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             present(alert, animated: true)

@@ -7,8 +7,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
         window = UIWindow(windowScene: windowScene)
+
+        // Install on-screen log overlay before any UI
+        LogOverlay.shared().install(in: window)
+        LogOverlay.shared().addEntry("Window created", isError: false)
+
         window?.rootViewController = MetalViewController()
         window?.makeKeyAndVisible()
+        LogOverlay.shared().addEntry("UI loaded", isError: false)
+
         iOSConfigureAudioSession()
         GameControllerManager.shared.startMonitoring()
     }

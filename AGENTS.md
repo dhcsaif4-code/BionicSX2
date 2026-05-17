@@ -2,7 +2,7 @@
 
 ## Repo Context
 - **BionicSX2**: iOS port of PCSX2 (PS2 emulator). Workspace at `/workspaces/BionicSX2`.
-- **Current HEAD**: `2b0f9c8` (on `main`, pushed to `origin/main`).
+- **Current HEAD**: `10e9bcb` (on `main`, pushed to `origin/main`).
 - **Phase 0**: iOS bring-up — integrating real PCSX2 C++ sources into an iOS Xcode project via CMake + XcodeGen.
 
 ---
@@ -13,94 +13,77 @@
 1. **BionicSX2** (STATIC library) — `libBionicSX2.a`, contains ~300+ real `.o` files compiled from PCSX2 tree.
 2. **BionicSX2_App** (executable) — the iOS app bundle. Links libBionicSX2.a + stubs. This is the `ios/` target.
 
-The stub files (`MissingSymbols.mm`, `AppStubs.mm`, `CStubs.c`) are compiled into BionicSX2_App (not the static lib) so they provide the last-resort symbols needed at link time.
-
 ### Key directories
-- `pcsx2/` — upstream PCSX2 source tree (many submodules are empty stubs)
-- `ios/platform/` — iOS-specific implementations and stubs
-- `ios/ui/` — SwiftUI view layer
+- `pcsx2/` — upstream PCSX2 source tree
+- `pcsx2/common/` — ~93 files, no `Align.h` (alignment in `BitUtils.h`)
+- `ios/platform/` — iOS-specific implementations and shared state
+- `ios/ui/` — SwiftUI/UIKit view layer
+- `metal/` — simplified Metal renderer (custom, not upstream GSDeviceMTL)
 
 ---
 
-## Build Configuration (Phase 0-D2)
+## Known Issues & Decisions
 
-### CMakeLists.txt key sections
-- **COMMON_DIR** = `${CMAKE_SOURCE_DIR}/pcsx2/common`
-- **PCSX2_CORE_SOURCES**: ~60+ files from pcsx2 tree — compiled into the static lib
-- **PCSX2_SPU2_SOURCES**: nullSnd + record-zer (stub audio drivers)
-- **PCSX2_PLATFORM_SOURCES**: GS/Host platform files from pcsx2 tree
-- **IOS_PLATFORM_SOURCES**: `ios/platform/` C++/ObjC++ files (compiled into static lib)
-- **IOS_METAL_SOURCES**: Metal renderer files from pcsx2/GS/Renderers/Metal
-- **IOS_SWIFT_SOURCES**: Swift UI layer
-- Conditional sources: `Log.cpp` (stub check), `fmt` (stub check), `liblzma` (stub check)
-- Flags: `-Wno-ambiguous-member-template`, C++20, ObjC ARC enabled for `.mm` files
+### Session 2026-05-17: Black Screen → MetalRenderer init + LogOverlay
 
-### XcodeGen project at `ios/project.yml`
-- Defines `BionicSX2_App` iOS app target
-- Uses `xcodegen` to generate `.xcodeproj`
+#### Root Cause
+Three independent failures produced the same symptom (nil MTLDevice + nil CAMetalLayer):
 
----
+1. **`MetalRenderer::Create(const WindowInfo&, string_view)` not an override** — The base class `GSDevice::Create(GSVSyncMode, bool)` was called (GS.cpp:143), just storing flags. MetalRenderer's `Create` had a **different signature**, so it was a separate overload never invoked. `m_device`, `m_commandQueue`, `m_library`, `m_presentPSO` all stayed nil.
 
-## Stub Files — Map
+2. **`setMetalLayer:` never called** — `MetalViewController.viewDidLoad()` configured `metalLayer` from `view.layer as? CAMetalLayer` but never called `BionicSX2Bridge.setMetalLayer(metalLayer)`. Even if called, that method built a stack-local `WindowInfo` that went nowhere — `g_metalLayer` was set but never read.
 
-| File | Purpose | Target |
-|---|---|---|
-| `ios/platform/MissingSymbols.mm` | Stubs for iOS-dead-code paths (RGBA8Image, Cubeb, SDL audio, Xz, Zstd, vTlb) | BionicSX2_App |
-| `ios/platform/AppStubs.mm` | C++-linkage stubs for symbols referenced by libBionicSX2.a (USB, DEV9, VIF, Discord, aligned alloc, FullscreenUI, etc.) | BionicSX2_App |
-| `ios/platform/SymbolStubs.cpp` | Small C++ stubs + asm stubs compiled into libBionicSX2.a (GSDrawScanline, GSVector4i, GSScanlineLocalData) | BionicSX2 |
-| `ios/platform/CStubs.c` | (Deleted) — Was C-linkage stubs, removed after moving to AppStubs.mm to fix ABI mismatch | — |
-| `ios/platform/Host_iOS.mm` | Real Host:: implementations (settings, OSD, translation, etc.) compiled into libBionicSX2.a | BionicSX2 |
-| `ios/platform/iOSHost.mm` | Minimal Host:: stubs for functions the iOS UI target needs | BionicSX2_App |
+3. **`SetWindow` never called** — No code called `g_gs_device->SetWindow(wi)`. Renderer never learned its CAMetalLayer.
 
----
+#### Fixes Applied
 
-## Fix Groups Applied This Session
-
-### Group 1 — GSDrawScanline stubs (MissingSymbols.mm)
-**Problem**: `isa_native::GSDrawScanline` symbols resolved via stubs in MissingSymbols.mm, but the real pcsx2 GS SW rasterizer (compiled into libBionicSX2.a) provides them now → link conflict.
-**Fix**: Removed the entire GROUP B section (lines 28–59) from MissingSymbols.mm.
-**Files**: `ios/platform/MissingSymbols.mm`
-
-### Group 2 — dVif/DEV9 C++ stubs (AppStubs.mm)
-**Problem**: `dVifRelease`, `dVifReset`, `DEV9CheckChanges` were stubbed in AppStubs.mm but now provided by real compilation in libBionicSX2.a.
-**Fix**: Removed lines 35–41 (the three stubs + their comment header).
-**Files**: `ios/platform/AppStubs.mm`
-
-### Group 3 — Image.cpp HEADER_FILE_ONLY (CMakeLists.txt)
-**Problem**: `pcsx2/common/Image.cpp` uses webp/jpeg libs unavailable on iOS. Was commented out so indexer couldn't see it.
-**Fix**: Uncommented it in PCSX2_CORE_SOURCES and added `set_source_files_properties(... HEADER_FILE_ONLY TRUE)` after `add_library()` so Xcode's indexer sees it but the compiler skips it. `Image_iOS.cpp` provides the iOS implementation.
-**Files**: `CMakeLists.txt`
-
-### Group 4 — iOSHost.mm duplicate removal
-**Problem**: `iOSHost.mm` defined `InputBindingKey{}` (conflicts with real pcsx2/Host.h definition) and had 3 functions (`ShouldPreferHostFileSelector`, `OpenHostFileSelectorAsync`, `OnAchievementsLoginRequested`) that are already in `Host_iOS.mm` → duplicate symbol errors.
-**Fix**: Removed `struct InputBindingKey {};` forward decl + the three duplicate function bodies.
-**Files**: `ios/platform/iOSHost.mm`
-
----
-
-## Notable Past Commits (preceding HEAD)
-| Hash | Message |
+| File | Change |
 |---|---|
-| `325eb37` | fix(linking): move GSScanlineLocalData to global namespace — fixes mangling R19 vs RNS_19 |
-| `03d4547` | fix(linking): force out-of-line emission for GSDrawScanline + applyGameFixes |
-| `bcdf615` | debug: show ALL T symbols from SymbolStubs without grep filter |
-| `4603571` | debug: capture compile errors from SymbolStubs + show file content on failure |
-| `5071d32` | debug: use iphoneos SDK explicitly for SymbolStubs inspection |
-| `06deea8` | debug: compile SymbolStubs standalone to inspect mangled names |
-| `d06c332` | debug: dump exported vs required symbols side by side |
-| `8a50c28` | fix(compile): move GSVector4i/GSVertexSW declarations before isa_native namespace |
-| `c823bc4` | fix(linking): fix GSDrawScanline namespace mangling + add nm export dump |
-| `9ec8a48` | fix(ci): move nm dump steps to AFTER make build step |
+| `metal/MetalRenderer.h` | Changed `Create(const WindowInfo&, string_view)` → `Create(GSVSyncMode, bool) override` |
+| `metal/MetalRenderer.mm` | Rewrote `Create` to override base class: creates MTLDevice, command queue, reads stored WindowInfo via `BXSX2GetWindowInfo()`, configures CAMetalLayer, loads metallib, builds present PSO |
+| `ios/ui/BionicSX2Bridge.mm` | Stores `WindowInfo` globally via `BXSX2SetWindowInfo`; `window_handle` + `surface_handle` now retrievable |
+| `ios/platform/BionicSX2Shared.h` | **New** — C/ObjC header declaring `BXSX2SetWindowInfo`/`BXSX2GetWindowInfo` + view handle accessors |
+| `ios/ui/BionicSX2Bridge.h` | Unchanged — `+setMetalLayer:` declaration still takes `CAMetalLayer*` |
+| `ios/ui/MetalViewController.swift` | Calls `BionicSX2Bridge.setMetalLayer(metalLayer)` before `BionicSX2Bridge.startVM(isoPath:)` |
+| `ios/ui/LogOverlay.h` | **New** — declares `BXLog`/`BXLogError` C functions + `LogOverlay` ObjC class |
+| `ios/ui/LogOverlay.mm` | **New** — writes to `Documents/runtime.log` with crash-safe `fflush`/`synchronizeFile` after every write; on-screen UITextView showing last 20 lines with timestamps |
+| `ios/ui/SceneDelegate.swift` | Installs LogOverlay before any UI; adds "Window created"/"UI loaded" checkpoints |
+| `ios/ui/AppDelegate.mm` | Initializes `LogOverlay.shared` in `application:didFinishLaunchingWithOptions:` |
+| `ios/platform/iOSVMManager.mm` | Replaced all `NSLog` → `BXLog`/`BXLogError` for persistent logging |
+| `metal/MetalRenderer.mm` | Added `BXLog`/`BXLogError` at every init step with device name, dimensions, failures |
+| `CMakeLists.txt` | Added `LogOverlay.mm` to `IOS_PLATFORM_SOURCES`; added `ios/ui` to `BionicSX2_App` include paths |
 
----
+#### On-Screen Log Overlay
+- Floating UITextView at top of screen (semi-transparent black background)
+- Shows last 20 lines with `[HH:MM:SS]` timestamp prefix
+- Errors shown in red text
+- All lines also written to `Documents/runtime.log` via crash-safe append+flush
+- New session marker: `===== APP STARTED =====`
+- File accessible via iPad Files app under BionicSX2's Documents folder
 
-## GSDrawScanline/Linking Saga (key learnings)
-- The `GSDrawScanline` class in the pcsx2 GS SW rasterizer uses `isa_native` namespace
-- Swift/clang++ mangles `isa_native::GSScanlineLocalData` as `R19` (global namespace ref) not `RNS_19` (nested namespace ref) because `isa_native` is declared as `namespace isa_native { ... }` not `namespace isa { namespace native { ... } }`
-- SymbolStubs.cpp provides `GSDrawScanline` with out-of-line key methods to force emission into the static lib
-- The original isa_native stubs in MissingSymbols.mm (BionicSX2_App target) conflicted once SymbolStubs.cpp (BionicSX2 lib target) provided the same symbols → Group 1 fix
-- `nm` / `objdump` (from Xcode toolchain) was used extensively to debug mangled names
-- Apple's `otool` and `nm` are at `/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/`
+#### Checkpoint Logs (matching user's format order)
+1. "App launched" — AppDelegate.mm
+2. "Metal device: <name>" — MetalViewController.swift (after MTLCreateSystemDefaultDevice)
+3. "Window created" — SceneDelegate.swift
+4. "Renderer init started" — MetalViewController.swift
+5. "Metal device: <name>" / "FAILED: MTLCreateSystemDefaultDevice returned nil" — MetalRenderer::Create
+6. "Surface created" / "Surface FAILED: ..." — MetalViewController.swift after startVM returns
+7. "UI loaded" — SceneDelegate.swift
+
+#### Remaining Issues
+- **No emulation run loop wired** — `iOSVMManager::StartVM()` initializes all subsystems but does NOT start EE/IOP threads or MTGS. Even with BIOS loaded, the emulator will not execute game code.
+- **swift `@main` vs ObjC `main.mm` conflict** — Both `BionicSX2App.swift (@main)` and `main.mm` define an entry point. Currently builds but may cause linker issues depending on toolchain version.
+- **Obsolete ObjC AppDelegate window** — `AppDelegate.mm` creates an empty UIWindow with no root VC, then `SceneDelegate` creates a second window. The first window is useless but harmless.
+
+### Past Fixes (previous sessions)
+- Removed `#include "common/Align.h"` from MetalRenderer.mm
+- Fixed deprecated `keyWindow` → `connectedScenes`-based lookup in BionicSX2Bridge.mm
+- Added `using Format = GSTexture::Format;` and `using Type = GSTexture::Type;` in MetalRenderer.mm
+- Added missing `override` to `Destroy()` in MetalRenderer.h
+- Initialized pcsx2 submodule to commit `58facc8ab16c30e7dc4e56d01e08ea57d5f1c1eb`
+- Created `ios/platform/Filesystem_iOS.h` for iOS path helpers
+- Rewrote `iOSVMManager::StartVM()` with proper BIOS init sequence
+- Added BIOS-missing alert UI in MetalViewController.swift
 
 ---
 
@@ -111,11 +94,3 @@ make clean && make 2>&1 | tail -100
 # or with Xcode:
 open BionicSX2.xcodeproj
 ```
-
----
-
-## Open/known issues
-- Several PCSX2 submodules are empty stubs → `Pcsx2Types.h`, `fmt`, `liblzma` all have fallback paths in CMake
-- `Image.cpp` is HEADER_FILE_ONLY (see Group 3) — if the actual file doesn't exist in the submodule, the conditional guard silently skips it
-- `InputBindingKey` type — real definition comes from pcsx2/Host.h; AppStubs.mm has its own forward decl (needed because AppStubs.mm doesn't include the real header)
-- `OnInputDeviceDisconnected(InputBindingKey, ...)` in iOSHost.mm depends on InputBindingKey being defined by the pcsx2/Host.h include
