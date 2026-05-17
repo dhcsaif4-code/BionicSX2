@@ -1,4 +1,8 @@
-#include "PrecompiledHeader.h"
+#import <Foundation/Foundation.h>
+#include <string>
+#include <string_view>
+#include <functional>
+#include <vector>
 #include "pcsx2/Config.h"
 
 // AppStubs.mm — BionicSX2 iOS Port

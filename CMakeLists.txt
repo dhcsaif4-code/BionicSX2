@@ -547,9 +547,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
         ${THIRDPARTY_INCLUDE_DIRS}
     )
 
-    # BionicSX2_App needs fmt headers (and other 3rdparty) for MissingSymbols.mm
+    # BionicSX2_App needs PCSX2 + common + fmt headers for stub files
     target_include_directories(BionicSX2_App PRIVATE
         ios/platform
+        ${CMAKE_SOURCE_DIR}/pcsx2
+        ${PCSX2_DIR}
+        ${COMMON_DIR}
         ${CMAKE_SOURCE_DIR}/3rdparty/fmt/include
         ${THIRDPARTY_INCLUDE_DIRS}
         $<$<BOOL:${IOS_DEPS}>:${IOS_DEPS}/include>
