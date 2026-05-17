@@ -1,3 +1,6 @@
+#include "PrecompiledHeader.h"
+#include "pcsx2/Config.h"
+
 // AppStubs.mm — BionicSX2 iOS Port
 // Linked directly into BionicSX2_App target (NOT into libBionicSX2.a)
 // All stubs use C++ linkage (mangled) — callers in libBionicSX2.a use C++ ABI
