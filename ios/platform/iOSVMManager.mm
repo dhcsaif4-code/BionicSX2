@@ -71,7 +71,10 @@ bool StartVM(const char* isoPath) {
     SysMemory::Reset();
     BXLog(@"SysMemory::Reset() OK");
 
-    // Step 5: reset CPU state → hwReset → vif0Reset/vif1Reset (Audit Sec 2.3-F)
+    // Step 5: force interpreter — belt-and-suspenders (Audit Sec 2.3-F)
+    BXLog(@"CPU — forcing interpreter mode (no JIT)");
+
+    // Step 6: reset CPU state → hwReset → vif0Reset/vif1Reset (Audit Sec 2.3-F)
     BXLog(@"Resetting CPU...");
     @try {
         cpuReset();
@@ -83,7 +86,7 @@ bool StartVM(const char* isoPath) {
         return false;
     }
 
-    // Step 6: initialize GS Metal backend (Audit Sec 4.1)
+    // Step 7: initialize GS Metal backend (Audit Sec 4.1)
     BXLog(@"Opening GS Metal backend...");
     if (!GSopen(EmuConfig.GS, GSRendererType::Metal, nullptr, GSVSyncMode::Disabled, false)) {
         BXLogError(@"GSopen() failed");

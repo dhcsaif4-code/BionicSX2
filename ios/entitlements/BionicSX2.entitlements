@@ -3,6 +3,9 @@
     "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- dynamic-codesigning — allows RWX mapping via MAP_JIT on iOS with dev signing -->
+    <key>dynamic-codesigning</key>
+    <true/>
     <!-- JIT — required for recompiler on iOS 15+ -->
     <key>com.apple.security.cs.allow-jit</key>
     <true/>

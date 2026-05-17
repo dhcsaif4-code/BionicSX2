@@ -134,6 +134,49 @@ jobs:
           echo "Result:"
           grep -n "newVifDynaRec" "$FILE"
 
+      - name: Patch cpuReset in R5900.cpp with first-line printf
+        run: |
+          set -euxo pipefail
+          FILE="pcsx2/pcsx2/R5900.cpp"
+
+          if [ ! -f "$FILE" ]; then
+            echo "ERROR: $FILE not found"
+            exit 1
+          fi
+
+          python3 <<'PYEOF'
+          with open("pcsx2/pcsx2/R5900.cpp", "r") as f:
+              content = f.read()
+
+          MARKER = "void cpuReset()"
+          if MARKER not in content:
+              print("WARNING: void cpuReset() not found — trying alternate patterns")
+              # Search for any cpuReset definition
+              for i, line in enumerate(content.splitlines()):
+                  if "cpuReset" in line and ("void" in line or "{" in line):
+                      print(f"  {i+1}: {line}")
+              exit(0)
+
+          idx = content.find(MARKER)
+          # Find the opening brace
+          brace_start = content.find("{", idx)
+          if brace_start == -1:
+              print("ERROR: no opening brace found after cpuReset()")
+              exit(1)
+
+          # Insert printf + fflush after the opening brace
+          insert = "{\n    printf(\"[CPU] Reset function entered\\n\"); fflush(stdout);"
+          content = content[:brace_start] + insert + content[brace_start + 1:]
+
+          with open("pcsx2/pcsx2/R5900.cpp", "w") as f:
+              f.write(content)
+
+          print("cpuReset() patched with first-line printf")
+          PYEOF
+
+          echo "Verification:"
+          grep -n -A3 "cpuReset" "$FILE"
+
       - name: Install Xcode CLI tools
         run: xcode-select --install || true
 
