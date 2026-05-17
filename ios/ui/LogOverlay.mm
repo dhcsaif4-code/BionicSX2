@@ -38,11 +38,63 @@ static void SafeWriteTimestamp() {
     BXSX2SafeWriteToLog(buf);
 }
 
-// ── Signal handlers (async-signal-safe only) ───────────────────────────
+// ── Async-signal-safe helpers for SA_SIGINFO reporting ────────────────
+static void SafeWriteRaw(const char* s, size_t len) {
+    if (g_crashLogFd < 0) return;
+    size_t written = 0;
+    while (written < len) {
+        ssize_t n = write(g_crashLogFd, s + written, len - written);
+        if (n <= 0) break;
+        written += (size_t)n;
+    }
+    fsync(g_crashLogFd);
+}
+
+static void SafeWriteStr(const char* s) {
+    size_t len = 0;
+    while (s[len]) len++;
+    SafeWriteRaw(s, len);
+}
+
+static void SafeWriteHex64(const char* label, uint64_t val) {
+    SafeWriteStr(label);
+    SafeWriteRaw(" 0x", 3);
+    char buf[16];
+    for (int i = 15; i >= 0; i--) {
+        unsigned digit = (unsigned)(val & 0xF);
+        buf[i] = (digit < 10) ? (char)('0' + digit) : (char)('a' + digit - 10);
+        val >>= 4;
+    }
+    SafeWriteRaw(buf, 16);
+    SafeWriteRaw("\n", 1);
+}
+
+// ── SA_SIGINFO handler for SIGSEGV (captures fault addr + PC) ─────────
+static void SigsegvHandler(int sig, siginfo_t* info, void* ucontext) {
+    SafeWriteTimestamp();
+    SafeWriteStr("FATAL CRASH: SIGSEGV (invalid memory access)\n");
+
+    uint64_t fault_addr = (uint64_t)(uintptr_t)(info->si_addr);
+    SafeWriteHex64("fault addr", fault_addr);
+
+    // Extract PC from ARM64 ucontext
+#if defined(__arm64__)
+    ucontext_t* uc = (ucontext_t*)ucontext;
+    uint64_t pc = (uint64_t)uc->uc_mcontext->__ss.__pc;
+#else
+    uint64_t pc = 0;
+#endif
+    SafeWriteHex64("pc", pc);
+
+    // Reset to default and re-raise so the OS generates a crash report
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
+
+// ── Plain signal handler for non-SEGV signals ─────────────────────────
 static void CrashSignalHandler(int sig) {
     const char* name = nullptr;
     switch (sig) {
-        case SIGSEGV: name = "SIGSEGV (invalid memory access)"; break;
         case SIGABRT: name = "SIGABRT (abort)"; break;
         case SIGBUS:  name = "SIGBUS (bus error)"; break;
         case SIGILL:  name = "SIGILL (illegal instruction)"; break;
@@ -50,9 +102,9 @@ static void CrashSignalHandler(int sig) {
         default:      name = "UNKNOWN SIGNAL"; break;
     }
     SafeWriteTimestamp();
-    BXSX2SafeWriteToLog("FATAL CRASH: ");
-    BXSX2SafeWriteToLog(name);
-    BXSX2SafeWriteToLog("\n");
+    SafeWriteStr("FATAL CRASH: ");
+    SafeWriteStr(name);
+    SafeWriteStr("\n");
     // Reset to default and re-raise so the OS generates a crash report
     signal(sig, SIG_DFL);
     raise(sig);
@@ -82,7 +134,15 @@ void BXSX2InstallCrashHandlers(void) {
     g_crashLogFd = open(cpath, O_WRONLY | O_CREAT | O_APPEND, 0644);
 
     // Install signal handlers (async-signal-safe)
-    signal(SIGSEGV, CrashSignalHandler);
+    // SIGSEGV uses sigaction with SA_SIGINFO for fault address + PC
+    {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_sigaction = SigsegvHandler;
+        sa.sa_flags = SA_SIGINFO | SA_NODEFER;
+        sigemptyset(&sa.sa_mask);
+        sigaction(SIGSEGV, &sa, NULL);
+    }
     signal(SIGABRT, CrashSignalHandler);
     signal(SIGBUS, CrashSignalHandler);
     signal(SIGILL, CrashSignalHandler);

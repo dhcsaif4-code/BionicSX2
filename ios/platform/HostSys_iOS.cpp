@@ -128,7 +128,9 @@ u8* SharedMemoryMappingArea::Map(void* file_handle, size_t file_offset, void* ma
 	pxAssert(static_cast<u8*>(map_base) >= m_base_ptr && static_cast<u8*>(map_base) < (m_base_ptr + m_size));
 
 	const u32 prot = iOSProt(mode);
+	fprintf(stderr, "[HostSys_iOS] Map: prot=0x%x size=%zu\n", prot, map_size); fflush(stderr);
 	kern_return_t kr = vm_protect(mach_task_self(), reinterpret_cast<vm_address_t>(map_base), map_size, FALSE, prot);
+	fprintf(stderr, "[HostSys_iOS] vm_protect returned: %s (kr=0x%x)\n", mach_error_string(kr), kr); fflush(stderr);
 	if (kr != KERN_SUCCESS)
 	{
 		Console.Error("(HostSys_iOS) SharedMemoryMappingArea::Map vm_protect failed: %s (0x%x)", mach_error_string(kr), kr);
