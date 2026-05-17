@@ -32,7 +32,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_compile_definitions(PCSX2_TARGET_IOS=1)
 
     # Phase 0-D2: Register missing global-variable source files
-    add_compile_definitions(ARCH_ARM64=1)
+    # ARCH_ARM64 moved to BionicSX2 target only (not BionicSX2_App)
 
     set(CMAKE_FIND_ROOT_PATH "${IOS_DEPS};${CMAKE_OSX_SYSROOT}")
     list(PREPEND CMAKE_PREFIX_PATH "${IOS_DEPS};${CMAKE_OSX_SYSROOT}")
@@ -587,9 +587,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_compile_definitions(BionicSX2 PRIVATE
         PCSX2_TARGET_IOS=1
         TARGET_OS_IOS=1
+        ARCH_ARM64=1
         VIXL_CODE_BUFFER_MMAP=0
     )
-    # ARCH_ARM64 is defined by Pcsx2Defs.h — do not duplicate
 
     # Phase 0-B: Exclude SW JIT files from iOS build
     # These are NOT added to sources for iOS
