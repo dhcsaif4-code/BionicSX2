@@ -13,6 +13,32 @@
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
 
+#include <memory>
+
+// ── Minimal Metal texture wrapper ──────────────────────────────────
+class MetalTexture final : public GSTexture
+{
+public:
+	MetalTexture(id<MTLTexture> texture, Type type, Format format);
+	~MetalTexture() override;
+
+	void* GetNativeHandle() const override;
+	bool Update(const GSVector4i& r, const void* data, int pitch, int layer = 0) override;
+	bool Map(GSMap& m, const GSVector4i* r = nullptr, int layer = 0) override;
+	void Unmap() override;
+	void GenerateMipmap() override;
+#ifdef PCSX2_DEVBUILD
+	void SetDebugName(std::string_view name) override;
+#endif
+
+	id<MTLTexture> GetMTLTexture() const { return m_texture; }
+
+private:
+	id<MTLTexture> m_texture = nil;
+	std::unique_ptr<u8[]> m_map_data;
+	u32 m_map_pitch = 0;
+};
+
 class MetalRenderer final : public GSDevice
 {
 public:
@@ -32,7 +58,7 @@ public:
 
 	void Present();
 
-	// GSDevice pure virtual stubs — Phase 11 (Audit Sec 4.1-4.3)
+	// GSDevice pure virtual implementations — Phase 11 (Audit Sec 4.1-4.3)
 	GSTexture* CreateSurface(GSTexture::Type type, int width, int height, int levels, GSTexture::Format format) override;
 	void DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex, GSVector4* dRect, const GSRegPMODE& PMODE, const GSRegEXTBUF& EXTBUF, u32 c, const bool linear) override;
 	void DoInterlace(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, ShaderInterlace shader, bool linear, const InterlaceConstantBuffer& cb) override;
@@ -65,10 +91,16 @@ public:
 	void ClearSamplerCache() override;
 
 private:
+	static MTLPixelFormat FormatToMTL(GSTexture::Format fmt);
+	static id<MTLTexture> GetMTLTexture(GSTexture* tex);
+	void BlitTexture(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect);
+
 	id<MTLDevice> m_device = nil;
 	id<MTLCommandQueue> m_commandQueue = nil;
 	CAMetalLayer* m_layer = nil;
 	id<MTLLibrary> m_library = nil;
 	id<MTLRenderPipelineState> m_presentPSO = nil;
-	id<MTLTexture> m_renderTexture = nil;
+	id<MTLTexture> m_presentTexture = nil;
+	id<MTLBuffer> m_uploadBuffer = nil;
+	uint64_t m_uploadBufferSize = 0;
 };
