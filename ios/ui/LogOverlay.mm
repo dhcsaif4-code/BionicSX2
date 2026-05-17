@@ -172,6 +172,11 @@ void BXLog(NSString* format, ...) {
     [[LogOverlay shared] addEntry:msg isError:NO];
 }
 
+void BLogC(const char* msg) {
+    if (msg)
+        BXLog(@"%s", msg);
+}
+
 void BXLogError(NSString* format, ...) {
     va_list args;
     va_start(args, format);
