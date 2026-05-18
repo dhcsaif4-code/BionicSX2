@@ -387,12 +387,14 @@ GS_OLD = r"""	bool okay = g_gs_device->Create(vsync_mode, allow_present_throttle
 
 GS_NEW = r"""	BLogC("[OpenGSDevice] calling g_gs_device->Create()");
 	bool okay = g_gs_device->Create(vsync_mode, allow_present_throttle);
-	BLogC("[OpenGSDevice] g_gs_device->Create() = %d", (int)okay);
+	if (okay) BLogC("[OpenGSDevice] Create succeeded");
+	else BLogC("[OpenGSDevice] Create FAILED");
 	if (okay)
 	{
 		BLogC("[OpenGSDevice] calling ImGuiManager::Initialize()");
 		okay = ImGuiManager::Initialize();
-		BLogC("[OpenGSDevice] ImGuiManager::Initialize() = %d", (int)okay);
+		if (okay) BLogC("[OpenGSDevice] ImGuiManager init OK");
+		else BLogC("[OpenGSDevice] ImGuiManager init FAILED");
 		if (!okay)
 			Console.Error("Failed to initialize ImGuiManager");
 	}
