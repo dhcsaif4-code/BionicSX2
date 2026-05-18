@@ -15,6 +15,10 @@
     <string>BionicSX2_App</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>iPhoneOS</string>
+    </array>
     <key>MinimumOSVersion</key>
     <string>16.0</string>
     <key>UISupportedDeviceFamilies</key>

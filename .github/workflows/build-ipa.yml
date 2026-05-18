@@ -300,29 +300,48 @@ jobs:
       - name: Package IPA manually
         run: |
           set -euxo pipefail
-          APP_BINARY="build-ios/BionicSX2_App.app/BionicSX2_App"
+          APP_SRC="build-ios/BionicSX2_App.app"
+          APP_DST="Payload/BionicSX2.app"
 
-          # Verify binary exists and is fat/arm64
-          test -f "$APP_BINARY"
-          file "$APP_BINARY"
-          lipo -info "$APP_BINARY"
+          # Verify source binary exists
+          test -f "$APP_SRC/BionicSX2_App"
+          file "$APP_SRC/BionicSX2_App"
+          lipo -info "$APP_SRC/BionicSX2_App"
 
           # Create Payload with correct .app bundle name
           mkdir -p Payload
-          cp -r build-ios/BionicSX2_App.app Payload/BionicSX2.app
+          cp -r "$APP_SRC" "$APP_DST"
 
-          # Verify Info.plist is inside
-          test -f Payload/BionicSX2.app/Info.plist
+          # Verify Info.plist is valid
+          test -f "$APP_DST/Info.plist"
+          plutil -lint "$APP_DST/Info.plist"
 
-          # Ad-hoc sign with ldid for sideloading (AltStore/SideStore compatible)
+          # Inject required keys into Info.plist if missing
+          # CFBundleSupportedPlatforms is required by ESign/AltStore
+          /usr/libexec/PlistBuddy -c "Add :CFBundleSupportedPlatforms array" "$APP_DST/Info.plist" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleSupportedPlatforms:0 string iPhoneOS" "$APP_DST/Info.plist" 2>/dev/null || true
+
+          # Write minimum required keys (ESign validates these)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.bionicsx2.app" "$APP_DST/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable BionicSX2_App" "$APP_DST/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1" "$APP_DST/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 0.1.0" "$APP_DST/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 16.0" "$APP_DST/Info.plist"
+
+          # Also ensure the bundle has the required PkgInfo file
+          printf 'APPL????' > "$APP_DST/PkgInfo"
+
+          # Ad-hoc sign with ldid for sideloading (AltStore/SideStore/ESign compatible)
           ldid -Sios/entitlements/BionicSX2.entitlements \
-            Payload/BionicSX2.app/BionicSX2_App
+            "$APP_DST/BionicSX2_App"
 
           # Package as IPA
           rm -f BionicSX2.ipa
           zip -r BionicSX2.ipa Payload/
           echo "IPA size: $(du -sh BionicSX2.ipa)"
-          echo "IPA contents:"
+          echo "=== Bundle contents ==="
+          ls -la "$APP_DST/"
+          echo "=== IPA contents ==="
           unzip -l BionicSX2.ipa | grep -E "Payload|Info\.plist|\.app/$"
 
       - name: Upload IPA
