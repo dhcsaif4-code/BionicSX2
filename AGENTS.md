@@ -24,6 +24,36 @@
 
 ## Known Issues & Decisions
 
+### Session 2026-05-17: SIGSEGV at offset 0x50 — null CDVD pointer
+
+#### Symptom
+Crash during `psxHwReset()` → `cdvdReset()` with fault addr `0x50` (null+80). Log shows `[psxHwReset] line 3: cdrReset() done` then immediate SIGSEGV.
+
+#### Root Cause
+The global `const CDVD_API* CDVD` pointer was left as `nullptr` because `CDVDsys_ChangeSource()` was never called when no ISO path was provided. Inside `cdvdReset()` → `cdvdCtrlTrayClose()` → `cdvdDetectDisk()` → `DoCDVDdetectDiskType()` → `DetectDiskType()` the code accessed `CDVD->getTrayStatus()` — a function pointer at **struct offset 80 = 0x50** in `CDVD_API`. Dereferencing through null produced the fault.
+
+#### Fix
+Added `CDVDsys_ChangeSource(CDVD_SourceType::NoDisc)` in the no-ISO branch of `iOSVMManager::StartVM()`, which sets `CDVD = &CDVDapi_NoDisc` (valid no-op API struct).
+
+#### Key insight for future null+offset crashes
+Offset 0x50 on ARM64 ≠ virtual dispatch (which faults at 0x00). It's a direct struct member access at byte 80 through null. `CDVD_API` has a function pointer at offset 80 (`getTrayStatus`), so calling `CDVD->getTrayStatus()` through null reads from address 0x50.
+
+### Session 2026-05-18: SIGABRT after step G — missing font resources
+
+#### Symptom
+Crash after log `"MetalRenderer: step G done — present pipeline ready"`. SIGABRT (not caught by `@try/@catch`). No crash info from BXLog markers in MetalRenderer::Create itself.
+
+#### Root Cause
+`OpenGSDevice()` in GS.cpp calls `ImGuiManager::Initialize()` after `g_gs_device->Create()` succeeds. `ImGuiManager::Initialize()` → `LoadFontData()` tries to load `resources/fonts/RobotoMono-Medium.ttf`, `fa-solid-900.ttf`, and `promptfont.otf` from the app bundle's `Resources/` directory. On iOS, `CocoaTools::GetResourcePath()` returns `<app_bundle>/resources/` (it detects iOS because `resourcePath == bundlePath` and appends `/resources`). Since the fonts were **never copied into the app bundle**, `LoadFontData()` returns false → `pxFailRel("Failed to load font data")` → `pxOnAssertFail()` → `AbortWithMessage()` → `abort()`. The `@try/@catch` doesn't catch it because `abort()` is a C-level process kill, not an ObjC exception.
+
+#### Fix
+Added `POST_BUILD` command in CMakeLists.txt to copy `pcsx2/bin/resources/fonts/` → `$<TARGET_FILE_DIR:BionicSX2_App>/resources/fonts/` (matching the `Resources/fonts/` path used by `EmuFolders::GetOverridableResourcePath` → `LoadFontData`).
+
+Also added `BLogC` markers inside `OpenGSDevice()` around the `Create`/`ImGuiManager::Initialize`/`Console.WriteLn` calls, and added the `OpenGSDevice` section to `patch_debug_tracing.py` for future CI runs.
+
+#### Key insight for future SIGABRT crashes
+`pxFailRel` and `pxAssertRel` call `abort()` which bypasses `@try/@catch`. To catch these, look for `LoadFontData`, `CreateSoftwareCursorTextures`, or `AddImGuiFonts` failures inside `ImGuiManager::Initialize()` — or add BLogC markers directly in the call chain.
+
 ### Session 2026-05-17: Black Screen → MetalRenderer init + LogOverlay
 
 #### Root Cause

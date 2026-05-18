@@ -662,6 +662,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     )
     add_dependencies(BionicSX2_App MetalShaders)
 
+    # Copy font resources into the .app bundle
+    set(FONTS_SRC_DIR "${CMAKE_SOURCE_DIR}/pcsx2/bin/resources/fonts")
+    add_custom_command(TARGET BionicSX2_App POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:BionicSX2_App>/resources/fonts"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${FONTS_SRC_DIR}"
+            "$<TARGET_FILE_DIR:BionicSX2_App>/resources/fonts"
+        COMMENT "Copying fonts to app bundle Resources/fonts"
+        VERBATIM
+    )
+
     # iOS app bundle settings
     set(CMAKE_MACOSX_BUNDLE YES)
     set(MACOSX_BUNDLE_GUI_IDENTIFIER com.bionicsx2.app)

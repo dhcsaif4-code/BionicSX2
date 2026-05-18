@@ -356,6 +356,71 @@ DECI2_NEW = r"""void Deci2Reset()
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# 7.  GS.cpp  —  OpenGSDevice()   (markers around Create/ImGuiInit/Console)
+# ════════════════════════════════════════════════════════════════════════════
+
+GS_OLD = r"""	bool okay = g_gs_device->Create(vsync_mode, allow_present_throttle);
+	if (okay)
+	{
+		okay = ImGuiManager::Initialize();
+		if (!okay)
+			Console.Error("Failed to initialize ImGuiManager");
+	}
+	else
+	{
+		Console.Error("Failed to create GS device");
+	}
+
+	if (!okay)
+	{
+		ImGuiManager::Shutdown(clear_state_on_fail);
+		g_gs_device->Destroy();
+		g_gs_device.reset();
+		Host::ReleaseRenderWindow();
+		return false;
+	}
+
+	GSConfig.OsdShowGPU = GSConfig.OsdShowGPU && g_gs_device->SetGPUTimingEnabled(true);
+
+	Console.WriteLn(Color_StrongGreen, "%s Graphics Driver Info:", GSDevice::RenderAPIToString(new_api));
+	Console.WriteLn(g_gs_device->GetDriverInfo());"""
+
+GS_NEW = r"""	BLogC("[OpenGSDevice] calling g_gs_device->Create()");
+	bool okay = g_gs_device->Create(vsync_mode, allow_present_throttle);
+	BLogC("[OpenGSDevice] g_gs_device->Create() = %d", (int)okay);
+	if (okay)
+	{
+		BLogC("[OpenGSDevice] calling ImGuiManager::Initialize()");
+		okay = ImGuiManager::Initialize();
+		BLogC("[OpenGSDevice] ImGuiManager::Initialize() = %d", (int)okay);
+		if (!okay)
+			Console.Error("Failed to initialize ImGuiManager");
+	}
+	else
+	{
+		Console.Error("Failed to create GS device");
+	}
+
+	BLogC("[OpenGSDevice] checking okay flag");
+	if (!okay)
+	{
+		BLogC("[OpenGSDevice] shutting down after failed init");
+		ImGuiManager::Shutdown(clear_state_on_fail);
+		g_gs_device->Destroy();
+		g_gs_device.reset();
+		Host::ReleaseRenderWindow();
+		return false;
+	}
+
+	BLogC("[OpenGSDevice] setting GPUTimingEnabled");
+	GSConfig.OsdShowGPU = GSConfig.OsdShowGPU && g_gs_device->SetGPUTimingEnabled(true);
+
+	BLogC("[OpenGSDevice] writing Console driver info");
+	Console.WriteLn(Color_StrongGreen, "%s Graphics Driver Info:", GSDevice::RenderAPIToString(new_api));
+	Console.WriteLn(g_gs_device->GetDriverInfo());
+	BLogC("[OpenGSDevice] returning true");"""
+
+# ════════════════════════════════════════════════════════════════════════════
 # Main
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -370,6 +435,7 @@ def main():
         ("pcsx2/pcsx2/ps2/Iop/PsxBios.cpp",  BIOS_OLD,  BIOS_NEW, "psxBiosReset",  '#include "fmt/format.h"'),
         ("pcsx2/pcsx2/ps2/pgif.cpp",     PGIF_OLD,   PGIF_NEW,   "pgifInit",      '#include "Common.h"'),
         ("pcsx2/pcsx2/R5900OpcodeImpl.cpp", DECI2_OLD, DECI2_NEW, "Deci2Reset",   '#include "VMManager.h"'),
+        ("pcsx2/pcsx2/GS/GS.cpp",        GS_OLD,     GS_NEW,     "OpenGSDevice",  '#include "MTGS.h"'),
     ]
 
     for path, old, new_, name, include_mark in files:
