@@ -293,6 +293,10 @@ jobs:
             | grep -E "GSDrawScanline|applyGameFixes|GameDatabase" \
             | sort -u
 
+      - name: Install ldid for ad-hoc signing
+        run: |
+          brew install ldid
+
       - name: Package IPA manually
         run: |
           set -euxo pipefail
@@ -310,10 +314,9 @@ jobs:
           # Verify Info.plist is inside
           test -f Payload/BionicSX2.app/Info.plist
 
-          # Ad-hoc sign for sideloading
-          codesign --force --deep --sign - \
-            --entitlements ios/entitlements/BionicSX2.entitlements \
-            Payload/BionicSX2.app
+          # Ad-hoc sign with ldid for sideloading (AltStore/SideStore compatible)
+          ldid -Sios/entitlements/BionicSX2.entitlements \
+            Payload/BionicSX2.app/BionicSX2_App
 
           # Package as IPA
           rm -f BionicSX2.ipa
