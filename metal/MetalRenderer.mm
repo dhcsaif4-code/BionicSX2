@@ -219,6 +219,7 @@ bool MetalRenderer::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 bool MetalRenderer::SetWindow(const WindowInfo& wi)
 {
     BXLog(@"MetalRenderer::SetWindow(surface_handle=%p)", wi.surface_handle);
+    GSDevice::SetWindow(wi);
 	m_layer = (__bridge CAMetalLayer*)wi.surface_handle;
 	if (m_layer)
 	{
